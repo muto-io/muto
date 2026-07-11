@@ -45,6 +45,7 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/jsonschema-go v0.4.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
@@ -76,10 +77,13 @@ require (
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.14 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.14 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.14 // indirect

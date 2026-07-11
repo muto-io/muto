@@ -12,3 +12,11 @@ wheels/
 bin/
 graphify-out/
 *.test
+
+# IDE
+.idea/
+
+# Python scaffold (unused)
+.python-version
+main.py
+pyproject.toml

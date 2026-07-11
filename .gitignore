@@ -12,6 +12,7 @@ wheels/
 bin/
 graphify-out/
 *.test
+coverage.out
 
 # IDE
 .idea/

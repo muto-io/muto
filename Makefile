@@ -13,7 +13,7 @@ build:
 	go build -o $(BINARY_DIR)/muto-mcp ./cmd/muto-mcp
 
 test-unit:
-	go test ./... -short -count=1
+	go test ./... -short -count=1 -coverprofile=coverage.out
 
 test-integration:
 	go test ./test/integration/... -tags integration -v -timeout 10m

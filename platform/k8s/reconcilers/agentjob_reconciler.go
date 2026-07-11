@@ -1,0 +1,149 @@
+package reconcilers
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type AgentJobReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
+
+func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	job := &v1alpha1.AgentJob{}
+	if err := r.Get(ctx, req.NamespacedName, job); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	switch job.Status.Phase {
+	case "", "Pending":
+		return r.reconcilePending(ctx, job)
+	case "Running":
+		return r.reconcileRunning(ctx, job)
+	case "Succeeded", "Failed":
+		return r.reconcileTerminal(ctx, job)
+	case "Terminating":
+		return r.reconcileTerminating(ctx, job)
+	}
+	return ctrl.Result{}, nil
+}
+
+func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	for _, roleSpec := range job.Spec.Agents {
+		pod := r.buildPod(job, roleSpec)
+		if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
+			return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
+		}
+	}
+	now := metav1.Now()
+	job.Status.Phase = "Running"
+	job.Status.ActiveAgents = int32(len(job.Spec.Agents))
+	job.Status.StartedAt = &now
+	return ctrl.Result{}, r.Status().Update(ctx, job)
+}
+
+func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList, client.InNamespace(job.Namespace),
+		client.MatchingLabels{"muto.io/job": job.Name}); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	allDone, anyFailed := true, false
+	for _, pod := range podList.Items {
+		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
+			allDone = false
+		}
+		if pod.Status.Phase == corev1.PodFailed {
+			anyFailed = true
+		}
+	}
+
+	if !allDone {
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
+	now := metav1.Now()
+	job.Status.CompletedAt = &now
+	job.Status.ActiveAgents = 0
+	if anyFailed {
+		job.Status.Phase = "Failed"
+	} else {
+		job.Status.Phase = "Succeeded"
+	}
+	return ctrl.Result{RequeueAfter: time.Duration(job.Spec.TTLAfterCompletion) * time.Second},
+		r.Status().Update(ctx, job)
+}
+
+func (r *AgentJobReconciler) reconcileTerminal(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	if job.Spec.TTLAfterCompletion <= 0 {
+		return ctrl.Result{}, nil
+	}
+	if job.Status.CompletedAt == nil {
+		return ctrl.Result{}, nil
+	}
+	elapsed := time.Since(job.Status.CompletedAt.Time)
+	ttl := time.Duration(job.Spec.TTLAfterCompletion) * time.Second
+	if elapsed < ttl {
+		return ctrl.Result{RequeueAfter: ttl - elapsed}, nil
+	}
+	job.Status.Phase = "Terminating"
+	return ctrl.Result{Requeue: true}, r.Status().Update(ctx, job)
+}
+
+func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	podList := &corev1.PodList{}
+	_ = r.List(ctx, podList, client.InNamespace(job.Namespace),
+		client.MatchingLabels{"muto.io/job": job.Name})
+	for i := range podList.Items {
+		_ = r.Delete(ctx, &podList.Items[i])
+	}
+	return ctrl.Result{}, r.Delete(ctx, job)
+}
+
+func (r *AgentJobReconciler) buildPod(job *v1alpha1.AgentJob, roleSpec v1alpha1.AgentRoleSpec) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s", job.Name, roleSpec.Role),
+			Namespace: job.Namespace,
+			Labels: map[string]string{
+				"muto.io/tenant": job.Spec.TenantRef,
+				"muto.io/job":    job.Name,
+				"muto.io/role":   roleSpec.Role,
+			},
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(job, v1alpha1.GroupVersion.WithKind("AgentJob")),
+			},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{
+				Name:  roleSpec.Role,
+				Image: roleSpec.Image,
+				Env: []corev1.EnvVar{
+					{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
+					{Name: "MUTO_ROLE", Value: roleSpec.Role},
+					{Name: "MUTO_JOB_ID", Value: job.Name},
+					{Name: "MUTO_BUS_TOPIC", Value: job.Spec.MessageBus.Topic},
+				},
+			}},
+			RestartPolicy: corev1.RestartPolicyNever,
+		},
+	}
+}
+
+func (r *AgentJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1alpha1.AgentJob{}).
+		Owns(&corev1.Pod{}).
+		Complete(r)
+}

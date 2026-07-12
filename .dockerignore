@@ -1,0 +1,9 @@
+bin/
+graphify-out/
+test/
+docs/
+.github/
+*.md
+*.test
+coverage.out
+.idea/

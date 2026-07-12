@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -43,6 +44,12 @@ var _ = Describe("AgentJob", func() {
 		AfterEach(func() {
 			_ = k8sClient.Delete(ctx, job)
 			_ = k8sClient.Delete(ctx, ns)
+			// Wait for namespace to fully terminate so the next BeforeEach can recreate it.
+			Eventually(func(g Gomega) {
+				check := &corev1.Namespace{}
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: "lifecycle-test"}, check)
+				g.Expect(kerrors.IsNotFound(err)).To(BeTrue())
+			}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(Succeed())
 		})
 
 		It("transitions to Running phase", func() {
@@ -74,3 +81,4 @@ var _ = Describe("AgentJob", func() {
 		})
 	})
 })
+

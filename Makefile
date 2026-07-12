@@ -1,7 +1,9 @@
 CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.17.3
+REGISTRY       ?= ghcr.io/muto-io
+VERSION        ?= $(shell git describe --tags --always --dirty)
 BINARY_DIR     := bin
 
-.PHONY: generate build test-unit test-integration test-integration-kind kind-up kind-down docker-build
+.PHONY: generate build test-unit test-integration test-integration-kind kind-up kind-down docker-build docker-push
 
 generate:
 	$(CONTROLLER_GEN) crd paths="./platform/k8s/types/..." output:crd:artifacts:config=deploy/crds
@@ -28,5 +30,11 @@ kind-down:
 	kind delete cluster --name muto-dev
 
 docker-build:
-	docker build -t muto-operator:dev -f Dockerfile.operator .
-	docker build -t muto-mcp:dev -f Dockerfile.mcp .
+	docker build --build-arg VERSION=$(VERSION) \
+	  -t $(REGISTRY)/muto-operator:$(VERSION) -f Dockerfile.operator .
+	docker build --build-arg VERSION=$(VERSION) \
+	  -t $(REGISTRY)/muto-mcp:$(VERSION) -f Dockerfile.mcp .
+
+docker-push: docker-build
+	docker push $(REGISTRY)/muto-operator:$(VERSION)
+	docker push $(REGISTRY)/muto-mcp:$(VERSION)

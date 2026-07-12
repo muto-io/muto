@@ -69,3 +69,12 @@ jobs:
         env:
           GOFLAGS: "-mod=mod"
         timeout-minutes: 15
+
+  helm-lint:
+    name: Helm Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Lint chart
+        run: helm lint deploy/helm/muto

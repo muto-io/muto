@@ -30,7 +30,8 @@ type TriggerSpec struct {
 
 type AgentRoleSpec struct {
 	Role        string `json:"role"`
-	Image       string `json:"image"`
+	Image       string `json:"image,omitempty"`    // K8s: container image ref
+	Command     string `json:"command,omitempty"`  // CF: task command
 	MaxReplicas int32  `json:"maxReplicas,omitempty"`
 }
 

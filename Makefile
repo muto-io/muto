@@ -1,4 +1,4 @@
-CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.0
+CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.17.3
 BINARY_DIR     := bin
 
 .PHONY: generate build test-unit test-integration kind-up kind-down docker-build

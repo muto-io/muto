@@ -26,7 +26,8 @@ const (
 
 type AgentRole struct {
 	Role        string
-	Image       string
+	Image       string  // K8s: container image ref
+	Command     string  // CF: task command to run on runner app
 	MaxReplicas int32
 }
 

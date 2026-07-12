@@ -1,7 +1,7 @@
 CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen@v0.17.3
 BINARY_DIR     := bin
 
-.PHONY: generate build test-unit test-integration kind-up kind-down docker-build
+.PHONY: generate build test-unit test-integration test-integration-kind kind-up kind-down docker-build
 
 generate:
 	$(CONTROLLER_GEN) crd paths="./platform/k8s/types/..." output:crd:artifacts:config=deploy/crds
@@ -15,8 +15,10 @@ build:
 test-unit:
 	go test ./... -short -count=1 -coverprofile=coverage.out
 
-test-integration:
-	go test ./test/integration/... -tags integration -v -timeout 10m
+test-integration-kind:
+	go test ./test/integration/... -tags integration -v -timeout 15m
+
+test-integration: test-integration-kind
 
 kind-up:
 	kind create cluster --config deploy/kind/kind-config.yaml --name muto-dev

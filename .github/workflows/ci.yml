@@ -62,10 +62,6 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Install envtest binaries
-        run: |
-          go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-          ENVTEST_ASSETS=$(setup-envtest use --bin-path /tmp/envtest-bin -p path 1.31.x)
-          echo "KUBEBUILDER_ASSETS=$ENVTEST_ASSETS" >> $GITHUB_ENV
-      - name: Run integration tests
-        run: make test-integration
+      - name: Run integration tests (k3s via testcontainers)
+        run: make test-integration-kind
+        timeout-minutes: 15

@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/muto-io/muto/core/agent"
 	corev1 "k8s.io/api/core/v1"
@@ -81,7 +82,7 @@ func (a *K8sAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan age
 			select {
 			case <-ctx.Done():
 				return
-			default:
+			case <-time.After(5 * time.Second):
 			}
 		}
 	}()

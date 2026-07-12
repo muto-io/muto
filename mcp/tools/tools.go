@@ -50,3 +50,25 @@ func (h *Handlers) CancelJob(ctx context.Context, jobID string) error {
 func (h *Handlers) ListActiveAgents(ctx context.Context, tenantID string) ([]*agent.Job, error) {
 	return h.sched.ListActive(ctx, tenantID)
 }
+
+// TenantInfo is returned by DescribeTenant.
+type TenantInfo struct {
+	TenantID string `json:"tenantId"`
+	ActiveJobs int  `json:"activeJobs"`
+	Note     string `json:"note"`
+}
+
+// DescribeTenant returns observable info about a tenant from the scheduler's perspective.
+// Full tenant configuration (isolation tier, bus type) lives in the Tenant CR — check
+// `kubectl get tenant <id>` for complete details.
+func (h *Handlers) DescribeTenant(ctx context.Context, tenantID string) (*TenantInfo, error) {
+	jobs, err := h.sched.ListActive(ctx, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("list active: %w", err)
+	}
+	return &TenantInfo{
+		TenantID:   tenantID,
+		ActiveJobs: len(jobs),
+		Note:       "For isolation tier and bus config, check the Tenant CR: kubectl get tenant " + tenantID,
+	}, nil
+}

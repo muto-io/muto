@@ -39,6 +39,7 @@ func (s *MutoMCPServer) registerTools() {
 	s.srv.AddTool(getJobStatusTool(), s.handleGetJobStatus)
 	s.srv.AddTool(cancelJobTool(), s.handleCancelJob)
 	s.srv.AddTool(listActiveAgentsTool(), s.handleListActiveAgents)
+	s.srv.AddTool(describeTenantTool(), s.handleDescribeTenant)
 }
 
 // ---- tool definitions -------------------------------------------------------
@@ -95,6 +96,16 @@ func listActiveAgentsTool() mcp.Tool {
 		mcp.WithString("tenant_id",
 			mcp.Required(),
 			mcp.Description("Tenant whose active agents should be listed."),
+		),
+	)
+}
+
+func describeTenantTool() mcp.Tool {
+	return mcp.NewTool("describe_tenant",
+		mcp.WithDescription("Describe a tenant's isolation tier, message bus type, namespace, and readiness."),
+		mcp.WithString("tenant_id",
+			mcp.Required(),
+			mcp.Description("Tenant identifier to describe."),
 		),
 	)
 }
@@ -172,6 +183,24 @@ func (s *MutoMCPServer) handleListActiveAgents(ctx context.Context, req mcp.Call
 	data, err := json.Marshal(jobs)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("marshal jobs: %s", err.Error())), nil
+	}
+	return mcp.NewToolResultText(string(data)), nil
+}
+
+func (s *MutoMCPServer) handleDescribeTenant(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	tenantID, err := req.RequireString("tenant_id")
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	info, err := s.handlers.DescribeTenant(ctx, tenantID)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("describe_tenant failed: %s", err.Error())), nil
+	}
+
+	data, err := json.Marshal(info)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("marshal tenant info: %s", err.Error())), nil
 	}
 	return mcp.NewToolResultText(string(data)), nil
 }

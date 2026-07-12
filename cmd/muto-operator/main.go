@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -77,7 +78,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = platformAdapter
+	// platformAdapter is used by the DefaultScheduler for direct job scheduling
+	// (e.g. via the MCP server). K8s reconcilers use mgr.GetClient() directly
+	// and are platform-independent. Future work: pass platformAdapter into
+	// reconcilers that need to spawn agents on non-K8s platforms.
+	log.Info("platform adapter initialized", "platform", platform, "type", fmt.Sprintf("%T", platformAdapter))
 
 	if err := (&reconcilers.TenantReconciler{
 		Client: mgr.GetClient(),

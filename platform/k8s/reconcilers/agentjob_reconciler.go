@@ -103,12 +103,19 @@ func (r *AgentJobReconciler) reconcileTerminal(ctx context.Context, job *v1alpha
 
 func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
 	podList := &corev1.PodList{}
-	_ = r.List(ctx, podList, client.InNamespace(job.Namespace),
-		client.MatchingLabels{"muto.io/job": job.Name})
-	for i := range podList.Items {
-		_ = r.Delete(ctx, &podList.Items[i])
+	if err := r.List(ctx, podList, client.InNamespace(job.Namespace),
+		client.MatchingLabels{"muto.io/job": job.Name}); err != nil {
+		return ctrl.Result{}, fmt.Errorf("list pods for terminating job: %w", err)
 	}
-	return ctrl.Result{}, r.Delete(ctx, job)
+	for i := range podList.Items {
+		if err := r.Delete(ctx, &podList.Items[i]); err != nil && !errors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("delete pod %s: %w", podList.Items[i].Name, err)
+		}
+	}
+	if err := r.Delete(ctx, job); err != nil && !errors.IsNotFound(err) {
+		return ctrl.Result{}, fmt.Errorf("delete agentjob: %w", err)
+	}
+	return ctrl.Result{}, nil
 }
 
 func (r *AgentJobReconciler) buildPod(job *v1alpha1.AgentJob, roleSpec v1alpha1.AgentRoleSpec) *corev1.Pod {

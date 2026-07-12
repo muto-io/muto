@@ -40,9 +40,7 @@ func NewDefaultScheduler(adapter PlatformAdapter) *DefaultScheduler {
 }
 
 func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	// Spawn agents outside the lock — I/O must not block other scheduler operations.
 	var agentIDs []string
 	for _, role := range job.Spec.Agents {
 		spec := &agent.Spec{
@@ -56,6 +54,8 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		agentIDs = append(agentIDs, id)
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	job.Status.Phase = agent.PhaseRunning
 	s.jobs[job.ID] = &jobRecord{job: job, agentIDs: agentIDs}
 	return nil
@@ -70,7 +70,9 @@ func (s *DefaultScheduler) Cancel(ctx context.Context, jobID string) error {
 		return fmt.Errorf("job %q not found", jobID)
 	}
 	for _, id := range rec.agentIDs {
-		_ = s.adapter.TerminateAgent(ctx, id)
+		if err := s.adapter.TerminateAgent(ctx, id); err != nil {
+			return fmt.Errorf("terminate agent %s: %w", id, err)
+		}
 	}
 	next, err := Transition(rec.job.Status.Phase, EventCancelled)
 	if err != nil {
@@ -99,7 +101,9 @@ func (s *DefaultScheduler) ListActive(_ context.Context, tenantID string) ([]*ag
 	var result []*agent.Job
 	for _, rec := range s.jobs {
 		if rec.job.TenantID == tenantID && !rec.job.Status.Phase.IsTerminal() {
-			result = append(result, rec.job)
+			// Return a copy to avoid races with concurrent writers.
+			jobCopy := *rec.job
+			result = append(result, &jobCopy)
 		}
 	}
 	return result, nil

@@ -114,7 +114,7 @@ Runs all packages with `-short` flag. No external dependencies required.
 make test-integration
 ```
 
-Requires [envtest](https://book.kubebuilder.io/reference/envtest) binaries. Integration tests exercise the full reconciler loop against a real API server.
+Integration tests spin up a real k3s cluster via [testcontainers-go](https://github.com/testcontainers/testcontainers-go) and exercise the full reconciler loop. Requires Docker.
 
 To verify integration tests compile without running them:
 
@@ -230,6 +230,21 @@ Topic naming is enforced by `core/tenant`: every topic is automatically prefixed
 
 ---
 
+## API Reference
+
+Full OpenAPI 3.0 schemas for all CRDs are in [`docs/api/openapi.yaml`](docs/api/openapi.yaml).
+
+Every field also has inline documentation accessible via `kubectl explain`:
+
+```bash
+kubectl explain agentjob.spec
+kubectl explain agentjob.spec.agents
+kubectl explain tenant.spec.isolationTier
+kubectl explain agentfleet.spec.jobRefs
+```
+
+---
+
 ## Project Layout
 
 ```
@@ -246,4 +261,4 @@ skills/         Claude skill definitions
 
 ## License
 
-Apache 2.0
+MIT

@@ -38,15 +38,28 @@ spec:
           spec:
             properties:
               isolationTier:
+                description: |-
+                  IsolationTier controls how strictly this tenant is isolated from others.
+                  shared: tenant shares the controller's message bus infrastructure.
+                  dedicated: tenant gets its own message bus instance (NATS or Kafka StatefulSet).
                 enum:
                 - shared
                 - dedicated
                 type: string
               messageBus:
+                description: MessageBus configures which message bus implementation
+                  and mode to use.
                 properties:
                   dedicated:
+                    description: |-
+                      Dedicated provisions a per-tenant message bus instance in the tenant namespace.
+                      Only applicable when the parent Tenant has isolationTier: dedicated.
                     type: boolean
                   type:
+                    description: |-
+                      Type selects the message bus implementation.
+                      nats: NATS JetStream — lightweight, low-latency, suited for simple agent tasks.
+                      kafka: Apache Kafka — high-throughput, durable, suited for complex pipelines.
                     enum:
                     - nats
                     - kafka
@@ -55,6 +68,9 @@ spec:
                 - type
                 type: object
               namespace:
+                description: |-
+                  Namespace is the Kubernetes namespace where agent pods for this tenant run.
+                  The TenantReconciler creates this namespace if it does not exist.
                 type: string
             required:
             - isolationTier
@@ -63,6 +79,9 @@ spec:
           status:
             properties:
               ready:
+                description: |-
+                  Ready is true once the tenant namespace and RBAC have been provisioned
+                  and the message bus (if dedicated) is running.
                 type: boolean
             type: object
         type: object

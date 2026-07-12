@@ -13,13 +13,19 @@ type AgentFleet struct {
 }
 
 type AgentFleetSpec struct {
-	TenantRef string   `json:"tenantRef"`
-	JobRefs   []string `json:"jobRefs,omitempty"`
+	// TenantRef is the name of the Tenant that owns this fleet.
+	TenantRef string `json:"tenantRef"`
+	// JobRefs lists the names of AgentJob resources that belong to this fleet.
+	// Fleet-level operations (e.g. cancel) apply to all listed jobs.
+	JobRefs []string `json:"jobRefs,omitempty"`
 }
 
 type AgentFleetStatus struct {
-	TotalJobs     int32 `json:"totalJobs,omitempty"`
-	RunningJobs   int32 `json:"runningJobs,omitempty"`
+	// TotalJobs is the total number of AgentJobs in this fleet.
+	TotalJobs int32 `json:"totalJobs,omitempty"`
+	// RunningJobs is the number of AgentJobs currently in Running phase.
+	RunningJobs int32 `json:"runningJobs,omitempty"`
+	// CompletedJobs is the number of AgentJobs in Succeeded or Failed phase.
 	CompletedJobs int32 `json:"completedJobs,omitempty"`
 }
 

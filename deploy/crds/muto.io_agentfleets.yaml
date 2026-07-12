@@ -38,10 +38,14 @@ spec:
           spec:
             properties:
               jobRefs:
+                description: |-
+                  JobRefs lists the names of AgentJob resources that belong to this fleet.
+                  Fleet-level operations (e.g. cancel) apply to all listed jobs.
                 items:
                   type: string
                 type: array
               tenantRef:
+                description: TenantRef is the name of the Tenant that owns this fleet.
                 type: string
             required:
             - tenantRef
@@ -49,12 +53,17 @@ spec:
           status:
             properties:
               completedJobs:
+                description: CompletedJobs is the number of AgentJobs in Succeeded
+                  or Failed phase.
                 format: int32
                 type: integer
               runningJobs:
+                description: RunningJobs is the number of AgentJobs currently in Running
+                  phase.
                 format: int32
                 type: integer
               totalJobs:
+                description: TotalJobs is the total number of AgentJobs in this fleet.
                 format: int32
                 type: integer
             type: object

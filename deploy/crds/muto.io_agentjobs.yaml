@@ -45,33 +45,66 @@ spec:
           spec:
             properties:
               agents:
+                description: |-
+                  Agents lists the agent roles to spawn for this job.
+                  At least one agent role is required.
                 items:
                   properties:
                     command:
+                      description: |-
+                        Command is the task command to run on the CF runner app.
+                        Required when MUTO_PLATFORM=cf.
                       type: string
                     image:
+                      description: |-
+                        Image is the container image to run when deploying on Kubernetes.
+                        Required when MUTO_PLATFORM=k8s.
                       type: string
                     maxReplicas:
+                      description: |-
+                        MaxReplicas caps the number of concurrent instances for this agent role.
+                        Defaults to 1 if unset.
                       format: int32
+                      minimum: 1
                       type: integer
                     role:
+                      description: |-
+                        Role is the functional name of this agent (e.g. "coordinator", "worker").
+                        Used to label pods and derive runner app names on CF.
                       type: string
                   required:
                   - role
                   type: object
                 type: array
               messageBus:
+                description: MessageBus configures the message bus topic for agent
+                  communication.
                 properties:
                   topic:
+                    description: |-
+                      Topic is the message bus topic prefix for agent-to-agent communication.
+                      Automatically namespaced to tenant.<tenantRef>.<topic> at runtime.
                     type: string
                 type: object
               tenantRef:
+                description: |-
+                  TenantRef is the name of the Tenant that owns this job.
+                  The AgentJob must be created in the namespace defined by that Tenant.
                 type: string
               trigger:
+                description: Trigger defines what initiates this agent job.
                 properties:
                   source:
+                    description: |-
+                      Source is the trigger origin — a message bus topic URL for event triggers,
+                      or a cron expression for cron triggers.
                     type: string
                   type:
+                    description: |-
+                      Type specifies how this job is triggered.
+                      event: triggered by an incoming message on the source topic.
+                      cron: triggered on a schedule (source is a cron expression).
+                      manual: triggered explicitly via the API or MCP tool.
                     enum:
                     - event
                     - cron
@@ -81,7 +114,12 @@ spec:
                 - type
                 type: object
               ttlAfterCompletion:
+                description: |-
+                  TTLAfterCompletion is the number of seconds to wait after the job
+                  reaches a terminal phase (Succeeded or Failed) before deleting it
+                  and all associated pods. 0 means no automatic cleanup.
                 format: int32
+                minimum: 0
                 type: integer
             required:
             - agents
@@ -91,12 +129,22 @@ spec:
           status:
             properties:
               activeAgents:
+                description: ActiveAgents is the count of currently running agent
+                  instances.
                 format: int32
                 type: integer
               completedAt:
+                description: CompletedAt is the time the job reached a terminal phase.
                 format: date-time
                 type: string
               phase:
+                description: |-
+                  Phase is the current lifecycle phase of the AgentJob.
+                  Pending: job created, agents not yet spawned.
+                  Running: agents are active.
+                  Succeeded: all agents completed successfully.
+                  Failed: one or more agents failed.
+                  Terminating: cleanup in progress.
                 enum:
                 - Pending
                 - Running
@@ -105,6 +153,7 @@ spec:
                 - Terminating
                 type: string
               startedAt:
+                description: StartedAt is the time the job transitioned to Running.
                 format: date-time
                 type: string
             type: object

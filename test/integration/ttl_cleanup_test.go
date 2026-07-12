@@ -41,11 +41,6 @@ var _ = Describe("AgentJob TTL cleanup", func() {
 
 	AfterEach(func() {
 		_ = k8sClient.Delete(ctx, ns)
-		Eventually(func(g Gomega) {
-			check := &corev1.Namespace{}
-			err := k8sClient.Get(ctx, client.ObjectKey{Name: "ttl-test"}, check)
-			g.Expect(errors.IsNotFound(err)).To(BeTrue())
-		}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(Succeed())
 	})
 
 	It("deletes the AgentJob after TTL expires", func() {

@@ -47,10 +47,10 @@ func (b *NATSBus) Publish(ctx context.Context, topic string, msg []byte) error {
 func (b *NATSBus) Subscribe(ctx context.Context, topic string, handler agent.MsgHandler) error {
 	_, err := b.js.Subscribe(topic, func(m *natsgo.Msg) {
 		if err := handler(m.Subject, m.Data); err != nil {
-			m.Nak()
+			_ = m.Nak()
 			return
 		}
-		m.Ack()
+		_ = m.Ack()
 	})
 	return err
 }

@@ -35,7 +35,7 @@ func New(cfg *messaging.Config) (*KafkaBus, error) {
 	}
 	consumer, err := sarama.NewConsumer(cfg.URLs, scfg)
 	if err != nil {
-		producer.Close()
+		_ = producer.Close()
 		return nil, fmt.Errorf("kafka consumer: %w", err)
 	}
 	return &KafkaBus{producer: producer, consumer: consumer, brokers: cfg.URLs}, nil
@@ -63,7 +63,7 @@ func (b *KafkaBus) Subscribe(ctx context.Context, topic string, handler agent.Ms
 				}
 				_ = handler(msg.Topic, msg.Value)
 			case <-ctx.Done():
-				pc.Close()
+				_ = pc.Close()
 				return
 			}
 		}
@@ -72,7 +72,15 @@ func (b *KafkaBus) Subscribe(ctx context.Context, topic string, handler agent.Ms
 }
 
 func (b *KafkaBus) Close() error {
-	b.producer.Close()
-	b.consumer.Close()
+	var errs []error
+	if err := b.producer.Close(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := b.consumer.Close(); err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("kafka close: %v", errs)
+	}
 	return nil
 }

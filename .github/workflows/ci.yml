@@ -19,7 +19,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.12.2
 
   unit-test:
     name: Unit Tests
@@ -62,6 +62,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Download integration test dependencies
+        run: go mod download
       - name: Run integration tests (k3s via testcontainers)
         run: make test-integration-kind
+        env:
+          GOFLAGS: "-mod=mod"
         timeout-minutes: 15

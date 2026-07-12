@@ -20,7 +20,7 @@ func TestEventWatcherCallsHandler(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	go watcher.Start(ctx)
+	go func() { _ = watcher.Start(ctx) }()
 
 	select {
 	case tenantID := <-called:

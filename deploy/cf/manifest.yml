@@ -1,0 +1,17 @@
+---
+applications:
+  - name: muto-operator
+    memory: 128M
+    disk_quota: 256M
+    instances: 1
+    no-route: true
+    health-check-type: process
+    buildpacks:
+      - binary_buildpack
+    command: ./muto-operator
+    env:
+      MUTO_PLATFORM: cf
+      CF_ISOLATION_TIER: dedicated
+      CF_SHARED_ORG: ""
+      # Sensitive vars — set via 'cf set-env', never commit here:
+      # CF_API_URL, CF_USERNAME, CF_PASSWORD

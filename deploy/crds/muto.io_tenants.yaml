@@ -63,6 +63,7 @@ spec:
                     enum:
                     - nats
                     - kafka
+                    - a2a
                     type: string
                 required:
                 - type

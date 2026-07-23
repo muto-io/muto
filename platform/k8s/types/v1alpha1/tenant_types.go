@@ -31,7 +31,7 @@ type TenantBusSpec struct {
 	// Type selects the message bus implementation.
 	// nats: NATS JetStream — lightweight, low-latency, suited for simple agent tasks.
 	// kafka: Apache Kafka — high-throughput, durable, suited for complex pipelines.
-	// +kubebuilder:validation:Enum=nats;kafka
+	// +kubebuilder:validation:Enum=nats;kafka;a2a
 	Type string `json:"type"`
 	// Dedicated provisions a per-tenant message bus instance in the tenant namespace.
 	// Only applicable when the parent Tenant has isolationTier: dedicated.

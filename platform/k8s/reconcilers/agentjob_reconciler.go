@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/muto-io/muto/core/a2a"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -39,8 +41,25 @@ func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	tenant := &v1alpha1.Tenant{}
+	if err := r.Get(ctx, types.NamespacedName{Name: job.Spec.TenantRef}, tenant); err != nil {
+		return ctrl.Result{}, fmt.Errorf("get tenant %q: %w", job.Spec.TenantRef, err)
+	}
+
+	var a2aToken string
+	if tenant.Spec.MessageBus.Type == a2a.BusTypeA2A {
+		sec := &corev1.Secret{}
+		if err := r.Get(ctx, types.NamespacedName{
+			Name:      "muto-a2a-token",
+			Namespace: job.Namespace,
+		}, sec); err != nil {
+			return ctrl.Result{}, fmt.Errorf("get a2a token secret: %w", err)
+		}
+		a2aToken = string(sec.Data["token"])
+	}
+
 	for _, roleSpec := range job.Spec.Agents {
-		pod := r.buildPod(job, roleSpec)
+		pod := r.buildPod(job, roleSpec, tenant, a2aToken)
 		if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
 			return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
 		}
@@ -118,7 +137,30 @@ func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1al
 	return ctrl.Result{}, nil
 }
 
-func (r *AgentJobReconciler) buildPod(job *v1alpha1.AgentJob, roleSpec v1alpha1.AgentRoleSpec) *corev1.Pod {
+func (r *AgentJobReconciler) buildPod(
+	job *v1alpha1.AgentJob,
+	roleSpec v1alpha1.AgentRoleSpec,
+	tenant *v1alpha1.Tenant,
+	a2aToken string,
+) *corev1.Pod {
+	envVars := []corev1.EnvVar{
+		{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
+		{Name: "MUTO_ROLE", Value: roleSpec.Role},
+		{Name: "MUTO_JOB_ID", Value: job.Name},
+		{Name: "MUTO_BUS_TOPIC", Value: job.Spec.MessageBus.Topic},
+	}
+	if tenant.Spec.MessageBus.Type == a2a.BusTypeA2A {
+		envVars = append(envVars,
+			corev1.EnvVar{
+				Name:  "MUTO_A2A_GATEWAY",
+				Value: "http://a2a-gateway." + job.Namespace + ".svc.cluster.local:8080",
+			},
+			corev1.EnvVar{
+				Name:  "MUTO_A2A_TOKEN",
+				Value: a2aToken,
+			},
+		)
+	}
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", job.Name, roleSpec.Role),
@@ -136,12 +178,7 @@ func (r *AgentJobReconciler) buildPod(job *v1alpha1.AgentJob, roleSpec v1alpha1.
 			Containers: []corev1.Container{{
 				Name:  roleSpec.Role,
 				Image: roleSpec.Image,
-				Env: []corev1.EnvVar{
-					{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
-					{Name: "MUTO_ROLE", Value: roleSpec.Role},
-					{Name: "MUTO_JOB_ID", Value: job.Name},
-					{Name: "MUTO_BUS_TOPIC", Value: job.Spec.MessageBus.Topic},
-				},
+				Env:   envVars,
 			}},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},

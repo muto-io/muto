@@ -20,7 +20,12 @@ func (f *fakeEventBus) Publish(_ context.Context, _ string, _ []byte) error { re
 
 func (f *fakeEventBus) Subscribe(ctx context.Context, topic string, handler agent.MsgHandler) error {
 	go func() {
-		_ = handler(topic, f.payload)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_ = handler(topic, f.payload)
+		}
 	}()
 	return nil
 }

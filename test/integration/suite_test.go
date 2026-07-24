@@ -15,6 +15,7 @@ import (
 
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -82,9 +83,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	// 4. Build runtime scheme with corev1 + v1alpha1
+	// 4. Build runtime scheme with corev1 + appsv1 + v1alpha1
 	scheme := runtime.NewScheme()
 	Expect(corev1.AddToScheme(scheme)).To(Succeed())
+	Expect(appsv1.AddToScheme(scheme)).To(Succeed())
 	Expect(v1alpha1.AddToScheme(scheme)).To(Succeed())
 
 	// 5. Create k8sClient

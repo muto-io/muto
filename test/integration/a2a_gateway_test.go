@@ -106,6 +106,7 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 			ObjectMeta: metav1.ObjectMeta{Name: "a2a-job", Namespace: tenantNS},
 			Spec: v1alpha1.AgentJobSpec{
 				TenantRef: tenantName,
+				Trigger:   v1alpha1.TriggerSpec{Type: "event"},
 				Agents:    []v1alpha1.AgentRoleSpec{{Role: "worker", Image: "busybox:latest", MaxReplicas: 1}},
 			},
 		}

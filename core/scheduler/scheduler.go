@@ -22,8 +22,9 @@ type Scheduler interface {
 }
 
 type jobRecord struct {
-	job      *agent.Job
-	agentIDs []string
+	job         *agent.Job
+	agentIDs    []string
+	cancelWatch context.CancelFunc // stops all WatchAgent goroutines for this job
 }
 
 type DefaultScheduler struct {
@@ -54,10 +55,23 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		agentIDs = append(agentIDs, id)
 	}
 
+	// context.Background() — watch goroutines must outlive the request context.
+	watchCtx, cancelWatch := context.WithCancel(context.Background())
+	var watchChans []<-chan agent.Event
+	for _, id := range agentIDs {
+		ch, err := s.adapter.WatchAgent(watchCtx, id)
+		if err != nil {
+			cancelWatch()
+			return fmt.Errorf("watch agent %s: %w", id, err)
+		}
+		watchChans = append(watchChans, ch)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	job.Status.Phase = agent.PhaseRunning
-	s.jobs[job.ID] = &jobRecord{job: job, agentIDs: agentIDs}
+	s.jobs[job.ID] = &jobRecord{job: job, agentIDs: agentIDs, cancelWatch: cancelWatch}
+	go s.watchJob(job.ID, watchChans)
 	return nil
 }
 
@@ -74,6 +88,7 @@ func (s *DefaultScheduler) Cancel(ctx context.Context, jobID string) error {
 			return fmt.Errorf("terminate agent %s: %w", id, err)
 		}
 	}
+	rec.cancelWatch()
 	next, err := Transition(rec.job.Status.Phase, EventCancelled)
 	if err != nil {
 		return err
@@ -107,4 +122,42 @@ func (s *DefaultScheduler) ListActive(_ context.Context, tenantID string) ([]*ag
 		}
 	}
 	return result, nil
+}
+
+// watchJob fans in all per-agent event channels and transitions the job's
+// in-memory phase once all agents have reported a terminal event.
+func (s *DefaultScheduler) watchJob(jobID string, chans []<-chan agent.Event) {
+	total := len(chans)
+	results := make(chan agent.Event, total*2)
+	for _, ch := range chans {
+		go func(c <-chan agent.Event) {
+			for ev := range c {
+				results <- ev
+			}
+		}(ch)
+	}
+	completed, failed := 0, 0
+	for completed+failed < total {
+		ev, ok := <-results
+		if !ok {
+			return
+		}
+		switch ev.Type {
+		case agent.EventCompleted:
+			completed++
+		case agent.EventFailed:
+			failed++
+		}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rec, ok := s.jobs[jobID]
+	if !ok {
+		return
+	}
+	if failed > 0 {
+		rec.job.Status.Phase = agent.PhaseFailed
+	} else {
+		rec.job.Status.Phase = agent.PhaseSucceeded
+	}
 }

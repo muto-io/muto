@@ -129,13 +129,17 @@ func (s *DefaultScheduler) ListActive(_ context.Context, tenantID string) ([]*ag
 func (s *DefaultScheduler) watchJob(jobID string, chans []<-chan agent.Event) {
 	total := len(chans)
 	results := make(chan agent.Event, total*2)
+	var wg sync.WaitGroup
 	for _, ch := range chans {
+		wg.Add(1)
 		go func(c <-chan agent.Event) {
+			defer wg.Done()
 			for ev := range c {
 				results <- ev
 			}
 		}(ch)
 	}
+	go func() { wg.Wait(); close(results) }()
 	completed, failed := 0, 0
 	for completed+failed < total {
 		ev, ok := <-results
@@ -155,9 +159,12 @@ func (s *DefaultScheduler) watchJob(jobID string, chans []<-chan agent.Event) {
 	if !ok {
 		return
 	}
-	if failed > 0 {
-		rec.job.Status.Phase = agent.PhaseFailed
-	} else {
-		rec.job.Status.Phase = agent.PhaseSucceeded
+	// Don't overwrite a terminal or Terminating phase set by Cancel().
+	if rec.job.Status.Phase != agent.PhaseTerminating && !rec.job.Status.Phase.IsTerminal() {
+		if failed > 0 {
+			rec.job.Status.Phase = agent.PhaseFailed
+		} else {
+			rec.job.Status.Phase = agent.PhaseSucceeded
+		}
 	}
 }

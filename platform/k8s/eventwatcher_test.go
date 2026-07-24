@@ -1,12 +1,31 @@
-package k8s_test
+package k8s
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	k8sadapter "github.com/muto-io/muto/platform/k8s"
+	"github.com/muto-io/muto/core/agent"
 )
+
+type fakeEventBus struct {
+	payload []byte
+}
+
+func newFakeEventBus(payload []byte) *fakeEventBus {
+	return &fakeEventBus{payload: payload}
+}
+
+func (f *fakeEventBus) Publish(_ context.Context, _ string, _ []byte) error { return nil }
+
+func (f *fakeEventBus) Subscribe(ctx context.Context, topic string, handler agent.MsgHandler) error {
+	go func() {
+		_ = handler(topic, f.payload)
+	}()
+	return nil
+}
+
+func (f *fakeEventBus) Close() error { return nil }
 
 func TestEventWatcherCallsHandler(t *testing.T) {
 	called := make(chan string, 1)
@@ -15,8 +34,8 @@ func TestEventWatcherCallsHandler(t *testing.T) {
 		return nil
 	}
 
-	bus := k8sadapter.NewFakeEventBus([]byte(`{"hello":"world"}`))
-	watcher := k8sadapter.NewEventWatcher(bus, "tenant.acme.tasks", "acme", handler)
+	bus := newFakeEventBus([]byte(`{"hello":"world"}`))
+	watcher := NewEventWatcher(bus, "tenant.acme.tasks", "acme", handler)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

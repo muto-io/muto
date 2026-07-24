@@ -7,6 +7,7 @@ import (
 
 	"github.com/muto-io/muto/core/agent"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -68,15 +69,37 @@ func (a *K8sAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan age
 		defer close(ch)
 		pod := &corev1.Pod{}
 		for {
-			if err := a.client.Get(ctx, client.ObjectKey{Name: agentID, Namespace: a.namespace}, pod); err != nil {
+			err := a.client.Get(ctx, client.ObjectKey{Name: agentID, Namespace: a.namespace}, pod)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					// Pod was deleted externally; treat as failure.
+					select {
+					case ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed}:
+					case <-ctx.Done():
+					}
+				} else if ctx.Err() == nil {
+					// Transient error — back off and retry.
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(5 * time.Second):
+					}
+					continue
+				}
 				return
 			}
 			switch pod.Status.Phase {
 			case corev1.PodSucceeded:
-				ch <- agent.Event{AgentID: agentID, Type: agent.EventCompleted}
+				select {
+				case ch <- agent.Event{AgentID: agentID, Type: agent.EventCompleted}:
+				case <-ctx.Done():
+				}
 				return
 			case corev1.PodFailed:
-				ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed}
+				select {
+				case ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed}:
+				case <-ctx.Done():
+				}
 				return
 			}
 			select {

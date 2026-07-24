@@ -126,11 +126,19 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 			client.MatchingLabels{"muto.io/job": "a2a-job"})).To(Succeed())
 
 		envMap := map[string]string{}
+		secretRefMap := map[string]*corev1.SecretKeySelector{}
 		for _, e := range podList.Items[0].Spec.Containers[0].Env {
-			envMap[e.Name] = e.Value
+			if e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil {
+				secretRefMap[e.Name] = e.ValueFrom.SecretKeyRef
+			} else {
+				envMap[e.Name] = e.Value
+			}
 		}
 		Expect(envMap["MUTO_A2A_GATEWAY"]).To(Equal(
 			"http://a2a-gateway." + tenantNS + ".svc.cluster.local:8080"))
-		Expect(envMap["MUTO_A2A_TOKEN"]).NotTo(BeEmpty())
+		ref := secretRefMap["MUTO_A2A_TOKEN"]
+		Expect(ref).NotTo(BeNil(), "expected MUTO_A2A_TOKEN to use valueFrom.secretKeyRef")
+		Expect(ref.Name).To(Equal("muto-a2a-token"))
+		Expect(ref.Key).To(Equal("token"))
 	})
 })

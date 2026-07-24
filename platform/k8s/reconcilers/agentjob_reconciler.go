@@ -46,20 +46,8 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 		return ctrl.Result{}, fmt.Errorf("get tenant %q: %w", job.Spec.TenantRef, err)
 	}
 
-	var a2aToken string
-	if tenant.Spec.MessageBus.Type == a2a.BusTypeA2A {
-		sec := &corev1.Secret{}
-		if err := r.Get(ctx, types.NamespacedName{
-			Name:      "muto-a2a-token",
-			Namespace: job.Namespace,
-		}, sec); err != nil {
-			return ctrl.Result{}, fmt.Errorf("get a2a token secret: %w", err)
-		}
-		a2aToken = string(sec.Data["token"])
-	}
-
 	for _, roleSpec := range job.Spec.Agents {
-		pod := r.buildPod(job, roleSpec, tenant, a2aToken)
+		pod := r.buildPod(job, roleSpec, tenant)
 		if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
 			return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
 		}
@@ -141,7 +129,6 @@ func (r *AgentJobReconciler) buildPod(
 	job *v1alpha1.AgentJob,
 	roleSpec v1alpha1.AgentRoleSpec,
 	tenant *v1alpha1.Tenant,
-	a2aToken string,
 ) *corev1.Pod {
 	envVars := []corev1.EnvVar{
 		{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
@@ -156,8 +143,13 @@ func (r *AgentJobReconciler) buildPod(
 				Value: "http://a2a-gateway." + job.Namespace + ".svc.cluster.local:8080",
 			},
 			corev1.EnvVar{
-				Name:  "MUTO_A2A_TOKEN",
-				Value: a2aToken,
+				Name: "MUTO_A2A_TOKEN",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "muto-a2a-token"},
+						Key:                  "token",
+					},
+				},
 			},
 		)
 	}

@@ -78,7 +78,7 @@ func (c *A2AClient) doRequest(req *http.Request) (*TaskResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("a2a: http: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("a2a: gateway returned %d", resp.StatusCode)
 	}

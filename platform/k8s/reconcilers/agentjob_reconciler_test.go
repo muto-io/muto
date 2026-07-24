@@ -65,10 +65,6 @@ func TestAgentJobReconcilerInjectsA2AEnvVars(t *testing.T) {
 			MessageBus:    v1alpha1.TenantBusSpec{Type: "a2a", Dedicated: true},
 		},
 	}
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{Name: "muto-a2a-token", Namespace: "a2a-ns"},
-		Data:       map[string][]byte{"token": []byte("test-token-value")},
-	}
 	job := &v1alpha1.AgentJob{
 		ObjectMeta: metav1.ObjectMeta{Name: "job-a2a", Namespace: "a2a-ns"},
 		Spec: v1alpha1.AgentJobSpec{
@@ -78,7 +74,7 @@ func TestAgentJobReconcilerInjectsA2AEnvVars(t *testing.T) {
 	}
 
 	fakeClient := fake.NewClientBuilder().WithScheme(scheme).
-		WithObjects(tenant, secret, job).
+		WithObjects(tenant, job).
 		WithStatusSubresource(&v1alpha1.AgentJob{}).Build()
 
 	r := &reconcilers.AgentJobReconciler{Client: fakeClient, Scheme: scheme}
@@ -97,14 +93,23 @@ func TestAgentJobReconcilerInjectsA2AEnvVars(t *testing.T) {
 	pod := podList.Items[0]
 
 	envMap := map[string]string{}
+	secretRefMap := map[string]*corev1.SecretKeySelector{}
 	for _, e := range pod.Spec.Containers[0].Env {
-		envMap[e.Name] = e.Value
+		if e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil {
+			secretRefMap[e.Name] = e.ValueFrom.SecretKeyRef
+		} else {
+			envMap[e.Name] = e.Value
+		}
 	}
 	if envMap["MUTO_A2A_GATEWAY"] != "http://a2a-gateway.a2a-ns.svc.cluster.local:8080" {
 		t.Errorf("unexpected MUTO_A2A_GATEWAY: %q", envMap["MUTO_A2A_GATEWAY"])
 	}
-	if envMap["MUTO_A2A_TOKEN"] != "test-token-value" {
-		t.Errorf("unexpected MUTO_A2A_TOKEN: %q", envMap["MUTO_A2A_TOKEN"])
+	ref := secretRefMap["MUTO_A2A_TOKEN"]
+	if ref == nil {
+		t.Fatal("expected MUTO_A2A_TOKEN to use valueFrom.secretKeyRef, got plain value")
+	}
+	if ref.Name != "muto-a2a-token" || ref.Key != "token" {
+		t.Errorf("unexpected secretKeyRef for MUTO_A2A_TOKEN: name=%q key=%q", ref.Name, ref.Key)
 	}
 }
 

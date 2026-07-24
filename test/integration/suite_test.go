@@ -43,6 +43,9 @@ func boolPtr(b bool) *bool { return &b }
 var _ = BeforeSuite(func() {
 	ctx := context.Background()
 
+	// Set required env vars for reconcilers
+	Expect(os.Setenv("MUTO_A2A_GATEWAY_IMAGE", "ghcr.io/a2aprotocol/a2a-gateway:v0.1.0")).To(Succeed())
+
 	// 1. Start k3s cluster via testcontainers k3s module
 	var err error
 	k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")

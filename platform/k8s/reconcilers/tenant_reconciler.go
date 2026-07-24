@@ -101,7 +101,7 @@ func (r *TenantReconciler) ensureA2ADeployment(ctx context.Context, ns string, o
 	}
 	image := os.Getenv("MUTO_A2A_GATEWAY_IMAGE")
 	if image == "" {
-		image = "ghcr.io/a2aprotocol/a2a-gateway:latest" // TBD: confirm real image
+		return fmt.Errorf("MUTO_A2A_GATEWAY_IMAGE env var is required for A2A tenants but is not set")
 	}
 	replicas := int32(1)
 	dep = &appsv1.Deployment{

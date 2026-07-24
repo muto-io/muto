@@ -68,6 +68,8 @@ func TestTenantReconcilerA2AGatewayProvisioned(t *testing.T) {
 		WithStatusSubresource(&v1alpha1.Tenant{}).Build()
 	r := &reconcilers.TenantReconciler{Client: fakeClient, Scheme: scheme}
 
+	t.Setenv("MUTO_A2A_GATEWAY_IMAGE", "ghcr.io/a2aprotocol/a2a-gateway:v1.0.0")
+
 	_, err := r.Reconcile(context.Background(), ctrl.Request{
 		NamespacedName: types.NamespacedName{Name: "a2a-tenant"},
 	})

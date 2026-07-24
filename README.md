@@ -168,7 +168,7 @@ spec:
     type: event
     source: github.pr.opened
   messageBus:
-    topic: muto.my-team.summarise-pr-42
+    topic: tenant.my-team.summarise-pr-42
   ttlAfterCompletion: 300
 ```
 
@@ -226,7 +226,7 @@ Muto enforces tenant isolation at two levels:
 | Message bus | Shared NATS/Kafka, prefixed topics | Dedicated bus instance |
 | Agent pods | Co-scheduled | Node-affinity / taint-based |
 
-Topic naming is enforced by `core/tenant`: every topic is automatically prefixed with `muto.<tenantID>.` so jobs from different tenants never collide on the bus.
+Topic naming is enforced by `core/tenant`: every topic is automatically prefixed with `tenant.<tenantID>.` so jobs from different tenants never collide on the bus.
 
 ---
 

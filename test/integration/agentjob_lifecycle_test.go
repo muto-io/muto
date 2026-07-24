@@ -26,6 +26,7 @@ var _ = Describe("AgentJob", func() {
 		var (
 			nsName string
 			ns     *corev1.Namespace
+			tenant *v1alpha1.Tenant
 			job    *v1alpha1.AgentJob
 		)
 
@@ -35,13 +36,23 @@ var _ = Describe("AgentJob", func() {
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
 
+			tenant = &v1alpha1.Tenant{
+				ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("test-%d", testCounter)},
+				Spec: v1alpha1.TenantSpec{
+					Namespace:     nsName,
+					IsolationTier: "shared",
+					MessageBus:    v1alpha1.TenantBusSpec{Type: "nats"},
+				},
+			}
+			Expect(k8sClient.Create(ctx, tenant)).To(Succeed())
+
 			job = &v1alpha1.AgentJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "lifecycle-job", Namespace: nsName},
 				Spec: v1alpha1.AgentJobSpec{
-					TenantRef:          "test",
+					TenantRef:          tenant.Name,
 					Trigger:            v1alpha1.TriggerSpec{Type: "event"},
 					Agents:             []v1alpha1.AgentRoleSpec{{Role: "worker", Image: "busybox:latest", MaxReplicas: 1}},
-					MessageBus:         v1alpha1.JobBusSpec{Topic: "tenant.test.lifecycle-job"},
+					MessageBus:         v1alpha1.JobBusSpec{Topic: fmt.Sprintf("tenant.%s.lifecycle-job", tenant.Name)},
 					TTLAfterCompletion: 60,
 				},
 			}
@@ -50,6 +61,7 @@ var _ = Describe("AgentJob", func() {
 
 		AfterEach(func() {
 			_ = k8sClient.Delete(ctx, job)
+			_ = k8sClient.Delete(ctx, tenant)
 			_ = k8sClient.Delete(ctx, ns)
 		})
 
@@ -78,7 +90,7 @@ var _ = Describe("AgentJob", func() {
 				client.MatchingLabels{"muto.io/job": "lifecycle-job"},
 			)).To(Succeed())
 			Expect(podList.Items).NotTo(BeEmpty())
-			Expect(podList.Items[0].Labels["muto.io/tenant"]).To(Equal("test"))
+			Expect(podList.Items[0].Labels["muto.io/tenant"]).To(Equal(tenant.Name))
 		})
 	})
 })

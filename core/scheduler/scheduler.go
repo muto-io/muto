@@ -86,8 +86,13 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 	}
 
 	// Use Transition() for consistency with Cancel() and to validate state changes
+	// Initialize phase to Pending if not already set
+	if job.Status.Phase == "" {
+		job.Status.Phase = agent.PhasePending
+	}
 	next, err := Transition(job.Status.Phase, EventSpawned)
 	if err != nil {
+		s.mu.Unlock()
 		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 	job.Status.Phase = next

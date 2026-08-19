@@ -93,6 +93,13 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 	next, err := Transition(job.Status.Phase, EventSpawned)
 	if err != nil {
 		s.mu.Unlock()
+
+		// Clean up agents and watch context on transition error
+		cancelWatch()
+		for _, id := range agentIDs {
+			_ = s.adapter.TerminateAgent(ctx, id)
+		}
+
 		return fmt.Errorf("invalid phase transition: %w", err)
 	}
 	job.Status.Phase = next

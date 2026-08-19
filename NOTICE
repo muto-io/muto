@@ -1,0 +1,67 @@
+Muto
+Copyright 2026 muto-io
+
+This product includes software developed by the Muto Project
+(https://github.com/muto-io/muto).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this product except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+===
+
+This product includes the following third-party components:
+
+1. controller-runtime (sigs.k8s.io/controller-runtime)
+   License: Apache 2.0
+   https://github.com/kubernetes-sigs/controller-runtime
+
+2. client-go (k8s.io/client-go)
+   License: Apache 2.0
+   https://github.com/kubernetes/client-go
+
+3. apimachinery (k8s.io/apimachinery)
+   License: Apache 2.0
+   https://github.com/kubernetes/apimachinery
+
+4. go-cfclient (github.com/cloudfoundry-community/go-cfclient)
+   License: Apache 2.0
+   https://github.com/cloudfoundry-community/go-cfclient
+
+5. NATS client library (github.com/nats-io/nats.go)
+   License: Apache 2.0
+   https://github.com/nats-io/nats.go
+
+6. Sarama (Apache Kafka client library) (github.com/Shopify/sarama)
+   License: Apache 2.0
+   https://github.com/Shopify/sarama
+
+7. Ginkgo (github.com/onsi/ginkgo/v2)
+   License: MIT
+   https://github.com/onsi/ginkgo
+
+8. Gomega (github.com/onsi/gomega)
+   License: MIT
+   https://github.com/onsi/gomega
+
+9. mcp-go (github.com/mark3labs/mcp-go)
+   License: MIT
+   https://github.com/mark3labs/mcp-go
+
+10. testcontainers-go (github.com/testcontainers/testcontainers-go)
+    License: Mozilla Public License 2.0
+    https://github.com/testcontainers/testcontainers-go
+
+See LICENSE file in the root directory of this distribution for full license details.
+
+===
+
+For more information about Muto, visit: https://github.com/muto-io/muto

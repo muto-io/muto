@@ -211,9 +211,4 @@ func (s *DefaultScheduler) watchJob(jobID string, chans []<-chan agent.Event) {
 			rec.job.Status.Phase = agent.PhaseSucceeded
 		}
 	}
-
-	// Clean up completed job from map to prevent memory leak
-	if rec.job.Status.Phase.IsTerminal() {
-		delete(s.jobs, jobID)
-	}
 }

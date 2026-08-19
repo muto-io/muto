@@ -8,6 +8,8 @@ trigger: /muto, or when user asks to schedule agents, run agent workloads, check
 
 Use these MCP tools to schedule and manage agent workloads on the Muto operator.
 
+Muto runs on **Kubernetes** (primary) or **Cloud Foundry** (single instance). The operator handles multi-tenant isolation and job scheduling across both platforms.
+
 ## Standard Workflow
 
 1. **Verify tenant** — always call `muto:describe_tenant` first to confirm the tenant is ready and note its isolation tier.
@@ -51,6 +53,15 @@ trigger_source: nats://tasks.inbound
 ttl: 300                         # 5 minutes after completion
 ```
 
+### Platform Support
+
+| Feature | Kubernetes | Cloud Foundry |
+|---------|------------|---------------|
+| Multi-replica agents | ✅ Full support (maxReplicas) | ✅ Runs as CF tasks |
+| Message bus types | ✅ NATS, Kafka | ✅ NATS, Kafka |
+| Tenant isolation | ✅ Shared/dedicated tiers | ✅ Shared/dedicated tiers |
+| Horizontal scaling | ✅ Multiple operator instances | ⚠️ Single operator instance |
+
 ## Phases
 
 | Phase | Meaning |
@@ -60,3 +71,11 @@ ttl: 300                         # 5 minutes after completion
 | Succeeded | All agents completed successfully |
 | Failed | One or more agents failed |
 | Terminating | Cleanup in progress, Pods being deleted |
+
+## Deployment
+
+For information on how to deploy and configure the Muto operator:
+
+- **Kubernetes** – See [`deploy/helm/`](https://github.com/muto-io/muto/tree/main/deploy/helm) for Helm chart
+- **Cloud Foundry** – See [`deploy/cf/README.md`](https://github.com/muto-io/muto/blob/main/deploy/cf/README.md) for CF deployment guide
+- **Local development** – Use `make kind-up` to spin up a local test cluster

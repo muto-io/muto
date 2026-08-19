@@ -1,6 +1,6 @@
 apiVersion: v2
 name: muto
-description: Platform-agnostic agent scheduler for Kubernetes (MUTO operator)
+description: Platform-agnostic agent scheduler and orchestrator (Kubernetes and Cloud Foundry)
 type: application
 version: 0.1.0
 appVersion: "latest"

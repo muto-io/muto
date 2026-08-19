@@ -18,7 +18,7 @@
 │    k8s/                      Kubernetes PlatformAdapter +        │
 │      reconcilers/            TenantReconciler, AgentJobReconciler│
 │                              AgentFleetReconciler, EventWatcher  │
-│    cf/                       Cloud Foundry stub (pluggable)      │
+│    cf/                       Cloud Foundry PlatformAdapter       │
 ├─────────────────────────────────────────────────────────────────┤
 │  core/                       Domain logic (platform-agnostic)    │
 │    agent/                    Job and Spec types, state machine   │
@@ -35,7 +35,9 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Data flow: `Claude (via MCP) → mcp/tools → core/scheduler → platform/k8s → Kubernetes CRDs`
+Data flow:
+- **Kubernetes**: `Claude (via MCP) → mcp/tools → core/scheduler → platform/k8s → Kubernetes CRDs`
+- **Cloud Foundry**: `Claude (via MCP) → mcp/tools → core/scheduler → platform/cf → CF Tasks`
 
 ---
 
@@ -95,6 +97,40 @@ Claude can then call tools like `schedule_agent_job`, `get_job_status`, `list_jo
 ```bash
 make kind-down
 ```
+
+---
+
+## Cloud Foundry Deployment
+
+Muto can also run as a long-lived Cloud Foundry app. See [Cloud Foundry Deployment Guide](deploy/cf/README.md) for step-by-step instructions.
+
+### Key differences from Kubernetes
+
+| Feature | Kubernetes | Cloud Foundry |
+|---------|------------|---------------|
+| State management | etcd (Kubernetes native) | Cloud Foundry app state |
+| Buildpack | N/A | Binary buildpack |
+| HTTP route | Service/Ingress | CF routes (disabled with `no-route: true`) |
+| Health checks | Kubelet probes | CF process health checks |
+| Scaling | Replicas via Kubernetes | Single instance on CF |
+
+### Quick start on CF
+
+```bash
+# Build Linux binary
+GOOS=linux GOARCH=amd64 make build
+
+# Push to your CF space
+cf push -f deploy/cf/manifest.yml -p bin/
+
+# Set API credentials (never commit these)
+cf set-env muto-operator CF_API_URL https://api.cf.example.com
+cf set-env muto-operator CF_USERNAME admin
+cf set-env muto-operator CF_PASSWORD your-password
+cf restage muto-operator
+```
+
+See `deploy/cf/README.md` for full configuration reference.
 
 ---
 

@@ -95,18 +95,34 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 
 func (s *DefaultScheduler) Cancel(ctx context.Context, jobID string) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	rec, ok := s.jobs[jobID]
 	if !ok {
+		s.mu.Unlock()
 		return fmt.Errorf("job %q not found", jobID)
 	}
-	for _, id := range rec.agentIDs {
+	// Copy fields needed for I/O, then release lock
+	agentIDs := rec.agentIDs
+	cancelWatch := rec.cancelWatch
+	s.mu.Unlock()
+
+	// Perform I/O outside the lock
+	for _, id := range agentIDs {
 		if err := s.adapter.TerminateAgent(ctx, id); err != nil {
 			return fmt.Errorf("terminate agent %s: %w", id, err)
 		}
 	}
-	rec.cancelWatch()
+
+	// Re-acquire lock only for state transition
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Verify job still exists and re-check state
+	rec, ok = s.jobs[jobID]
+	if !ok {
+		return nil // Already removed
+	}
+
+	cancelWatch()
 	next, err := Transition(rec.job.Status.Phase, EventCancelled)
 	if err != nil {
 		return err

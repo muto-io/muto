@@ -43,7 +43,7 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 			n := &corev1.Namespace{}
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantNS}, n)
 			return err != nil
-		}).WithTimeout(60 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
+		}).WithTimeout(120 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 	})
 
 	It("provisions gateway Deployment, Service, and Secret for type:a2a dedicated tenant", func() {

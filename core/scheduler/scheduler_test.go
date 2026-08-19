@@ -2,6 +2,7 @@ package scheduler_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -10,17 +11,22 @@ import (
 )
 
 type mockAdapter struct {
+	mu         sync.Mutex
 	spawned    []string
 	terminated []string
 }
 
 func (m *mockAdapter) SpawnAgent(_ context.Context, spec *agent.Spec) (string, error) {
 	id := "agent-" + spec.TenantRef
+	m.mu.Lock()
 	m.spawned = append(m.spawned, id)
+	m.mu.Unlock()
 	return id, nil
 }
 func (m *mockAdapter) TerminateAgent(_ context.Context, id string) error {
+	m.mu.Lock()
 	m.terminated = append(m.terminated, id)
+	m.mu.Unlock()
 	return nil
 }
 func (m *mockAdapter) WatchAgent(_ context.Context, _ string) (<-chan agent.Event, error) {
@@ -69,6 +75,7 @@ func (m *failingAdapter) WatchAgent(_ context.Context, agentID string) (<-chan a
 
 // blockingAdapter returns a channel that blocks until ctx is cancelled.
 type blockingAdapter struct {
+	mu          sync.Mutex
 	watchCalled bool
 }
 
@@ -77,7 +84,9 @@ func (m *blockingAdapter) SpawnAgent(_ context.Context, spec *agent.Spec) (strin
 }
 func (m *blockingAdapter) TerminateAgent(_ context.Context, _ string) error { return nil }
 func (m *blockingAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan agent.Event, error) {
+	m.mu.Lock()
 	m.watchCalled = true
+	m.mu.Unlock()
 	ch := make(chan agent.Event)
 	go func() {
 		defer close(ch)
@@ -200,6 +209,134 @@ func TestCancelJob(t *testing.T) {
 	st, _ := sched.Status(context.Background(), "job-2")
 	if st.Phase != agent.PhaseTerminating {
 		t.Errorf("expected Terminating, got %s", st.Phase)
+	}
+}
+
+// TestScheduleDuplicateJobIDRejected verifies that a second Schedule() call
+// with a jobID already in flight is rejected instead of overwriting the
+// jobRecord out from under the first call's watchJob goroutine.
+func TestScheduleDuplicateJobIDRejected(t *testing.T) {
+	adapter := &blockingAdapter{}
+	sched := scheduler.NewDefaultScheduler(adapter)
+	job1 := &agent.Job{
+		ID:       "job-dup",
+		TenantID: "acme",
+		Spec: agent.Spec{
+			TenantRef: "acme",
+			Agents:    []agent.AgentRole{{Role: "worker", Image: "img:1", MaxReplicas: 1}},
+		},
+	}
+	if err := sched.Schedule(context.Background(), job1); err != nil {
+		t.Fatalf("first schedule: unexpected error: %v", err)
+	}
+
+	job2 := &agent.Job{
+		ID:       "job-dup",
+		TenantID: "acme",
+		Spec: agent.Spec{
+			TenantRef: "acme",
+			Agents:    []agent.AgentRole{{Role: "worker", Image: "img:1", MaxReplicas: 1}},
+		},
+	}
+	err := sched.Schedule(context.Background(), job2)
+	if err == nil {
+		t.Fatal("expected error scheduling duplicate jobID, got nil")
+	}
+
+	// The original job record must be untouched.
+	st, statusErr := sched.Status(context.Background(), "job-dup")
+	if statusErr != nil {
+		t.Fatalf("status: unexpected error: %v", statusErr)
+	}
+	if st.Phase != agent.PhaseRunning {
+		t.Errorf("expected original job to remain PhaseRunning, got %v", st.Phase)
+	}
+}
+
+// TestScheduleConcurrentDifferentJobIDs verifies concurrent Schedule() calls
+// with distinct jobIDs all succeed without racing on s.jobs.
+func TestScheduleConcurrentDifferentJobIDs(t *testing.T) {
+	adapter := &mockAdapter{}
+	sched := scheduler.NewDefaultScheduler(adapter)
+
+	const n = 20
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			job := &agent.Job{
+				ID:       "job-concurrent-" + string(rune('a'+i)),
+				TenantID: "acme",
+				Spec: agent.Spec{
+					TenantRef: "acme",
+					Agents:    []agent.AgentRole{{Role: "worker", Image: "img:1", MaxReplicas: 1}},
+				},
+			}
+			errs[i] = sched.Schedule(context.Background(), job)
+		}(i)
+	}
+	wg.Wait()
+
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("schedule %d: unexpected error: %v", i, err)
+		}
+	}
+
+	jobs, err := sched.ListActive(context.Background(), "acme")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != n {
+		t.Errorf("expected %d active jobs, got %d", n, len(jobs))
+	}
+}
+
+// TestScheduleConcurrentSameJobID verifies that when many goroutines race to
+// schedule the same jobID, exactly one succeeds and the rest are rejected —
+// this is the regression test for the double-schedule race.
+func TestScheduleConcurrentSameJobID(t *testing.T) {
+	adapter := &blockingAdapter{}
+	sched := scheduler.NewDefaultScheduler(adapter)
+
+	const n = 20
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			job := &agent.Job{
+				ID:       "job-race",
+				TenantID: "acme",
+				Spec: agent.Spec{
+					TenantRef: "acme",
+					Agents:    []agent.AgentRole{{Role: "worker", Image: "img:1", MaxReplicas: 1}},
+				},
+			}
+			errs[i] = sched.Schedule(context.Background(), job)
+		}(i)
+	}
+	wg.Wait()
+
+	successes := 0
+	for _, err := range errs {
+		if err == nil {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Errorf("expected exactly 1 successful schedule, got %d", successes)
+	}
+
+	jobs, err := sched.ListActive(context.Background(), "acme")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != 1 {
+		t.Errorf("expected exactly 1 active job, got %d", len(jobs))
 	}
 }
 

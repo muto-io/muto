@@ -68,9 +68,27 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
+
+	// Reject duplicate jobIDs to avoid a race where a second Schedule() call
+	// overwrites the jobRecord in s.jobs while the first call's watchJob
+	// goroutine still references the old record (lost events, double-close,
+	// corrupted job state).
+	if _, exists := s.jobs[job.ID]; exists {
+		s.mu.Unlock()
+
+		// Clean up the agents/watch we already spawned for this rejected
+		// attempt. Done outside the lock since TerminateAgent is I/O.
+		cancelWatch()
+		for _, id := range agentIDs {
+			_ = s.adapter.TerminateAgent(ctx, id)
+		}
+		return fmt.Errorf("job %q already scheduled", job.ID)
+	}
+
 	job.Status.Phase = agent.PhaseRunning
 	s.jobs[job.ID] = &jobRecord{job: job, agentIDs: agentIDs, cancelWatch: cancelWatch}
+	s.mu.Unlock()
+
 	go s.watchJob(job.ID, watchChans)
 	return nil
 }

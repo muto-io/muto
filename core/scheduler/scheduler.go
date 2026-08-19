@@ -85,7 +85,12 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		return fmt.Errorf("job %q already scheduled", job.ID)
 	}
 
-	job.Status.Phase = agent.PhaseRunning
+	// Use Transition() for consistency with Cancel() and to validate state changes
+	next, err := Transition(job.Status.Phase, EventSpawned)
+	if err != nil {
+		return fmt.Errorf("invalid phase transition: %w", err)
+	}
+	job.Status.Phase = next
 	s.jobs[job.ID] = &jobRecord{job: job, agentIDs: agentIDs, cancelWatch: cancelWatch}
 	s.mu.Unlock()
 
@@ -200,5 +205,10 @@ func (s *DefaultScheduler) watchJob(jobID string, chans []<-chan agent.Event) {
 		} else {
 			rec.job.Status.Phase = agent.PhaseSucceeded
 		}
+	}
+
+	// Clean up completed job from map to prevent memory leak
+	if rec.job.Status.Phase.IsTerminal() {
+		delete(s.jobs, jobID)
 	}
 }

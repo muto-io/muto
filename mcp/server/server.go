@@ -131,6 +131,11 @@ func (s *MutoMCPServer) handleScheduleAgentJob(ctx context.Context, req mcp.Call
 	}
 
 	ttlFloat := req.GetFloat("ttl", 0)
+
+	// Validate TTL bounds before conversion to int32
+	if ttlFloat < 0 || ttlFloat > 2147483647 {
+		return mcp.NewToolResultError(fmt.Sprintf("invalid ttl: %v (must be 0-2147483647 seconds)", ttlFloat)), nil
+	}
 	ttl := int32(ttlFloat)
 
 	if err := s.handlers.ScheduleAgentJob(ctx, jobID, tenantID, image, triggerSource, ttl); err != nil {

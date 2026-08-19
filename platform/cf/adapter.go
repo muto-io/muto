@@ -2,6 +2,7 @@ package cf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -80,6 +81,10 @@ func (a *CFAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan agen
 		for {
 			task, err := a.client.GetTask(ctx, agentID)
 			if err != nil {
+				// Don't report context cancellation as a failure
+				if errors.Is(err, context.Canceled) {
+					return
+				}
 				ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed, Message: err.Error()}
 				return
 			}

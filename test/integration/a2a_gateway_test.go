@@ -42,6 +42,12 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 
 		if tenant != nil {
 			_ = k8sClient.Delete(ctx, tenant, delOpts...)
+			// Wait for Tenant to be fully deleted before deleting namespace
+			Eventually(func() bool {
+				t := &v1alpha1.Tenant{}
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: tenant.Name}, t)
+				return err != nil
+			}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 		}
 
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tenantNS}}
@@ -52,7 +58,7 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 			n := &corev1.Namespace{}
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantNS}, n)
 			return err != nil
-		}).WithTimeout(120 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
+		}).WithTimeout(300 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 	})
 
 	It("provisions gateway Deployment, Service, and Secret for type:a2a dedicated tenant", func() {

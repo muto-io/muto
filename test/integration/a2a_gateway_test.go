@@ -40,12 +40,16 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 			client.PropagationPolicy(metav1.DeletePropagationForeground),
 		}
 
-		if tenant != nil {
-			_ = k8sClient.Delete(ctx, tenant, delOpts...)
-		}
-
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tenantNS}}
 		_ = k8sClient.Delete(ctx, ns, delOpts...)
+
+		// A2A namespaces contain Deployment+Service+Secret+Pods — allow longer GC.
+		// Namespace deletion will cascade-delete all owned resources (Tenant, Deployments, Services, etc)
+		Eventually(func() bool {
+			n := &corev1.Namespace{}
+			err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantNS}, n)
+			return err != nil
+		}).WithTimeout(300 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 	})
 
 	It("provisions gateway Deployment, Service, and Secret for type:a2a dedicated tenant", func() {

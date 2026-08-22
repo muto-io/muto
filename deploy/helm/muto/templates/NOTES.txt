@@ -1,0 +1,26 @@
+Muto operator has been deployed!
+
+Image: {{ include "muto.image" . }}
+Namespace: {{ .Release.Namespace }}
+Platform: {{ .Values.env.MUTO_PLATFORM }}
+
+Check operator status:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name=muto
+
+View CRDs:
+  kubectl get crds | grep muto.io
+
+Schedule an agent job:
+  kubectl apply -f - <<EOF
+  apiVersion: muto.io/v1alpha1
+  kind: Tenant
+  metadata:
+    name: my-tenant
+  spec:
+    namespace: my-tenant-agents
+    isolationTier: shared
+    messageBus:
+      type: nats
+  EOF
+
+Docs: https://github.com/muto-io/muto

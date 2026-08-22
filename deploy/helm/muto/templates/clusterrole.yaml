@@ -1,0 +1,30 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "muto.fullname" . }}
+  labels:
+    {{- include "muto.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["muto.io"]
+    resources: ["tenants", "agentjobs", "agentfleets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["muto.io"]
+    resources: ["tenants/status", "agentjobs/status", "agentfleets/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+{{- end }}

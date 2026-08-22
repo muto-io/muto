@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+bin/
+graphify-out/
+*.test
+coverage.out
+
+# IDE
+.idea/
+
+# Python scaffold (unused)
+.python-version
+main.py
+pyproject.toml

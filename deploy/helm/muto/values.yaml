@@ -1,0 +1,51 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/muto-io/muto-operator
+  # tag defaults to .Chart.AppVersion when empty
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  create: true
+
+# Set to false if CRDs are managed externally (e.g. by a GitOps operator)
+installCRDs: true
+
+env:
+  MUTO_PLATFORM: k8s
+  MUTO_NAMESPACE: default
+  # CF platform vars — only used when MUTO_PLATFORM=cf
+  CF_API_URL: ""
+  CF_USERNAME: ""
+  CF_PASSWORD: ""
+  CF_ISOLATION_TIER: dedicated
+  CF_SHARED_ORG: ""
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+metrics:
+  enabled: true
+  port: 8080
+
+healthProbe:
+  port: 8081
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

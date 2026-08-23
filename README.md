@@ -306,5 +306,3 @@ Muto is licensed under the Apache License 2.0, which provides:
 - Full protection for derivative works
 
 See [LICENSE](LICENSE) for full license text and [NOTICE](NOTICE) for third-party component licenses.
-
-For a detailed analysis of why Apache 2.0 was chosen for this project, see [LICENSE_ANALYSIS.md](docs/LICENSE_ANALYSIS.md).

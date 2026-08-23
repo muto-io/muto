@@ -33,23 +33,35 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 	})
 
 	AfterEach(func() {
-		// Use foreground deletion policy to ensure cascade-delete of owned resources
-		// completes before the owner is marked for deletion. This prevents namespace
-		// from getting stuck in Terminating state waiting for dependent cleanup.
-		delOpts := []client.DeleteOption{
-			client.PropagationPolicy(metav1.DeletePropagationForeground),
+		// Delete the Tenant explicitly first — this triggers cleanup of gateway resources
+		if tenant != nil {
+			tenant := &v1alpha1.Tenant{ObjectMeta: metav1.ObjectMeta{Name: tenantName}}
+			delOpts := []client.DeleteOption{
+				client.PropagationPolicy(metav1.DeletePropagationForeground),
+			}
+			_ = k8sClient.Delete(ctx, tenant, delOpts...)
 		}
 
+		// Wait for Tenant to be deleted
+		Eventually(func() bool {
+			t := &v1alpha1.Tenant{}
+			err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantName}, t)
+			return err != nil
+		}).WithTimeout(30 * time.Second).WithPolling(100 * time.Millisecond).Should(BeTrue())
+
+		// Now delete the namespace — cascade-delete will clean up remaining resources
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tenantNS}}
+		delOpts := []client.DeleteOption{
+			client.PropagationPolicy(metav1.DeletePropagationBackground),
+		}
 		_ = k8sClient.Delete(ctx, ns, delOpts...)
 
-		// A2A namespaces contain Deployment+Service+Secret+Pods — allow longer GC.
-		// Namespace deletion will cascade-delete all owned resources (Tenant, Deployments, Services, etc)
+		// Wait for namespace to be deleted (allow more time for A2A resources)
 		Eventually(func() bool {
 			n := &corev1.Namespace{}
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantNS}, n)
 			return err != nil
-		}).WithTimeout(300 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
+		}).WithTimeout(60 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 	})
 
 	It("provisions gateway Deployment, Service, and Secret for type:a2a dedicated tenant", func() {

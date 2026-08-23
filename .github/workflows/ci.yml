@@ -53,8 +53,8 @@ jobs:
       - name: Verify integration tests compile
         run: go build -tags integration ./test/integration/...
 
-  integration-test:
-    name: Integration Tests
+  integration-test-k8s:
+    name: Integration Tests (K8s)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,11 +64,30 @@ jobs:
           cache: true
       - name: Download integration test dependencies
         run: go mod download
-      - name: Run integration tests (k3s via testcontainers)
+      - name: Run K8s integration tests (k3s via testcontainers)
         run: make test-integration-kind
         env:
           GOFLAGS: "-mod=mod"
-        timeout-minutes: 15
+          DOCKER_HOST: "unix:///var/run/docker.sock"
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
+        timeout-minutes: 20
+
+  integration-test-cf:
+    name: Integration Tests (Cloud Foundry)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Download integration test dependencies
+        run: go mod download
+      - name: Run CF integration tests (mock server)
+        run: make test-integration-cf
+        env:
+          GOFLAGS: "-mod=mod"
+        timeout-minutes: 10
 
   helm-lint:
     name: Helm Lint

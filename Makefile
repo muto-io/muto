@@ -3,7 +3,7 @@ REGISTRY       ?= ghcr.io/muto-io
 VERSION        ?= $(shell git describe --tags --always --dirty)
 BINARY_DIR     := bin
 
-.PHONY: generate build test-unit test-integration test-integration-kind kind-up kind-down docker-build docker-push
+.PHONY: generate build test-unit test-integration test-integration-kind test-integration-cf kind-up kind-down docker-build docker-push
 
 generate:
 	$(CONTROLLER_GEN) crd paths="./platform/k8s/types/..." output:crd:artifacts:config=deploy/crds
@@ -18,9 +18,12 @@ test-unit:
 	go test ./... -short -count=1 -coverprofile=coverage.out
 
 test-integration-kind:
-	go test ./test/integration/... -tags integration -v -timeout 15m
+	go test ./test/integration/... -tags integration -v -timeout 20m
 
-test-integration: test-integration-kind
+test-integration-cf:
+	go test ./test/integration/cf/... -tags integration -v -timeout 10m
+
+test-integration: test-integration-kind test-integration-cf
 
 kind-up:
 	kind create cluster --config deploy/kind/kind-config.yaml --name muto-dev

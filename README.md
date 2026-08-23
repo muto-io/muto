@@ -136,29 +136,42 @@ See `deploy/cf/README.md` for full configuration reference.
 
 ## Testing
 
-### Unit tests
+Muto includes a comprehensive e2e test suite with **39 tests** covering both Kubernetes and Cloud Foundry platforms:
+
+- **11 Cloud Foundry adapter tests** — Mock CF API server with task lifecycle testing
+- **28 Kubernetes tests** — Agent lifecycle, Helm deployment, failure scenarios, and stress testing
+
+### Quick Start
 
 ```bash
+# Run all tests (K8s + CF) — ~88 seconds total
+make test-integration
+
+# Run K8s tests only — K3s cluster spun up automatically
+make test-integration-kind
+
+# Run CF tests only — Mock server, no external dependencies
+make test-integration-cf
+
+# Run unit tests
 make test-unit
 ```
 
-Runs all packages with `-short` flag. No external dependencies required.
-
-### Integration tests
+### Local Development
 
 ```bash
-make test-integration
-```
+# Run with verbose output
+go test ./test/integration -tags integration -v
 
-Integration tests spin up a real k3s cluster via [testcontainers-go](https://github.com/testcontainers/testcontainers-go) and exercise the full reconciler loop. Requires Docker.
+# Run specific test file
+go test ./test/integration -tags integration -run TestAgentJob -v
 
-To verify integration tests compile without running them:
+# Increase timeout for slow machines
+go test ./test/integration -tags integration -timeout 30m
 
-```bash
+# Verify tests compile without running
 go build -tags integration ./test/integration/...
 ```
-
----
 
 ## CRDs
 

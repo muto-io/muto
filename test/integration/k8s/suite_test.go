@@ -1,6 +1,6 @@
 //go:build integration
 
-package integration_test
+package k8s_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	tck3s "github.com/testcontainers/testcontainers-go/modules/k3s"
+	"github.com/go-logr/logr"
 
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
@@ -34,9 +35,9 @@ var (
 	k3sContainer *tck3s.K3sContainer
 )
 
-func TestIntegration(t *testing.T) {
+func TestK8sIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite")
+	RunSpecs(t, "K8s Integration Suite")
 }
 
 func boolPtr(b bool) *bool { return &b }
@@ -44,32 +45,51 @@ func boolPtr(b bool) *bool { return &b }
 var _ = BeforeSuite(func() {
 	ctx := context.Background()
 
+	// Initialize logger to suppress controller-runtime warnings
+	ctrl.SetLogger(logr.Discard())
+
 	// Set required env vars for reconcilers
 	Expect(os.Setenv("MUTO_A2A_GATEWAY_IMAGE", "ghcr.io/a2aprotocol/a2a-gateway:v0.1.0")).To(Succeed())
 
-	// 1. Start k3s cluster via testcontainers k3s module
 	var err error
-	k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")
+	var kubeconfigPath string
+
+	// Check if using existing cluster (e.g., kind cluster from CI)
+	useExistingCluster := os.Getenv("MUTO_USE_EXISTING_CLUSTER") == "true"
+
+	if useExistingCluster {
+		// Use existing cluster (kind or other)
+		kubeconfigPath = os.Getenv("KUBECONFIG")
+		if kubeconfigPath == "" {
+			kubeconfigPath = filepath.Join(os.Getenv("HOME"), ".kube", "config")
+		}
+		GinkgoLogr.Info("Using existing cluster", "kubeconfig", kubeconfigPath)
+	} else {
+		// Start k3s cluster via testcontainers k3s module
+		GinkgoLogr.Info("Starting k3s cluster via testcontainers")
+		k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")
+		Expect(err).NotTo(HaveOccurred())
+
+		// Get kubeconfig, write to temp file, set KUBECONFIG env var
+		kubeConfigBytes, err := k3sContainer.GetKubeConfig(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		tmpFile, err := os.CreateTemp("", "k3s-kubeconfig-*.yaml")
+		Expect(err).NotTo(HaveOccurred())
+		_, err = tmpFile.Write(kubeConfigBytes)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(tmpFile.Close()).To(Succeed())
+
+		kubeconfigPath = tmpFile.Name()
+		Expect(os.Setenv("KUBECONFIG", kubeconfigPath)).To(Succeed())
+	}
+
+	// Build rest.Config from kubeconfig
+	cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	// 2. Get kubeconfig, write to temp file, set KUBECONFIG env var
-	kubeConfigBytes, err := k3sContainer.GetKubeConfig(ctx)
-	Expect(err).NotTo(HaveOccurred())
-
-	tmpFile, err := os.CreateTemp("", "k3s-kubeconfig-*.yaml")
-	Expect(err).NotTo(HaveOccurred())
-	_, err = tmpFile.Write(kubeConfigBytes)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(tmpFile.Close()).To(Succeed())
-
-	Expect(os.Setenv("KUBECONFIG", tmpFile.Name())).To(Succeed())
-
-	// Build rest.Config from the written kubeconfig
-	cfg, err = clientcmd.BuildConfigFromFlags("", tmpFile.Name())
-	Expect(err).NotTo(HaveOccurred())
-
-	// 3. Connect via envtest.Environment with UseExistingCluster and CRD paths
-	crdPath, err := filepath.Abs("../../deploy/crds")
+	// Connect via envtest.Environment with UseExistingCluster and CRD paths
+	crdPath, err := filepath.Abs("../../../deploy/crds")
 	Expect(err).NotTo(HaveOccurred())
 
 	testEnv = &envtest.Environment{

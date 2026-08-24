@@ -22,6 +22,46 @@ make test-integration-cf
 make test-e2e
 ```
 
+---
+
+## Directory Structure
+
+```
+test/integration/
+├── k8s/                           # Kubernetes e2e tests (13 files)
+│   ├── suite_test.go              # K8s cluster setup
+│   ├── agentjob_lifecycle_test.go
+│   ├── a2a_gateway_test.go
+│   ├── failure_scenarios_test.go
+│   ├── helm_deployment_test.go
+│   ├── isolation_test.go
+│   ├── mcp_roundtrip_test.go
+│   ├── stress_testing_test.go
+│   ├── tenant_test.go
+│   ├── ttl_cleanup_test.go
+│   ├── k8s_multiagent_coordination_test.go
+│   ├── k8s_advanced_failure_test.go
+│   └── k8s_stress_comprehensive_test.go
+├── cf/                            # CloudFoundry e2e tests (11 files)
+│   ├── suite_test.go              # CF test suite setup
+│   ├── e2e_setup_test.go          # CF cluster initialization
+│   ├── e2e_job_lifecycle_test.go
+│   ├── e2e_multiagent_test.go
+│   ├── e2e_failure_scenarios_test.go
+│   ├── e2e_isolation_test.go
+│   ├── e2e_stress_test.go
+│   ├── e2e_cleanup_test.go
+│   ├── mockserver_test.go
+│   ├── mockclient_test.go
+│   └── adapter_test.go
+├── helpers.go                     # Shared helpers for both platforms
+├── README.md                      # This file
+├── E2E_TESTS_SUMMARY.md          # (archived - content below)
+└── CONTRIBUTING.md               # (archived - content below)
+```
+
+---
+
 ## Kubernetes E2E Tests
 
 Located in `test/integration/k8s/`
@@ -201,6 +241,15 @@ make test-e2e
 
 ---
 
+## GitHub Actions CI/CD
+
+E2E tests run automatically via `.github/workflows/e2e-tests.yml`:
+
+### Triggers
+- **Pull Requests** — When changes affect platform, core, or test code
+- **Push to main** — On every push to main branch
+- **Weekly Schedule** — Runs every Monday at 2 AM UTC
+
 ### PR Validation
 
 For PRs:
@@ -243,6 +292,23 @@ make test-e2e                  # Both K8s and CF tests
 make test-integration          # All integration tests (backward compatible)
 make test-unit                 # Unit tests with coverage
 ```
+
+---
+
+## Test Coverage Matrix
+
+| Scenario | K8s | CF | Notes |
+|----------|-----|-----|-------|
+| Agent Job Lifecycle | ✓ | ✓ | Create, run, complete |
+| Multi-Agent Coordination | ✓ | ✓ | Multiple roles, communication |
+| Failure Scenarios | ✓ | ✓ | Crashes, timeouts, OOM |
+| Tenant Isolation | ✓ | ✓ | Data/resource separation |
+| Resource Constraints | ✓ | ✓ | Memory/CPU limits |
+| Concurrent Operations | ✓ | ✓ | High-volume testing |
+| Stress Testing | ✓ | ✓ | Job churn, rapid cycling |
+| Resource Cleanup | ✓ | ✓ | TTL, completion cleanup |
+
+---
 
 ## Shared Test Helpers
 

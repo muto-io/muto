@@ -13,6 +13,9 @@ bin/
 graphify-out/
 *.test
 coverage.out
+test-results/
+test-output.log
+*.log
 
 # IDE
 .idea/
@@ -21,3 +24,6 @@ coverage.out
 .python-version
 main.py
 pyproject.toml
+
+# Claude
+.superpowers

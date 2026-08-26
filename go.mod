@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/IBM/sarama v1.60.1
-	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.21
+	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/stdr v1.2.2
 	github.com/mark3labs/mcp-go v0.58.0

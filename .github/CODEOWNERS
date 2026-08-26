@@ -1,0 +1,62 @@
+# CODEOWNERS file for muto project
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @muto-io/maintainers
+
+# Platform-specific owners
+platform/ @muto-io/maintainers @muto-io/platform-team
+platform/k8s/ @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
+platform/cf/ @muto-io/maintainers @muto-io/platform-team @muto-io/cf-team
+
+# Core business logic
+core/ @muto-io/maintainers @muto-io/core-team
+
+# Tests
+test/ @muto-io/maintainers @muto-io/qa-team
+test/integration/ @muto-io/maintainers @muto-io/qa-team
+test/integration/k8s/ @muto-io/maintainers @muto-io/qa-team @muto-io/k8s-team
+test/integration/cf/ @muto-io/maintainers @muto-io/qa-team @muto-io/cf-team
+
+# CI/CD and infrastructure
+.github/ @muto-io/maintainers @muto-io/devops-team
+.github/workflows/ @muto-io/maintainers @muto-io/devops-team
+.github/dependabot.yml @muto-io/maintainers @muto-io/devops-team
+Makefile @muto-io/maintainers @muto-io/devops-team
+
+# Deployment and Helm charts
+deploy/ @muto-io/maintainers @muto-io/devops-team
+deploy/helm/ @muto-io/maintainers @muto-io/devops-team
+
+# Documentation
+README.md @muto-io/maintainers @muto-io/docs-team
+CONTRIBUTING.md @muto-io/maintainers @muto-io/docs-team
+docs/ @muto-io/maintainers @muto-io/docs-team
+
+# Build and dependency management
+go.mod @muto-io/maintainers @muto-io/devops-team
+go.sum @muto-io/maintainers @muto-io/devops-team
+Dockerfile* @muto-io/maintainers @muto-io/devops-team
+docker-compose* @muto-io/maintainers @muto-io/devops-team
+
+# Configuration
+.gitignore @muto-io/maintainers
+.gitattributes @muto-io/maintainers
+.editorconfig @muto-io/maintainers
+
+# Kubernetes reconcilers
+platform/k8s/reconcilers/agentjob_reconciler.go @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
+platform/k8s/reconcilers/tenant_reconciler.go @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
+platform/k8s/reconcilers/agentfleet_reconciler.go @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
+
+# CloudFoundry platform
+platform/cf/ @muto-io/maintainers @muto-io/platform-team @muto-io/cf-team
+
+# A2A Gateway integration
+platform/*/a2a*.go @muto-io/maintainers @muto-io/platform-team
+
+# Security-sensitive files
+*.key @muto-io/maintainers
+*.pem @muto-io/maintainers
+*.secret* @muto-io/maintainers
+certs/ @muto-io/maintainers

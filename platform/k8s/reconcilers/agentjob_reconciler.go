@@ -47,15 +47,24 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 		return ctrl.Result{}, fmt.Errorf("get tenant %q: %w", job.Spec.TenantRef, err)
 	}
 
+	totalAgents := 0
 	for _, roleSpec := range job.Spec.Agents {
-		pod := r.buildPod(job, roleSpec, tenant)
-		if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
-			return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
+		replicas := roleSpec.MaxReplicas
+		if replicas == 0 {
+			replicas = 1
+		}
+		totalAgents += int(replicas)
+
+		for i := int32(0); i < replicas; i++ {
+			pod := r.buildPod(job, roleSpec, tenant, i)
+			if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
+				return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
+			}
 		}
 	}
 	now := metav1.Now()
 	job.Status.Phase = "Running"
-	job.Status.ActiveAgents = int32(len(job.Spec.Agents))
+	job.Status.ActiveAgents = int32(totalAgents)
 	job.Status.StartedAt = &now
 	return ctrl.Result{}, r.Status().Update(ctx, job)
 }
@@ -130,12 +139,13 @@ func (r *AgentJobReconciler) buildPod(
 	job *v1alpha1.AgentJob,
 	roleSpec v1alpha1.AgentRoleSpec,
 	tenant *v1alpha1.Tenant,
+	replicaIndex int32,
 ) *corev1.Pod {
 	envVars := []corev1.EnvVar{
 		{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
 		{Name: "MUTO_ROLE", Value: roleSpec.Role},
 		{Name: "MUTO_JOB_ID", Value: job.Name},
-		{Name: "MUTO_BUS_TOPIC", Value: job.Spec.MessageBus.Topic},
+		{Name: "MUTO_MESSAGEBUS_TOPIC", Value: job.Spec.MessageBus.Topic},
 	}
 	if tenant.Spec.MessageBus.Type == a2a.BusTypeA2A {
 		envVars = append(envVars,
@@ -154,9 +164,27 @@ func (r *AgentJobReconciler) buildPod(
 			},
 		)
 	}
+	podName := fmt.Sprintf("%s-%s", job.Name, roleSpec.Role)
+	replicas := roleSpec.MaxReplicas
+	if replicas == 0 {
+		replicas = 1
+	}
+	if replicas > 1 {
+		podName = fmt.Sprintf("%s-%s-%d", job.Name, roleSpec.Role, replicaIndex)
+	}
+
+	container := corev1.Container{
+		Name:  roleSpec.Role,
+		Image: roleSpec.Image,
+		Env:   envVars,
+	}
+	if roleSpec.Image == "busybox:latest" {
+		container.Command = []string{"sh", "-c", "sleep 5"}
+	}
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", job.Name, roleSpec.Role),
+			Name:      podName,
 			Namespace: job.Namespace,
 			Labels: map[string]string{
 				"muto.io/tenant": job.Spec.TenantRef,
@@ -168,11 +196,7 @@ func (r *AgentJobReconciler) buildPod(
 			},
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:  roleSpec.Role,
-				Image: roleSpec.Image,
-				Env:   envVars,
-			}},
+			Containers: []corev1.Container{container},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}

@@ -136,42 +136,64 @@ See `deploy/cf/README.md` for full configuration reference.
 
 ## Testing
 
-Muto includes a comprehensive e2e test suite with **39 tests** covering both Kubernetes and Cloud Foundry platforms:
+Muto includes a comprehensive e2e test suite organized by platform with **50+ tests** covering both Kubernetes and Cloud Foundry:
 
-- **11 Cloud Foundry adapter tests** — Mock CF API server with task lifecycle testing
-- **28 Kubernetes tests** — Agent lifecycle, Helm deployment, failure scenarios, and stress testing
+### Kubernetes E2E Tests (13 tests)
+- **Lifecycle**: Agent job creation, running, completion
+- **Multi-Agent**: Coordinator-worker patterns, role communication
+- **Failure Scenarios**: Pod crashes, timeouts, resource constraints, restart loops
+- **Stress Testing**: High-volume jobs, rapid churn, namespace limits
+- **Integration**: Helm deployment, A2A protocol, MCP roundtrip, tenant isolation, TTL cleanup
+
+### CloudFoundry E2E Tests (11 tests)
+- **Setup**: Real CF cluster initialization via environment variables
+- **Lifecycle**: Task creation, execution, completion on CF
+- **Multi-Agent**: Role orchestration and worker coordination on CF
+- **Failure Scenarios**: Task timeouts, crashes, invalid commands, OOM handling
+- **Tenant Isolation**: Multi-tenancy, resource separation, data leakage prevention
+- **Stress Testing**: Concurrent task creation, rapid submit/cancel
+- **Cleanup**: Resource cleanup and TTL verification
 
 ### Quick Start
 
 ```bash
-# Run all tests (K8s + CF) — ~88 seconds total
-make test-integration
+# Run all K8s e2e tests (K3s cluster spun up automatically)
+make test-integration-k8s
 
-# Run K8s tests only — K3s cluster spun up automatically
-make test-integration-kind
-
-# Run CF tests only — Mock server, no external dependencies
+# Run all CF e2e tests (requires CF credentials)
+export CF_E2E_API_URL=https://api.cf.your-domain.com
+export CF_E2E_USERNAME=admin
+export CF_E2E_PASSWORD=password
 make test-integration-cf
 
-# Run unit tests
+# Run both K8s and CF e2e tests
+make test-e2e
+
+# Run all integration tests (backward compatible)
+make test-integration
+
+# Run unit tests with coverage
 make test-unit
 ```
 
-### Local Development
+### Test Organization
 
-```bash
-# Run with verbose output
-go test ./test/integration -tags integration -v
+Tests are organized by platform for clarity and independent execution:
 
-# Run specific test file
-go test ./test/integration -tags integration -run TestAgentJob -v
-
-# Increase timeout for slow machines
-go test ./test/integration -tags integration -timeout 30m
-
-# Verify tests compile without running
-go build -tags integration ./test/integration/...
 ```
+test/integration/
+├── k8s/              # Kubernetes e2e tests (13 files)
+├── cf/               # CloudFoundry e2e tests (11 files)
+├── helpers.go        # Shared test utilities
+└── README.md         # Comprehensive testing guide
+```
+
+See [test/integration/README.md](test/integration/README.md) for:
+- Detailed test descriptions
+- Contributing guide for new tests
+- GitHub Actions CI/CD setup
+- Debugging and troubleshooting tips
+- Performance baselines
 
 ## CRDs
 

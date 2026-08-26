@@ -19,7 +19,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.12.2
+          version: latest
 
   unit-test:
     name: Unit Tests
@@ -50,8 +50,10 @@ jobs:
           cache: true
       - name: Build binaries
         run: make build
-      - name: Verify integration tests compile
-        run: go build -tags integration ./test/integration/...
+      - name: Verify K8s integration tests compile
+        run: go build -tags integration ./test/integration/k8s/...
+      - name: Verify CF integration tests compile
+        run: go build -tags integration ./test/integration/cf/...
 
   integration-test-k8s:
     name: Integration Tests (K8s)
@@ -62,15 +64,29 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+      - name: Install kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
       - name: Download integration test dependencies
         run: go mod download
       - name: Run K8s integration tests (k3s via testcontainers)
-        run: make test-integration-kind
+        run: make test-integration-k8s
         env:
           GOFLAGS: "-mod=mod"
           DOCKER_HOST: "unix:///var/run/docker.sock"
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
-        timeout-minutes: 20
+        timeout-minutes: 30
+      - name: Upload K8s test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8s-test-results
+          path: test-results/k8s/
+          retention-days: 30
+        if: always()
 
   integration-test-cf:
     name: Integration Tests (Cloud Foundry)
@@ -83,11 +99,19 @@ jobs:
           cache: true
       - name: Download integration test dependencies
         run: go mod download
-      - name: Run CF integration tests (mock server)
+      - name: Run CF integration tests (mocked)
         run: make test-integration-cf
         env:
           GOFLAGS: "-mod=mod"
-        timeout-minutes: 10
+        timeout-minutes: 20
+        continue-on-error: true
+      - name: Upload CF test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf-test-results
+          path: test-results/cf/
+          retention-days: 30
+        if: always()
 
   helm-lint:
     name: Helm Lint

@@ -115,7 +115,7 @@ func (r *AgentJobReconciler) reconcileTerminal(ctx context.Context, job *v1alpha
 		return ctrl.Result{RequeueAfter: ttl - elapsed}, nil
 	}
 	job.Status.Phase = "Terminating"
-	return ctrl.Result{Requeue: true}, r.Status().Update(ctx, job)
+	return ctrl.Result{RequeueAfter: 0}, r.Status().Update(ctx, job)
 }
 
 func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
@@ -179,7 +179,7 @@ func (r *AgentJobReconciler) buildPod(
 		Env:   envVars,
 	}
 	if roleSpec.Image == "busybox:latest" {
-		container.Command = []string{"sh", "-c", "sleep 5"}
+		container.Command = []string{"sh", "-c", "sleep 30"}
 	}
 
 	return &corev1.Pod{

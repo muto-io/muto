@@ -1,0 +1,205 @@
+name: SLA Monitor
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Run daily at 9 AM UTC for overall metrics
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+  checks: write
+  contents: read
+
+jobs:
+  check-pr-sla:
+    # Only run on PR events, not on schedule
+    # Skip Dependabot PRs - they have automatic approval/merge
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR SLA Status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const twoBusinessDaysMs = 2 * 24 * 60 * 60 * 1000;
+            const fiveBusinessDaysMs = 5 * 24 * 60 * 60 * 1000;
+
+            const pr = context.payload.pull_request;
+            const createdAt = new Date(pr.created_at);
+            const timeSinceCreation = now - createdAt;
+            const daysSinceCreation = Math.ceil(timeSinceCreation / (24 * 60 * 60 * 1000));
+            // Note: SLA uses calendar days, not business days. Adjust multipliers if business-day calculation needed
+
+            // Get reviews for this PR
+            const reviews = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const hasReview = reviews.data.length > 0;
+            const hasApproval = reviews.data.some(r => r.state === 'APPROVED');
+            const hasChangesRequested = reviews.data.some(r => r.state === 'CHANGES_REQUESTED');
+
+            // Determine SLA status
+            let status = 'success';
+            let title = '✅ SLA: On Track';
+            let summary = `PR is ${daysSinceCreation} day(s) old. Target: First review within 2 business days, approval within 5 business days.`;
+
+            if (hasApproval) {
+              summary += '\n\n✅ Approved';
+            } else if (hasChangesRequested) {
+              summary += '\n\n🔄 Changes requested';
+            } else if (hasReview && timeSinceCreation > fiveBusinessDaysMs) {
+              status = 'failure';
+              title = '❌ SLA: Review Pending Decision (5+ days)';
+              summary += '\n\n⚠️ PR has reviews but no approval/rejection after 5+ business days.';
+            } else if (hasReview && timeSinceCreation > twoBusinessDaysMs) {
+              status = 'neutral';
+              title = '⏱️ SLA: Under Review';
+              summary += '\n\n✓ PR has been reviewed, awaiting decision.';
+            } else if (!hasReview && timeSinceCreation > fiveBusinessDaysMs) {
+              status = 'failure';
+              title = '❌ SLA: No Review (5+ days)';
+              summary += '\n\n🚨 PR awaiting first review after 5+ business days. Please escalate to @muto-io/maintainers.';
+            } else if (!hasReview && timeSinceCreation > twoBusinessDaysMs) {
+              status = 'neutral';
+              title = '⏱️ SLA: Awaiting Review (2+ days)';
+              summary += '\n\n⌛ PR awaiting first review. Target: within 2 business days.';
+            } else {
+              summary += '\n\n✓ Within first 2 business days.';
+            }
+
+            // Create/update check run
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'SLA Compliance',
+              head_sha: pr.head.sha,
+              status: 'completed',
+              conclusion: status,
+              title: title,
+              summary: summary,
+              details_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/CONTRIBUTING.md#review-slas`
+            });
+
+  monitor-all-prs:
+    # Run daily and on manual trigger to check all open PRs
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Monitor All PR SLAs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const fiveBusinessDaysMs = 5 * 24 * 60 * 60 * 1000;
+            const sevenBusinessDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+            // Get all open PRs
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            let metrics = {
+              total: prs.data.length,
+              reviewed: 0,
+              approved: 0,
+              changesRequested: 0,
+              noReview: 0,
+              slaWarning: 0,
+              slaEscalated: 0
+            };
+
+            for (const pr of prs.data) {
+              const createdAt = new Date(pr.created_at);
+              const timeSinceCreation = now - createdAt;
+
+              // Get reviews for this PR
+              const reviews = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+
+              const hasReview = reviews.data.length > 0;
+              const hasApproval = reviews.data.some(r => r.state === 'APPROVED');
+              const hasChangesRequested = reviews.data.some(r => r.state === 'CHANGES_REQUESTED');
+
+              if (hasApproval) {
+                metrics.approved++;
+              } else if (hasChangesRequested) {
+                metrics.changesRequested++;
+              } else if (hasReview) {
+                metrics.reviewed++;
+              } else {
+                metrics.noReview++;
+              }
+
+              // Check SLA violations
+              const existingLabels = pr.labels.map(l => l.name);
+              const hasSlaWarning = existingLabels.includes('sla-warning');
+              const hasSlaEscalated = existingLabels.includes('sla-escalated');
+
+              if (timeSinceCreation > sevenBusinessDaysMs && !hasReview) {
+                // 7+ days without review: escalate
+                if (!hasSlaEscalated) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    labels: ['sla-escalated']
+                  });
+
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    body: `⚠️ **SLA Escalation**: This PR has been waiting ${Math.ceil(timeSinceCreation / (24 * 60 * 60 * 1000))} days without review.\n\nCC @muto-io/maintainers - Please prioritize this review or provide feedback on blockers.`
+                  });
+
+                  metrics.slaEscalated++;
+                }
+              } else if (timeSinceCreation > fiveBusinessDaysMs && !hasReview) {
+                // 5-7 days without review: warn
+                if (!hasSlaWarning && !hasSlaEscalated) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    labels: ['sla-warning']
+                  });
+
+                  metrics.slaWarning++;
+                }
+              } else if (timeSinceCreation > fiveBusinessDaysMs && hasReview && !hasApproval && !hasChangesRequested) {
+                // 5+ days with review but no decision: warn
+                if (!hasSlaWarning && !hasSlaEscalated) {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    labels: ['sla-warning']
+                  });
+
+                  metrics.slaWarning++;
+                }
+              }
+            }
+
+            // Log metrics
+            console.log('SLA Metrics Summary:');
+            console.log(`Total open PRs: ${metrics.total}`);
+            console.log(`Approved: ${metrics.approved}`);
+            console.log(`Changes requested: ${metrics.changesRequested}`);
+            console.log(`Under review: ${metrics.reviewed}`);
+            console.log(`No review yet: ${metrics.noReview}`);
+            console.log(`SLA warnings: ${metrics.slaWarning}`);
+            console.log(`SLA escalations: ${metrics.slaEscalated}`);;

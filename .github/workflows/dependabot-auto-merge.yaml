@@ -1,0 +1,133 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  handle-dependabot:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse version and decide action
+        id: decision
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              console.log('No PR found in payload');
+              return;
+            }
+
+            const title = pr.title;
+            console.log(`Analyzing: ${title}`);
+
+            // Parse Dependabot format: "Bump package-name from X.Y.Z to A.B.C"
+            // Handles: semantic versions, pre-release (1.0.0-rc1), build metadata (1.0.0+build)
+            const versionMatch = title.match(/from ([\d.]+(?:-[\w.]+)?(?:\+[\w.]+)?) to ([\d.]+(?:-[\w.]+)?(?:\+[\w.]+)?)/);
+            if (!versionMatch) {
+              console.log('Could not parse version from title - skipping');
+              core.setOutput('should-auto-merge', 'false');
+              return;
+            }
+
+            const [, fromVersion, toVersion] = versionMatch;
+            console.log(`Version change: ${fromVersion} → ${toVersion}`);
+
+            // Extract major.minor.patch (ignore pre-release and build metadata)
+            const parseVersion = (v) => {
+              const match = v.match(/^(\d+)\.(\d+)\.(\d+)/);
+              if (!match) return null;
+              return {
+                major: parseInt(match[1]),
+                minor: parseInt(match[2]),
+                patch: parseInt(match[3])
+              };
+            };
+
+            const from = parseVersion(fromVersion);
+            const to = parseVersion(toVersion);
+
+            if (!from || !to) {
+              console.log('Invalid version format - skipping');
+              core.setOutput('should-auto-merge', 'false');
+              return;
+            }
+
+            const isMajorChange = to.major > from.major;
+            const isMinorChange = to.major === from.major && to.minor > from.minor;
+            const isPatchChange = to.major === from.major && to.minor === from.minor && to.patch > from.patch;
+
+            console.log(`Release type - Major: ${isMajorChange}, Minor: ${isMinorChange}, Patch: ${isPatchChange}`);
+
+            // Auto-merge patch and minor, skip major versions
+            if (isPatchChange || isMinorChange) {
+              console.log('✅ Auto-merge enabled for patch/minor update');
+              core.setOutput('should-auto-merge', 'true');
+              core.setOutput('version-type', isPatchChange ? 'patch' : 'minor');
+            } else if (isMajorChange) {
+              console.log('⚠️ Major version bump - requires manual review');
+              core.setOutput('should-auto-merge', 'false');
+            } else {
+              console.log('Unknown version change pattern');
+              core.setOutput('should-auto-merge', 'false');
+            }
+
+      - name: Approve PR
+        if: steps.decision.outputs.should-auto-merge == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            // Check if already approved to avoid duplicate reviews
+            const reviews = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+
+            const hasApproval = reviews.data.some(r => r.state === 'APPROVED' && r.user.type === 'Bot');
+
+            if (!hasApproval) {
+              await github.rest.pulls.createReview({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                event: 'APPROVE',
+                body: 'Auto-approved: ${{ steps.decision.outputs.version-type }} version dependency update.'
+              });
+              console.log('✅ PR approved');
+            } else {
+              console.log('ℹ️ PR already approved');
+            }
+
+      - name: Enable auto-merge
+        if: steps.decision.outputs.should-auto-merge == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            try {
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: 'squash'
+              });
+              console.log('✅ Auto-merge enabled (will merge when checks pass)');
+            } catch (error) {
+              if (error.status === 404 || error.message.includes('Merge queue')) {
+                console.log('ℹ️ Auto-merge not available (may use merge queue)');
+              } else {
+                console.log(`⚠️ Could not enable auto-merge: ${error.message}`);
+              }
+            }

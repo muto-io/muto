@@ -76,6 +76,11 @@ func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1
 		return ctrl.Result{}, err
 	}
 
+	// If no pods found yet, requeue (pods may still be creating)
+	if len(podList.Items) == 0 {
+		return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
+	}
+
 	allDone, anyFailed := true, false
 	for _, pod := range podList.Items {
 		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {

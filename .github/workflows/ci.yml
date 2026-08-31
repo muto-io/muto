@@ -33,7 +33,7 @@ jobs:
       - name: Run unit tests
         run: make test-unit
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.out
@@ -81,7 +81,7 @@ jobs:
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
         timeout-minutes: 30
       - name: Upload K8s test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: k8s-test-results
           path: test-results/k8s/
@@ -106,7 +106,7 @@ jobs:
         timeout-minutes: 20
         continue-on-error: true
       - name: Upload CF test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cf-test-results
           path: test-results/cf/

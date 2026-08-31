@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR SLA Status
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const now = new Date();
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Monitor All PR SLAs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const now = new Date();

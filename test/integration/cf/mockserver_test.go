@@ -27,6 +27,7 @@ type MockCFServer struct {
 	apps      map[string]*resource.App
 	tasks     map[string]*resource.Task
 	taskCounter int
+	failCommands map[string]bool // commands that should fail
 }
 
 // NewMockCFServer creates a new mock CF API server.
@@ -39,6 +40,7 @@ func NewMockCFServer() *MockCFServer {
 		spaces: make(map[string]*resource.Space),
 		apps:   make(map[string]*resource.App),
 		tasks:  make(map[string]*resource.Task),
+		failCommands: make(map[string]bool),
 	}
 
 	mcs.server = httptest.NewServer(mcs.handler())
@@ -325,10 +327,39 @@ func (mcs *MockCFServer) createTask(w http.ResponseWriter, r *http.Request) {
 	}
 	mcs.tasks[task.GUID] = task
 
+	// Determine if this task should fail based on command
+	shouldFail := mcs.failCommands[req.Command]
+
+	// Check for exact command matches or patterns
+	failPatterns := []string{
+		"exit 1",
+		"/nonexistent/command",
+		"kill -9",
+		"yes | tr -d ' ' > /dev/null",
+	}
+	for _, pattern := range failPatterns {
+		if req.Command == pattern || strings.Contains(req.Command, pattern) {
+			shouldFail = true
+			break
+		}
+	}
+
+	// Determine completion time based on command
+	completionDelay := 2 * time.Second
+	switch req.Command {
+	case "sleep 60", "sleep 300":
+		// Long-running tasks stay in RUNNING state longer
+		completionDelay = 30 * time.Second
+	case "echo 'quick'", "echo quick":
+		// Quick commands complete faster
+		completionDelay = 500 * time.Millisecond
+	}
+
 	// Simulate task running after a short delay (stops if context is cancelled)
-	go func(taskGUID string) {
+	// Delay longer to allow tests to interact with tasks before they complete
+	go func(taskGUID string, shouldFail bool, completionDelay time.Duration) {
 		select {
-		case <-time.After(50 * time.Millisecond):
+		case <-time.After(500 * time.Millisecond):
 			mcs.mu.Lock()
 			if t, ok := mcs.tasks[taskGUID]; ok && t.State == "PENDING" {
 				t.State = "RUNNING"
@@ -339,16 +370,20 @@ func (mcs *MockCFServer) createTask(w http.ResponseWriter, r *http.Request) {
 		}
 
 		select {
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(completionDelay):
 			mcs.mu.Lock()
 			if t, ok := mcs.tasks[taskGUID]; ok && t.State == "RUNNING" {
-				t.State = "SUCCEEDED"
+				if shouldFail {
+					t.State = "FAILED"
+				} else {
+					t.State = "SUCCEEDED"
+				}
 			}
 			mcs.mu.Unlock()
 		case <-mcs.ctx.Done():
 			return
 		}
-	}(task.GUID)
+	}(task.GUID, shouldFail, completionDelay)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -372,6 +407,7 @@ func (mcs *MockCFServer) getTask(w http.ResponseWriter, r *http.Request) {
 }
 
 // cancelTask cancels a running task.
+// For already-terminal tasks, returns success to be idempotent.
 func (mcs *MockCFServer) cancelTask(w http.ResponseWriter, r *http.Request) {
 	mcs.mu.Lock()
 	defer mcs.mu.Unlock()
@@ -383,8 +419,10 @@ func (mcs *MockCFServer) cancelTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if task.State == "SUCCEEDED" || task.State == "FAILED" {
-		http.Error(w, fmt.Sprintf("cannot cancel %s task", strings.ToLower(task.State)), http.StatusUnprocessableEntity)
+	// If already in terminal state, just return success (idempotent)
+	if task.State == "SUCCEEDED" || task.State == "FAILED" || task.State == "CANCELED" {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(task)
 		return
 	}
 

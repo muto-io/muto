@@ -1,0 +1,135 @@
+site_name: Muto
+site_description: Multi-platform orchestration and agent coordination
+site_author: Muto Contributors
+site_url: https://muto-io.github.io/muto
+repo_url: https://github.com/muto-io/muto
+repo_name: muto-io/muto
+copyright: Copyright © 2024 Muto Contributors
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/overview.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Kubernetes Platform: architecture/k8s.md
+      - CloudFoundry Platform: architecture/cf.md
+      - Agent Model: architecture/agents.md
+  - Testing:
+      - Overview: testing/overview.md
+      - Unit Tests: testing/unit-tests.md
+      - Integration Tests: testing/integration-tests.md
+      - E2E Tests: testing/e2e-tests.md
+      - Running Tests Locally: testing/running-locally.md
+  - Deployment:
+      - Kubernetes: deployment/k8s.md
+      - CloudFoundry: deployment/cf.md
+      - Helm Charts: deployment/helm.md
+  - Configuration:
+      - Environment Variables: configuration/env-vars.md
+      - Reconcilers: configuration/reconcilers.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Development Setup: development/setup.md
+      - Code Style: development/style.md
+      - CI/CD Pipeline: development/cicd.md
+  - API Reference:
+      - Types: api/types.md
+      - Reconcilers: api/reconcilers.md
+
+plugins:
+  - search:
+      lang: en
+  - glightbox:
+      auto_load: true
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+      emoji_index: !!python/name:pymdownx.emoji.twemoji
+  - pymdownx.highlight:
+      use_pygments: true
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: muto-io
+      repo: muto
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/muto-io/muto
+      name: GitHub
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX  # Replace with your Google Analytics ID
+
+docs_dir: docs
+site_dir: site

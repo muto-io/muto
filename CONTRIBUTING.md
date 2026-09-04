@@ -18,7 +18,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ### Prerequisites
 
-- Go 1.22+
+- Go 1.26+
 - Docker
 - kind (Kubernetes in Docker)
 - kubectl

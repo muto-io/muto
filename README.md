@@ -45,7 +45,7 @@ Data flow:
 
 ### Prerequisites
 
-- [Go 1.22+](https://golang.org/dl/)
+- [Go 1.26+](https://golang.org/dl/)
 - [kind](https://kind.sigs.k8s.io/) (Kubernetes in Docker)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Docker](https://www.docker.com/)

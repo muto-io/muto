@@ -31,7 +31,7 @@ Muto provides a unified framework for:
 
 ## Documentation Map
 
-### 1. Getting Started (5 files, 1,068 lines)
+### 1. Getting Started
 
 Start here if you're new to Muto. Learn the basics, understand concepts, and run your first example.
 
@@ -47,7 +47,7 @@ Start here if you're new to Muto. Learn the basics, understand concepts, and run
 
 ---
 
-### 2. Architecture (5 files, 2,689 lines)
+### 2. Architecture
 
 Deep dive into Muto's design. Understand messaging, reconciliation, multi-platform support, and security.
 
@@ -63,7 +63,7 @@ Deep dive into Muto's design. Understand messaging, reconciliation, multi-platfo
 
 ---
 
-### 3. Deployment (9 files, 506 lines)
+### 3. Deployment
 
 Deploy Muto to production on Kubernetes or CloudFoundry. Includes installation guides, configuration, and pre-launch checklists.
 
@@ -86,7 +86,7 @@ Deploy Muto to production on Kubernetes or CloudFoundry. Includes installation g
 
 ---
 
-### 4. Configuration (5 files, 3,726 lines)
+### 4. Configuration
 
 Configure Muto for your environment. Set up message buses, define reconcilers, enable TLS, and configure multi-tenancy.
 
@@ -102,7 +102,7 @@ Configure Muto for your environment. Set up message buses, define reconcilers, e
 
 ---
 
-### 5. Usage (6 files, 2,123 lines)
+### 5. Usage
 
 Learn how to use Muto once it's deployed. Includes examples, patterns, and best practices.
 
@@ -120,7 +120,7 @@ Learn how to use Muto once it's deployed. Includes examples, patterns, and best 
 
 ---
 
-### 6. API Reference (4 files, 2,932 lines)
+### 6. API Reference
 
 Complete API documentation: CRD types, message API, webhook API, and MCP tools.
 
@@ -135,7 +135,7 @@ Complete API documentation: CRD types, message API, webhook API, and MCP tools.
 
 ---
 
-### 7. Development (5 files, 2,402 lines)
+### 7. Development
 
 Develop, test, and contribute to Muto. Includes setup, testing strategy, debugging, and contribution guidelines.
 
@@ -153,7 +153,7 @@ Develop, test, and contribute to Muto. Includes setup, testing strategy, debuggi
 
 ---
 
-### 8. Operations (5 files, 2,941 lines)
+### 8. Operations
 
 Run Muto in production. Includes monitoring, troubleshooting, performance tuning, backup/recovery, and FAQs.
 
@@ -169,7 +169,7 @@ Run Muto in production. Includes monitoring, troubleshooting, performance tuning
 
 ---
 
-### Bonus: Testing (3 files, 787 lines)
+### Bonus: Testing
 
 Testing infrastructure and analysis. Part of the development workflow.
 
@@ -357,15 +357,15 @@ Muto is licensed under the **Apache License 2.0**. See [LICENSE](https://github.
 
 1. [Quick Links](#getting-started-quickly)
 2. [Documentation Map](#documentation-map)
-   - [Getting Started](#1-getting-started-5-files-1068-lines)
-   - [Architecture](#2-architecture-5-files-2689-lines)
-   - [Deployment](#3-deployment-9-files-506-lines)
-   - [Configuration](#4-configuration-5-files-3726-lines)
-   - [Usage](#5-usage-6-files-2123-lines)
-   - [API Reference](#6-api-reference-4-files-2932-lines)
-   - [Development](#7-development-5-files-2402-lines)
-   - [Operations](#8-operations-5-files-2941-lines)
-   - [Testing](#bonus-testing-3-files-787-lines)
+   - [Getting Started](#1-getting-started)
+   - [Architecture](#2-architecture)
+   - [Deployment](#3-deployment)
+   - [Configuration](#4-configuration)
+   - [Usage](#5-usage)
+   - [API Reference](#6-api-reference)
+   - [Development](#7-development)
+   - [Operations](#8-operations)
+   - [Testing](#bonus-testing)
 3. [At a Glance](#documentation-at-a-glance)
 4. [Navigation by Audience](#navigation-by-audience)
 5. [Quick Reference](#quick-reference)

@@ -1,291 +1,207 @@
 # Installation Guide
 
-Detailed steps to install Muto from source.
+Choose your path based on your role:
 
-## System Requirements
+- **[👥 Users & Operators](#for-users--operators)** — Deploy Muto using Docker and Helm (recommended)
+- **[👨‍💻 Developers](#for-developers--contributors)** — Build from source and contribute to Muto
 
-### Minimum Requirements
-- **CPU**: 2 cores
-- **RAM**: 2 GB
-- **Disk**: 5 GB free space
-- **Network**: Outbound HTTP/HTTPS for package downloads
+---
 
-### Recommended Requirements (Production)
-- **CPU**: 4 cores
-- **RAM**: 8 GB
-- **Disk**: 20 GB (for container images and logs)
-- **Network**: Stable, low-latency connection to cluster
+## For Users & Operators
 
-## Prerequisites
+### Quick Start: Deploy with Docker & Helm
 
-### 1. Install Go
+Muto is distributed as pre-built Docker images. No Go compilation needed.
 
-Muto requires Go 1.26 or later.
+**Prerequisites:**
+- Docker (or access to a Kubernetes cluster)
+- kubectl (for Kubernetes)
+- Helm 3.10+ (for Kubernetes)
 
-**macOS (Homebrew):**
-```bash
-brew install go@1.26
-```
+**Installation paths:**
 
-**Linux:**
-```bash
-# Download from golang.org
-curl -LO https://dl.google.com/go/go1.26.0.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.26.0.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-```
+1. **Kubernetes (Recommended)** → [Kubernetes Deployment Guide](../deployment/kubernetes/install.md)
+   - Use Helm charts for production deployments
+   - Supports multi-tenant, high-availability setups
+   - Most common production path
 
-**Windows:**
-Download installer from [golang.org](https://golang.org/dl/)
+2. **CloudFoundry** → [CloudFoundry Deployment Guide](../deployment/cf.md)
+   - Deploy to CloudFoundry environments
+   - Alternative to Kubernetes
 
-**Verify installation:**
-```bash
-go version
-# Output: go version go1.26.0 linux/amd64
-```
+3. **Local Testing** → [Quick Start](./quick-start.md)
+   - 5-minute walkthrough with Docker Compose
 
-### 2. Install Docker
+### System Requirements
 
-Muto runs containerized agents, so Docker is required.
+**For Kubernetes deployment:**
+- Kubernetes 1.24+
+- 3+ nodes with 2 CPU and 4GB RAM each
+- Helm 3.10+
 
-**macOS/Windows:** Download [Docker Desktop](https://www.docker.com/products/docker-desktop)
+**For local testing:**
+- Docker or Docker Desktop
+- 4GB RAM minimum
 
-**Linux:**
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-```
+---
 
-**Verify installation:**
-```bash
-docker run hello-world
-```
+## For Developers & Contributors
 
-### 3. Install kubectl
+### Build from Source
 
-Kubernetes CLI for managing clusters.
+To contribute to Muto or customize the build, you'll need to compile from source.
 
-**macOS:**
-```bash
-brew install kubectl
-```
+#### Prerequisites
 
-**Linux:**
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-```
+1. **Go 1.26+**
 
-**Windows:**
-```bash
-choco install kubernetes-cli
-```
+   **macOS:**
+   ```bash
+   brew install go@1.26
+   ```
 
-**Verify installation:**
-```bash
-kubectl version --client
-```
+   **Linux:**
+   ```bash
+   curl -LO https://dl.google.com/go/go1.26.0.linux-amd64.tar.gz
+   sudo tar -C /usr/local -xzf go1.26.0.linux-amd64.tar.gz
+   export PATH=$PATH:/usr/local/go/bin
+   ```
 
-### 4. Install kind (for local development)
+   **Windows:**
+   Download from [golang.org](https://golang.org/dl/)
 
-kind creates Kubernetes clusters in Docker.
+   **Verify:**
+   ```bash
+   go version
+   ```
 
-```bash
-go install sigs.k8s.io/kind@latest
-```
+2. **Docker** (for building images)
 
-**Verify installation:**
-```bash
-kind version
-```
+   **macOS/Windows:** [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-### 5. Install Helm (for Kubernetes deployments)
+   **Linux:**
+   ```bash
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sudo sh get-docker.sh
+   sudo usermod -aG docker $USER
+   ```
 
-Helm is a package manager for Kubernetes.
+3. **Git, Make, and other tools**
 
-**macOS:**
-```bash
-brew install helm
-```
+   **macOS:**
+   ```bash
+   brew install make git
+   ```
 
-**Linux:**
-```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-```
+   **Linux:**
+   ```bash
+   sudo apt-get install build-essential git  # Debian/Ubuntu
+   ```
 
-**Windows:**
-```bash
-choco install kubernetes-helm
-```
-
-**Verify installation:**
-```bash
-helm version
-```
-
-### 6. Install make
-
-Build automation tool.
-
-**macOS:**
-```bash
-brew install make
-```
-
-**Linux:**
-```bash
-sudo apt-get install make  # Debian/Ubuntu
-sudo yum install make      # RedHat/CentOS
-```
-
-**Windows:**
-```bash
-choco install make
-```
-
-## Clone the Repository
+#### Clone and Build
 
 ```bash
 git clone https://github.com/muto-io/muto.git
 cd muto
 ```
 
-Verify directory structure:
-```bash
-ls -la
-# Expected: bin/, cmd/, core/, deploy/, docs/, platform/, etc.
-```
-
-## Build from Source
-
-### Development Build
-
-For local development and testing:
-
+**Development build:**
 ```bash
 make build
+# Outputs: bin/muto-operator, bin/muto-mcp
 ```
 
-This creates:
-- `bin/muto-operator` — Kubernetes operator
-- `bin/muto-mcp` — MCP server
-
-**Verify binaries:**
-```bash
-./bin/muto-operator --version
-./bin/muto-mcp --version
-```
-
-### Production Build
-
-For production deployment with optimizations:
-
+**Production build:**
 ```bash
 make build-prod
+# Creates stripped, optimized binaries
 ```
 
-This includes:
-- Stripped symbols (smaller binary)
-- Optimized compilation
-- Static binary (portable across systems)
-
-### Build Specific Components
-
-Build individual components:
-
+**Verify:**
 ```bash
-# Operator only
-make build-operator
-
-# MCP server only
-make build-mcp
+./bin/muto-operator --version
 ```
 
-## Verify Installation
+#### Build Docker Images
 
-After building, verify everything works:
-
-```bash
-# Check Go dependencies
-go mod verify
-
-# Run unit tests
-make test
-
-# Run integration tests (requires Docker)
-make test-integration
-```
-
-## Docker Images
-
-### Build Docker Images (Local Registry)
-
-For Kubernetes deployments, you need Docker images:
+For local Kubernetes testing:
 
 ```bash
-# Build all images
 make docker-build
-
-# Build specific image
-make docker-build-operator
+# Tags images as muto-operator:latest, muto-mcp:latest
 ```
 
-Images are tagged as `muto-operator:latest` and `muto-mcp:latest`.
-
-### Push to Registry
-
-To use images in a remote cluster:
-
+Push to registry:
 ```bash
-# Set your registry
 export DOCKER_REGISTRY=myregistry.com
-
-# Build and push
 make docker-build docker-push
 ```
 
-## Next Steps
+#### Run Tests
 
-Congratulations! Muto is installed. Next:
-
-1. **[Quick Start](./quick-start.md)** — Try the 5-minute local walkthrough
-2. **[Kubernetes Deployment](../deployment/k8s.md)** — Deploy to production K8s
-3. **[CloudFoundry Deployment](../deployment/cf.md)** — Deploy to CloudFoundry
-
-## Troubleshooting Installation
-
-### Go version mismatch
 ```bash
-go version
-# If not 1.26+, update:
-# Download from golang.org or use version manager
+# Unit tests
+make test
+
+# Integration tests (requires Docker)
+make test-integration
 ```
 
-### Docker daemon not running
-```bash
-# Start Docker
-docker ps
-# If it fails, start Docker Desktop (GUI) or:
-sudo systemctl start docker
-```
+#### Local Development with kind
 
-### kind cluster creation fails
-```bash
-# Ensure Docker has enough resources (8GB RAM minimum)
-# Delete problematic cluster:
-kind delete cluster --name muto-dev
-# Try again:
-make kind-up
-```
+Create a local Kubernetes cluster:
 
-### Permission denied on Linux
 ```bash
-# Add user to docker group
-sudo usermod -aG docker $USER
-# Log out and back in for changes to take effect
+brew install kind  # or use official installer
+
+# Create cluster
+kind create cluster --name muto-dev
+
+# Build and load images
+make docker-build
+kind load docker-image muto-operator:latest --name muto-dev
 ```
 
 ---
 
-**Support:** For issues, open a GitHub issue at [muto-io/muto/issues](https://github.com/muto-io/muto/issues)
+## Next Steps
+
+**Users:** Follow the [Kubernetes Deployment Guide](../deployment/kubernetes/install.md) or [CloudFoundry guide](../deployment/cf.md)
+
+**Developers:** Check out [Development Setup](../development/setup.md) and [Contributing Guidelines](../development/contributing.md)
+
+**Everyone:** Try the [Quick Start](./quick-start.md)
+
+---
+
+## Troubleshooting
+
+### Docker daemon not running
+```bash
+docker ps
+# If it fails, start Docker Desktop or:
+sudo systemctl start docker
+```
+
+### Kubernetes connection issues
+```bash
+kubectl cluster-info
+kubectl get nodes
+```
+
+### Go version mismatch (developers only)
+```bash
+go version
+# Update from golang.org if needed
+```
+
+### kind cluster issues (developers only)
+```bash
+# Ensure Docker has 8GB+ RAM
+kind delete cluster --name muto-dev
+kind create cluster --name muto-dev
+```
+
+---
+
+**Support:** [GitHub Issues](https://github.com/muto-io/muto/issues) | [GitHub Discussions](https://github.com/muto-io/muto/discussions)

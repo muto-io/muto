@@ -42,7 +42,15 @@ Branch naming conventions:
 
 ### 3. Make Changes
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 Follow [Code Style Guide](./style.md) for code standards.
+=======
+Follow [Code Style Guide](./code-style.md) for code standards.
+>>>>>>> 97cdc4d (docs: write development/setup.md - dev environment setup)
+=======
+Follow [Code Style Guide](./style.md) for code standards.
+>>>>>>> 3ce5273 (fix: correct code-style references to style.md)
 
 Write tests for your changes:
 ```bash
@@ -248,7 +256,15 @@ type MessageBus interface {
 }
 ```
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 See [Code Style Guide](./style.md) for naming conventions and style details.
+=======
+See [Code Style Guide](./code-style.md) for naming conventions and style details.
+>>>>>>> 97cdc4d (docs: write development/setup.md - dev environment setup)
+=======
+See [Code Style Guide](./style.md) for naming conventions and style details.
+>>>>>>> 3ce5273 (fix: correct code-style references to style.md)
 
 ## Common Contributions
 
@@ -301,7 +317,11 @@ golangci-lint run ./...
 
 ### Tests fail locally but pass in CI
 
+<<<<<<< HEAD
 1. Ensure Go version matches (1.26+)
+=======
+1. Ensure Go version matches (1.22+)
+>>>>>>> 97cdc4d (docs: write development/setup.md - dev environment setup)
 2. Clear module cache: `go clean -modcache && go mod tidy`
 3. Run the exact test CI runs: `go test ./test/integration/... -timeout 20m`
 4. Check for environment-specific issues (permissions, ports, disk space)

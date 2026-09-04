@@ -36,6 +36,38 @@ Muto provides a message bus abstraction that enables agents to communicate relia
 
 All message bus implementations follow this interface:
 
+<<<<<<< HEAD
+=======
+```go
+type MessageBus interface {
+    // Publish a message to a topic
+    Publish(ctx context.Context, topic string, message *Message) error
+    
+    // Subscribe to a topic, receive messages via callback
+    Subscribe(ctx context.Context, topic string, callback MessageCallback) error
+    
+    // Unsubscribe from a topic
+    Unsubscribe(ctx context.Context, topic string) error
+    
+    // Health check
+    HealthCheck(ctx context.Context) error
+    
+    // Close connection
+    Close() error
+}
+
+type Message struct {
+    Topic     string            // Topic name
+    ID        string            // Unique message ID
+    Timestamp time.Time         // When published
+    Tenant    string            // Tenant ID for scoping
+    Headers   map[string]string // Metadata
+    Payload   []byte            // Message body (usually JSON)
+}
+
+type MessageCallback func(ctx context.Context, msg *Message) error
+```
+>>>>>>> a53175d (docs: write architecture/messaging.md - message bus abstraction and implementations)
 
 ## Topic Naming Convention
 
@@ -147,6 +179,43 @@ data:
 
 Agents subscribe to topics:
 
+<<<<<<< HEAD
+=======
+```go
+// Agent code subscribing to messages
+type Agent struct {
+    messageBus MessageBus
+    logger     Logger
+}
+
+func (a *Agent) Start(ctx context.Context) error {
+    tenant := os.Getenv("TENANT_ID")
+    topic := fmt.Sprintf("%s/workflow/*", tenant)
+    
+    return a.messageBus.Subscribe(ctx, topic, func(ctx context.Context, msg *Message) error {
+        a.logger.Info("Received message", "topic", msg.Topic, "data", string(msg.Payload))
+        return a.processMessage(ctx, msg)
+    })
+}
+
+func (a *Agent) processMessage(ctx context.Context, msg *Message) error {
+    // Parse message
+    var data map[string]interface{}
+    json.Unmarshal(msg.Payload, &data)
+    
+    // Process
+    result := a.transform(data)
+    
+    // Publish result
+    resultMsg := &Message{
+        Topic:   fmt.Sprintf("%s/workflow/transformed", msg.Tenant),
+        Tenant:  msg.Tenant,
+        Payload: marshal(result),
+    }
+    return a.messageBus.Publish(ctx, resultMsg.Topic, resultMsg)
+}
+```
+>>>>>>> a53175d (docs: write architecture/messaging.md - message bus abstraction and implementations)
 
 ### Advantages
 
@@ -268,6 +337,41 @@ Consumer Groups:
 
 You can implement custom message buses for specific needs:
 
+<<<<<<< HEAD
+=======
+```go
+type CustomMessageBus struct {
+    // Your implementation
+}
+
+func (c *CustomMessageBus) Publish(ctx context.Context, topic string, msg *Message) error {
+    // Your logic: send to custom broker, API, webhook, etc.
+    return nil
+}
+
+func (c *CustomMessageBus) Subscribe(ctx context.Context, topic string, callback MessageCallback) error {
+    // Your logic: listen for messages and call callback
+    return nil
+}
+
+func (c *CustomMessageBus) HealthCheck(ctx context.Context) error {
+    // Verify connection to your system
+    return nil
+}
+
+func (c *CustomMessageBus) Close() error {
+    // Cleanup
+    return nil
+}
+
+// Register with Muto
+func init() {
+    messageBus.Register("custom", func(config map[string]interface{}) (MessageBus, error) {
+        return &CustomMessageBus{}, nil
+    })
+}
+```
+>>>>>>> a53175d (docs: write architecture/messaging.md - message bus abstraction and implementations)
 
 Examples:
 - **Google Cloud Pub/Sub**: Publish to GCP Pub/Sub topics
@@ -352,6 +456,20 @@ Kafka: ~500 bytes (persisted)
 
 Muto monitors message bus health:
 
+<<<<<<< HEAD
+=======
+```go
+// Regular health checks
+ticker := time.NewTicker(30 * time.Second)
+for range ticker.C {
+    if err := messageBus.HealthCheck(ctx); err != nil {
+        logger.Error(err, "message bus unhealthy")
+        // Alert operators
+        metrics.IncMessageBusErrors()
+    }
+}
+```
+>>>>>>> a53175d (docs: write architecture/messaging.md - message bus abstraction and implementations)
 
 Exported metrics:
 

@@ -420,7 +420,15 @@ muto_job_retries_total{reason="timeout"}
 muto_job_retries_total{reason="error"}
 ```
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 Scrape these metrics with Prometheus. See [Monitoring & Observability](../operations/monitoring-observability.md) (coming in Phase 8) for detailed setup.
+=======
+Scrape these metrics with Prometheus. See [Monitoring & Observability](../operations/monitoring-observability.md) for detailed setup.
+>>>>>>> f0e92c6 (docs: write usage/scheduling-agent-jobs.md - job creation and lifecycle management)
+=======
+Scrape these metrics with Prometheus. See [Monitoring & Observability](../operations/monitoring-observability.md) (coming in Phase 8) for detailed setup.
+>>>>>>> 7aaffb4 (fix: defer Phase 8 monitoring-observability references)
 
 ## Cancellation
 
@@ -651,7 +659,15 @@ spec:
 - **[Multi-Agent Patterns](./multi-agent-patterns.md)** — Build complex workflows
 - **[Best Practices](./best-practices.md)** — Optimize job performance
 - **[Examples](./examples/)** — See real-world usage patterns
+<<<<<<< HEAD
+<<<<<<< HEAD
 - **[Monitoring](../operations/monitoring-observability.md)** (coming in Phase 8) — Track and debug jobs
+=======
+- **[Monitoring](../operations/monitoring-observability.md)** — Track and debug jobs
+>>>>>>> f0e92c6 (docs: write usage/scheduling-agent-jobs.md - job creation and lifecycle management)
+=======
+- **[Monitoring](../operations/monitoring-observability.md)** (coming in Phase 8) — Track and debug jobs
+>>>>>>> 7aaffb4 (fix: defer Phase 8 monitoring-observability references)
 
 ---
 

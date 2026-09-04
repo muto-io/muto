@@ -231,6 +231,31 @@ For reliable coordination:
 2. **Use message IDs** to track what's been processed
 3. **Store processed message IDs** (in database or local storage)
 
+<<<<<<< HEAD
+=======
+```go
+// Example: Idempotent message handler
+
+func handleMessage(msg *Message) error {
+    // Step 1: Check if already processed
+    processed, err := db.IsMessageProcessed(msg.ID)
+    if err != nil {
+        return err
+    }
+    if processed {
+        return nil  // Already processed, safe to skip
+    }
+    
+    // Step 2: Process message
+    if err := processData(msg.Data); err != nil {
+        return err  // Will be retried
+    }
+    
+    // Step 3: Mark as processed
+    return db.MarkMessageProcessed(msg.ID)
+}
+```
+>>>>>>> f1c58dc (docs: write usage/best-practices.md - production best practices)
 
 ## Monitoring and Observability
 
@@ -452,6 +477,35 @@ resources:
 
 Scale based on queue depth:
 
+<<<<<<< HEAD
+=======
+```go
+// In custom reconciler
+func (r *JobScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+    job := &mutov1.AgentJob{}
+    r.Get(ctx, req.NamespacedName, job)
+    
+    // Check queue depth
+    queueDepth, _ := r.messagebus.GetQueueDepth(job.Spec.Tenant)
+    
+    // Scale based on queue
+    desiredAgents := 1
+    if queueDepth > 100 {
+        desiredAgents = 10
+    } else if queueDepth > 50 {
+        desiredAgents = 5
+    }
+    
+    // Update job if needed
+    if len(job.Spec.Agents) != desiredAgents {
+        job.Spec.Agents = generateAgents(desiredAgents)
+        r.Update(ctx, job)
+    }
+    
+    return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+}
+```
+>>>>>>> f1c58dc (docs: write usage/best-practices.md - production best practices)
 
 ### Cluster Capacity Planning
 
@@ -499,6 +553,24 @@ agents:
 
 Handle missing dependencies:
 
+<<<<<<< HEAD
+=======
+```go
+// If dependency fails, continue with fallback
+func processData(primarySource, fallbackSource string) error {
+    data, err := readFromSource(primarySource)
+    if err != nil {
+        // Primary failed, try fallback
+        log.Warn("Primary source failed, using fallback", "error", err)
+        data, err = readFromSource(fallbackSource)
+        if err != nil {
+            return err  // Both sources failed
+        }
+    }
+    return processData(data)
+}
+```
+>>>>>>> f1c58dc (docs: write usage/best-practices.md - production best practices)
 
 ### Idempotent Operations
 
@@ -658,7 +730,15 @@ kubectl logs agentjob/<job-name> --all-containers=true --tail=500
 
 - **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** — Job specification reference
 - **[Multi-Agent Patterns](./multi-agent-patterns.md)** — Orchestration patterns
+<<<<<<< HEAD
+<<<<<<< HEAD
 - **[Monitoring & Observability](../operations/monitoring-observability.md)** (coming in Phase 8) — Setup observability
+=======
+- **[Monitoring & Observability](../operations/monitoring-observability.md)** — Setup observability
+>>>>>>> f1c58dc (docs: write usage/best-practices.md - production best practices)
+=======
+- **[Monitoring & Observability](../operations/monitoring-observability.md)** (coming in Phase 8) — Setup observability
+>>>>>>> 7aaffb4 (fix: defer Phase 8 monitoring-observability references)
 - **[Configuration](../configuration/)** — Fine-tune settings
 
 ---

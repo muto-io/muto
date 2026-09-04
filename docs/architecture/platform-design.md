@@ -34,6 +34,30 @@ Muto Core (Platform-agnostic)
 
 The core interface that all platform adapters must implement:
 
+<<<<<<< HEAD
+=======
+```go
+type PlatformAdapter interface {
+    // Job Management
+    CreateJob(ctx context.Context, job *AgentJob) (jobID string, err error)
+    GetJobStatus(ctx context.Context, jobID string) (*JobStatus, error)
+    UpdateJobStatus(ctx context.Context, jobID string, status *JobStatus) error
+    DeleteJob(ctx context.Context, jobID string) error
+    
+    // Monitoring
+    WatchEvents(ctx context.Context, callback EventCallback) error
+    GetLogs(ctx context.Context, jobID string) ([]byte, error)
+    
+    // Resource Management
+    AllocateResources(ctx context.Context, req *ResourceRequest) (*Allocation, error)
+    ReleaseResources(ctx context.Context, allocation *Allocation) error
+    
+    // Health
+    HealthCheck(ctx context.Context) error
+    Name() string
+}
+```
+>>>>>>> 43e5405 (docs: write architecture/platform-design.md - K8s + CF adapters)
 
 Each adapter translates Muto's generic job concepts into platform-specific resources.
 
@@ -161,6 +185,38 @@ spec             vs actual
 
 K8s adapter uses informer pattern to watch for events:
 
+<<<<<<< HEAD
+=======
+```go
+informer := cache.NewSharedIndexInformer(
+    &cache.ListWatch{
+        ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+            return client.AgentJobs(namespace).List(ctx, options)
+        },
+        WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+            return client.AgentJobs(namespace).Watch(ctx, options)
+        },
+    },
+    &muto.AgentJob{},
+    resyncPeriod,
+    handlers,
+)
+
+// Handlers called on Add, Update, Delete
+informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+    AddFunc: func(obj interface{}) {
+        job := obj.(*muto.AgentJob)
+        reconciler.Enqueue(job)  // Trigger reconciliation
+    },
+    UpdateFunc: func(old, new interface{}) {
+        reconciler.Enqueue(new)
+    },
+    DeleteFunc: func(obj interface{}) {
+        reconciler.OnDelete(obj)
+    },
+})
+```
+>>>>>>> 43e5405 (docs: write architecture/platform-design.md - K8s + CF adapters)
 
 ### Resource Limits and Requests
 
@@ -316,6 +372,28 @@ spec             vs actual
 
 CF doesn't have event streaming, so adapter polls:
 
+<<<<<<< HEAD
+=======
+```go
+// Poll Cloud Controller for task state changes
+ticker := time.NewTicker(10 * time.Second)
+defer ticker.Stop()
+
+for range ticker.C {
+    tasks, err := cfClient.ListTasks(ctx, spaceGUID)
+    for _, task := range tasks {
+        switch task.State {
+        case "RUNNING":
+            callback(Event{Type: Running, TaskID: task.GUID})
+        case "SUCCEEDED":
+            callback(Event{Type: Completed, TaskID: task.GUID})
+        case "FAILED":
+            callback(Event{Type: Failed, TaskID: task.GUID})
+        }
+    }
+}
+```
+>>>>>>> 43e5405 (docs: write architecture/platform-design.md - K8s + CF adapters)
 
 ### Environment Variables and Secrets
 
@@ -344,6 +422,25 @@ cf run-task app \
 
 The scheduler and reconcilers are completely platform-agnostic:
 
+<<<<<<< HEAD
+=======
+```go
+// Scheduler doesn't care about platform
+func (s *Scheduler) Schedule(ctx context.Context, job *AgentJob) error {
+    tenant, _ := s.getTenant(job.Spec.Tenant)
+    adapter := s.selectAdapter(tenant.Platform)  // Get K8s or CF adapter
+    
+    jobID, err := adapter.CreateJob(ctx, job)    // Unified interface
+    if err != nil {
+        return err
+    }
+    
+    job.Status.JobID = jobID
+    job.Status.State = StateScheduled
+    return s.updateJobStatus(ctx, job)
+}
+```
+>>>>>>> 43e5405 (docs: write architecture/platform-design.md - K8s + CF adapters)
 
 The scheduler:
 - Never directly creates K8s Pods

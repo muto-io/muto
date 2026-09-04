@@ -417,7 +417,11 @@ go test ./test/integration/... -timeout 40m -v
 
 ### Tests pass locally but fail in CI
 
+<<<<<<< HEAD
 1. Check Go version: `go version` (must be 1.26+)
+=======
+1. Check Go version: `go version` (must be 1.22+)
+>>>>>>> 97cdc4d (docs: write development/setup.md - dev environment setup)
 2. Check Docker: `docker ps` (must be running)
 3. Check available resources: `docker stats`
 4. Clear cache: `go clean -modcache && go mod tidy`
@@ -468,7 +472,15 @@ go tool cover -html=coverage.out
 ## Next Steps
 
 - [Setup Guide](./setup.md) — Configure development environment
+<<<<<<< HEAD
+<<<<<<< HEAD
 - [Code Style](./style.md) — Coding standards
+=======
+- [Code Style](./code-style.md) — Coding standards
+>>>>>>> 97cdc4d (docs: write development/setup.md - dev environment setup)
+=======
+- [Code Style](./style.md) — Coding standards
+>>>>>>> 3ce5273 (fix: correct code-style references to style.md)
 - [Debugging Guide](./debugging.md) — Troubleshooting techniques
 
 ---

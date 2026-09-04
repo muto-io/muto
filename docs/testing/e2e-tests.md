@@ -119,7 +119,7 @@ make test-integration-cf
 **Issue:** Kubernetes namespace stuck in "Terminating" state after A2A Gateway tests
 
 **Symptoms:**
-- Cleanup timeout gradually increased: 60s -> 120s -> 300s
+- Cleanup timeout gradually increased: 60s → 120s → 300s
 - Tests occasionally fail waiting for namespace deletion
 - Resource accumulation if not properly cleaned
 

@@ -126,12 +126,13 @@ Complete API documentation: CRD types, message API, webhook API, and MCP tools.
 
 | File | Purpose | Audience |
 |------|---------|----------|
+| [API Documentation](api/index.md) | Complete API overview, guides, and integration examples | Everyone |
 | [CRD Types](api-reference/crd-types.md) | Agent, Job, Reconciler CRD definitions and fields | Engineers |
 | [Message API](api-reference/message-api.md) | Message bus protocol and message formats | Engineers |
 | [Webhook API](api-reference/webhook-api.md) | Webhook endpoints and event notifications | Engineers |
 | [MCP Tools](api-reference/mcp-tools.md) | Model Context Protocol tools and integration | Engineers |
 
-**Next steps:** Start with [CRD Types](api-reference/crd-types.md) to understand the data model, then explore [Message API](api-reference/message-api.md) and [Webhook API](api-reference/webhook-api.md) for communication patterns.
+**Next steps:** Start with [API Documentation](api/index.md) for an overview, then dive into [CRD Types](api-reference/crd-types.md) to understand the data model and explore [Message API](api-reference/message-api.md) and [Webhook API](api-reference/webhook-api.md) for communication patterns.
 
 ---
 
@@ -211,7 +212,7 @@ Start here and work through in order:
 5. [Best Practices](usage/best-practices.md)
 6. [Troubleshooting](operations/troubleshooting.md) (when needed)
 
-**Typical path:** Getting Started → Usage → Operations
+**Typical path:** Getting Started -> Usage -> Operations
 
 ---
 
@@ -227,7 +228,7 @@ Follow this path:
 6. [Production Checklist](deployment/production-checklist.md)
 7. [Monitoring & Observability](operations/monitoring-observability.md)
 
-**Typical path:** Architecture → Deployment → Configuration → Operations
+**Typical path:** Architecture -> Deployment -> Configuration -> Operations
 
 ---
 
@@ -240,7 +241,7 @@ Follow this path:
 5. [Usage Examples](usage/examples/) (start with simple-job.md)
 6. [Custom Reconciler Example](usage/examples/custom-reconciler.md)
 
-**Typical path:** Architecture → API Reference → Usage Examples → Development/Debugging
+**Typical path:** Architecture -> API Reference -> Usage Examples -> Development/Debugging
 
 ---
 
@@ -256,7 +257,7 @@ Follow this path:
    - For debugging: [Debugging Guide](development/debugging.md)
 6. [Style Guide](development/style.md) (before submitting PRs)
 
-**Typical path:** Setup → Testing → Contributing → Development → (Architecture/Usage as needed)
+**Typical path:** Setup -> Testing -> Contributing -> Development -> (Architecture/Usage as needed)
 
 ---
 
@@ -268,7 +269,7 @@ Read these to understand Muto's design and capabilities:
 4. [Production Checklist](deployment/production-checklist.md) (production readiness)
 5. [Performance Analysis](testing/performance-analysis.md) (scalability)
 
-**Typical path:** Getting Started → Architecture → Operations
+**Typical path:** Getting Started -> Architecture -> Operations
 
 ---
 

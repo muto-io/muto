@@ -93,9 +93,9 @@ kubectl set image deployment/muto-operator \
 ### What about backwards compatibility?
 
 Muto maintains backwards compatibility within minor versions:
-- v0.1 → v0.1.5: Fully compatible, drop-in upgrade
-- v0.1 → v0.2: May require manifest changes, documented in release notes
-- v1.0 → v2.0: Breaking changes, migration guide provided
+- v0.1 -> v0.1.5: Fully compatible, drop-in upgrade
+- v0.1 -> v0.2: May require manifest changes, documented in release notes
+- v1.0 -> v2.0: Breaking changes, migration guide provided
 
 Check release notes before upgrading major/minor versions.
 

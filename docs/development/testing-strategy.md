@@ -317,7 +317,7 @@ Full system tests running both Kubernetes and CloudFoundry scenarios.
 
 E2E tests verify:
 
-1. **Agent Job Lifecycle**: Create → Schedule → Run → Complete
+1. **Agent Job Lifecycle**: Create -> Schedule -> Run -> Complete
 2. **Multi-Agent Workflows**: Sequential and parallel execution
 3. **Message Coordination**: Agents communicate via message bus
 4. **Tenant Isolation**: Complete isolation between tenants

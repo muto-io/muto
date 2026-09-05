@@ -45,9 +45,9 @@ Every agent job follows this state machine:
 - No execution has started yet
 
 Transitions:
-- → **Scheduled**: Scheduler accepted job and allocated resources
-- → **Cancelled**: User cancelled before scheduling
-- → **Failed**: Validation failed (e.g., invalid image, missing fields)
+- -> **Scheduled**: Scheduler accepted job and allocated resources
+- -> **Cancelled**: User cancelled before scheduling
+- -> **Failed**: Validation failed (e.g., invalid image, missing fields)
 
 #### Scheduled
 **Transition state** — Resources allocated, platform-specific execution initiated.
@@ -59,9 +59,9 @@ Transitions:
 - Job ready to transition to Running when platform starts execution
 
 Transitions:
-- → **Running**: Platform started executing the job
-- → **Failed**: Platform rejected execution (insufficient resources, image not found)
-- → **Cancelled**: User cancelled during scheduling
+- -> **Running**: Platform started executing the job
+- -> **Failed**: Platform rejected execution (insufficient resources, image not found)
+- -> **Cancelled**: User cancelled during scheduling
 
 #### Running
 **Active state** — Agent container executing.
@@ -73,10 +73,10 @@ Transitions:
 - Still consuming CPU/memory
 
 Transitions:
-- → **Completed**: Agent exited successfully (exit code 0)
-- → **Failed**: Agent exited with error (exit code non-zero) or timed out
-- → **Scheduled**: Retrying (if retry policy allows)
-- → **Cancelled**: User cancelled during execution
+- -> **Completed**: Agent exited successfully (exit code 0)
+- -> **Failed**: Agent exited with error (exit code non-zero) or timed out
+- -> **Scheduled**: Retrying (if retry policy allows)
+- -> **Cancelled**: User cancelled during execution
 
 #### Completed
 **Terminal state** — Agent finished successfully.
@@ -103,7 +103,7 @@ Transitions:
 - Failure details available in job status
 
 Transitions (if retry policy allows):
-- → **Scheduled**: Will retry execution
+- -> **Scheduled**: Will retry execution
 - **Final state** — If retries exhausted, job terminates
 
 #### Cancelled
@@ -119,7 +119,7 @@ Transitions (if retry policy allows):
 
 ## Detailed State Transitions
 
-### Pending → Scheduled
+### Pending -> Scheduled
 
 **Trigger:** Scheduler processes job and allocates resources
 
@@ -142,7 +142,7 @@ Reconciliation Loop:
    - Record failure reason
 ```
 
-### Scheduled → Running
+### Scheduled -> Running
 
 **Trigger:** Platform reports execution started
 
@@ -159,7 +159,7 @@ Reconciliation Loop:
 3. Begin collecting logs
 ```
 
-### Running → Completed
+### Running -> Completed
 
 **Trigger:** Platform reports successful execution
 
@@ -179,7 +179,7 @@ Reconciliation Loop:
 5. Mark job as terminal
 ```
 
-### Running → Failed
+### Running -> Failed
 
 **Trigger:** Platform reports execution failed
 
@@ -210,7 +210,7 @@ Reconciliation Loop:
      - Job terminates in Failed state
 ```
 
-### Running → Cancelled
+### Running -> Cancelled
 
 **Trigger:** User requests cancellation
 
@@ -235,7 +235,7 @@ Reconciliation Loop:
    - job.Status.CancelledBy = username
 ```
 
-### Scheduled/Running → Scheduled (Retry)
+### Scheduled/Running -> Scheduled (Retry)
 
 **Trigger:** Failure with retry policy enabled
 

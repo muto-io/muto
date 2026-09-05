@@ -36,8 +36,8 @@
 ```
 
 Data flow:
-- **Kubernetes**: `Claude (via MCP) → mcp/tools → core/scheduler → platform/k8s → Kubernetes CRDs`
-- **Cloud Foundry**: `Claude (via MCP) → mcp/tools → core/scheduler → platform/cf → CF Tasks`
+- **Kubernetes**: `Claude (via MCP) -> mcp/tools -> core/scheduler -> platform/k8s -> Kubernetes CRDs`
+- **Cloud Foundry**: `Claude (via MCP) -> mcp/tools -> core/scheduler -> platform/cf -> CF Tasks`
 
 ---
 
@@ -243,7 +243,7 @@ spec:
   ttlAfterCompletion: 300
 ```
 
-Status phases: `Pending → Running → Succeeded | Failed`
+Status phases: `Pending -> Running -> Succeeded | Failed`
 
 ### AgentFleet
 

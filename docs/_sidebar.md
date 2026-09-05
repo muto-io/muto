@@ -49,6 +49,7 @@
   - [Multi-Agent Workflow](usage/examples/multi-agent-workflow.md)
 
 ## API Reference
+- [API Documentation](api/index.md)
 - [CRD Types](api-reference/crd-types.md)
 - [Message API](api-reference/message-api.md)
 - [Webhook API](api-reference/webhook-api.md)

@@ -303,7 +303,7 @@ open coverage.html
 ### GoLand
 
 1. Open project settings (Cmd+, on macOS or Ctrl+Alt+S on Linux/Windows)
-2. Go → Code Style → Go
+2. Go -> Code Style -> Go
 3. Set formatting to "goimports"
 4. Enable inspections for common issues
 

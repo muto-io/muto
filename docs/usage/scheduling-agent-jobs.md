@@ -121,25 +121,25 @@ Agent jobs follow a state machine:
 
 ```
 Pending
-  ├─ (resources available) → Scheduled
-  └─ (timeout) → Failed
-       └─ (retry enabled) → Pending
+  ├─ (resources available) -> Scheduled
+  └─ (timeout) -> Failed
+       └─ (retry enabled) -> Pending
 
 Scheduled
-  ├─ (platform accepted) → Running
-  └─ (scheduling failed) → Failed
-       └─ (retry enabled) → Pending
+  ├─ (platform accepted) -> Running
+  └─ (scheduling failed) -> Failed
+       └─ (retry enabled) -> Pending
 
 Running
-  ├─ (completed successfully) → Completed
-  ├─ (execution failed) → Failed
-  │   └─ (retry enabled, retries < max) → Pending
-  │   └─ (retries exhausted) → Failed (terminal)
-  └─ (user cancellation) → Cancelled
+  ├─ (completed successfully) -> Completed
+  ├─ (execution failed) -> Failed
+  │   └─ (retry enabled, retries < max) -> Pending
+  │   └─ (retries exhausted) -> Failed (terminal)
+  └─ (user cancellation) -> Cancelled
 
-Completed → Cleanup (auto-delete if TTL set)
-Failed (terminal) → Cleanup (auto-delete if TTL set)
-Cancelled → Cleanup
+Completed -> Cleanup (auto-delete if TTL set)
+Failed (terminal) -> Cleanup (auto-delete if TTL set)
+Cancelled -> Cleanup
 ```
 
 Check job status:

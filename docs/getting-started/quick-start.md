@@ -116,7 +116,7 @@ kubectl logs job.muto.io/hello-world
 kubectl describe agentjob hello-world
 ```
 
-Expected: Job transitions from Pending → Scheduled → Running → Completed.
+Expected: Job transitions from Pending -> Scheduled -> Running -> Completed.
 
 ## Step 5: Run the MCP Server (Optional, 1 min)
 

@@ -31,7 +31,7 @@ An **Agent Job** (or simply "Job") is a request to execute one or more agents wi
 Every agent job follows a state machine:
 
 ```
-Pending → Scheduled → Running → Completed
+Pending -> Scheduled -> Running -> Completed
   ↓                      ↓
 Cancelled            Failed (↻ Retry)
 ```

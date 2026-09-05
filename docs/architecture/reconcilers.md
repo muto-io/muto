@@ -303,10 +303,10 @@ Every resource change is processed at least once. If a reconciliation fails, it 
 New AgentJob created
     │
     ├─ Reconciliation attempt 1: Network error
-    │   → Retry after 5s
+    │   -> Retry after 5s
     │
     ├─ Reconciliation attempt 2: API timeout
-    │   → Retry after 10s
+    │   -> Retry after 10s
     │
     └─ Reconciliation attempt 3: Success ✓
        Job scheduled
@@ -318,9 +318,9 @@ Reconciliation is idempotent, so repeated executions don't cause harm:
 ```
 Resource X in state Pending
     │
-    ├─ Reconciliation 1: Create platform resource → Pending→Scheduled
-    ├─ Reconciliation 2: Platform resource exists → No duplicate created
-    ├─ Reconciliation 3: No change detected → No action
+    ├─ Reconciliation 1: Create platform resource -> Pending->Scheduled
+    ├─ Reconciliation 2: Platform resource exists -> No duplicate created
+    ├─ Reconciliation 3: No change detected -> No action
     └─ Continue monitoring until state changes
 ```
 
@@ -332,7 +332,7 @@ Desired: Job should be running
 Current: Failed due to temporary error
 
 After reconciliation retries and automatic recovery:
-    → Job eventually transitions to Running
+    -> Job eventually transitions to Running
 ```
 
 ---

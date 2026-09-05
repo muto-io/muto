@@ -25,8 +25,8 @@ agents:
 ```
 
 **Why both?**
-- **Requests**: Scheduler reserves these resources. Too low → contention with other jobs; too high → wasted resources
-- **Limits**: Kubernetes kills the agent if it exceeds. Too low → OOM kills; too high → runaway processes cost money
+- **Requests**: Scheduler reserves these resources. Too low -> contention with other jobs; too high -> wasted resources
+- **Limits**: Kubernetes kills the agent if it exceeds. Too low -> OOM kills; too high -> runaway processes cost money
 
 ### Sizing Your Requests
 

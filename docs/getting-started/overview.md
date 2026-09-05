@@ -43,7 +43,7 @@ Deploy the same agent orchestration logic to Kubernetes or CloudFoundry without 
 ### Flexible Coordination
 
 Define complex agent coordination patterns:
-- Sequential workflows (Agent A → Agent B → Agent C)
+- Sequential workflows (Agent A -> Agent B -> Agent C)
 - Parallel execution (run agents concurrently)
 - Fan-out/fan-in patterns (distribute work, aggregate results)
 - Message-driven coordination (agents communicate via message bus)

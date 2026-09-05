@@ -20,16 +20,16 @@ Muto is distributed as pre-built Docker images. No Go compilation needed.
 
 **Installation paths:**
 
-1. **Kubernetes (Recommended)** → [Kubernetes Deployment Guide](../deployment/kubernetes/install.md)
+1. **Kubernetes (Recommended)** -> [Kubernetes Deployment Guide](../deployment/kubernetes/install.md)
    - Use Helm charts for production deployments
    - Supports multi-tenant, high-availability setups
    - Most common production path
 
-2. **CloudFoundry** → [CloudFoundry Deployment Guide](../deployment/cf.md)
+2. **CloudFoundry** -> [CloudFoundry Deployment Guide](../deployment/cf.md)
    - Deploy to CloudFoundry environments
    - Alternative to Kubernetes
 
-3. **Local Testing** → [Quick Start](./quick-start.md)
+3. **Local Testing** -> [Quick Start](./quick-start.md)
    - 5-minute walkthrough with Docker Compose
 
 ### System Requirements

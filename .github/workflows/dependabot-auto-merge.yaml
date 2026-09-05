@@ -39,7 +39,7 @@ jobs:
             }
 
             const [, fromVersion, toVersion] = versionMatch;
-            console.log(`Version change: ${fromVersion} → ${toVersion}`);
+            console.log(`Version change: ${fromVersion} -> ${toVersion}`);
 
             // Extract major.minor.patch (ignore pre-release and build metadata)
             const parseVersion = (v) => {

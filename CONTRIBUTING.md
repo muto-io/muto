@@ -55,18 +55,18 @@ We maintain Service Level Agreements (SLAs) for code review to ensure timely fee
 
 Dependabot pull requests follow an expedited, automated SLA to keep dependencies current and secure:
 
-- **Patch Updates** (e.g., 1.2.3 → 1.2.4):
+- **Patch Updates** (e.g., 1.2.3 -> 1.2.4):
   - Automatically approved and merged if all checks pass
   - No manual review required
   - Merged within minutes of tests passing
   - Commit squashed for clean history
 
-- **Minor Updates** (e.g., 1.2.3 → 1.3.0):
+- **Minor Updates** (e.g., 1.2.3 -> 1.3.0):
   - Automatically approved and merged if all checks pass
   - No manual review required
   - Merged within minutes of tests passing
 
-- **Major Version Updates** (e.g., 1.2.3 → 2.0.0):
+- **Major Version Updates** (e.g., 1.2.3 -> 2.0.0):
   - Flagged for manual review
   - Require explicit approval within 3 business days
   - Reviewer checks for breaking changes and compatibility

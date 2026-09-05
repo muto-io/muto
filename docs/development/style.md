@@ -17,9 +17,9 @@ goimports -r ./...
 ```
 
 Configure in your editor:
+
 - **VS Code**: Set `"go.formatTool": "goimports"` in settings.json
-- **GoLand**: Go → Code Style → Go → set formatter to "goimports"
-- **vim**: Use plugin or manual `goimports -w` before saving
+- **GoLand**: Go -> Code Style -> Go -> set formatter to "goimports"
 
 ### Go fmt
 

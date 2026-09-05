@@ -258,7 +258,7 @@ For PRs:
 
 To enable CF testing in CI/CD, configure GitHub secrets:
 
-Settings → Secrets and Variables → Actions
+Settings -> Secrets and Variables -> Actions
 
 - `CF_API_URL` — CloudFoundry API endpoint
 - `CF_USERNAME` — Admin username

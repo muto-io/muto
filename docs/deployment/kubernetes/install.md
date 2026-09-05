@@ -226,7 +226,7 @@ kubectl logs agentjob/test-deployment
 - [ ] CRDs are registered (`kubectl get crd | grep muto.io`)
 - [ ] Webhook is operational (`kubectl get validatingwebhookconfiguration`)
 - [ ] Tenant created successfully
-- [ ] Test job transitions through states: Pending → Scheduled → Running → Completed
+- [ ] Test job transitions through states: Pending -> Scheduled -> Running -> Completed
 - [ ] Health check returns 200 OK
 
 ## Upgrade Muto

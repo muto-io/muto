@@ -11,7 +11,7 @@ Multi-agent workflows coordinate multiple agents to accomplish complex tasks. Mu
 Run agents one after another, each depending on the previous one's output.
 
 ```
-Agent A → Agent B → Agent C → Done
+Agent A -> Agent B -> Agent C -> Done
   ↓        ↓        ↓
 Output 1   Input: Output 1   Input: Output 2
            Output 2         Output 3
@@ -92,14 +92,14 @@ Run multiple agents concurrently, each processing independently.
 ```
         ┌─ Agent A ─┐
         │           │
- Input ─┤─ Agent B ─├─ Aggregator → Output
+ Input ─┤─ Agent B ─├─ Aggregator -> Output
         │           │
         └─ Agent C ─┘
 ```
 
 Use parallel when:
 - Agents work independently
-- Same input → different processing → combine results
+- Same input -> different processing -> combine results
 - Can utilize multiple cores/nodes
 
 ### Parallel Execution Example

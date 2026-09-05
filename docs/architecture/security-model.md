@@ -550,7 +550,7 @@ All operations are logged for compliance:
 ```
 
 Logs exported to:
-- **Kubernetes**: CloudAudit logs → Cloud Logging
+- **Kubernetes**: CloudAudit logs -> Cloud Logging
 - **Files**: Local audit.log with log rotation
 - **SIEM**: Forward to Splunk, ELK, or similar
 

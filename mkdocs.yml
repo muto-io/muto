@@ -4,7 +4,7 @@ site_author: Muto Contributors
 site_url: https://muto-io.github.io/muto
 repo_url: https://github.com/muto-io/muto
 repo_name: muto-io/muto
-copyright: Copyright © 2024 Muto Contributors
+copyright: Copyright © 2026 Muto Contributors
 
 theme:
   name: material
@@ -127,9 +127,6 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/muto-io/muto
       name: GitHub
-  analytics:
-    provider: google
-    property: G-XXXXXXXXXX  # Replace with your Google Analytics ID
 
 docs_dir: docs
 site_dir: site

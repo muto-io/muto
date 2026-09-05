@@ -411,6 +411,17 @@ Yes. Muto supports pluggable message bus implementations:
 
 To use custom:
 
+<<<<<<< HEAD
+=======
+```go
+type MyMessageBus struct{}
+func (m *MyMessageBus) Publish(topic string, msg []byte) error { ... }
+func (m *MyMessageBus) Subscribe(topic string) (Subscriber, error) { ... }
+
+// Register in operator
+operator.RegisterMessageBus("custom", &MyMessageBus{})
+```
+>>>>>>> 3cd522b (docs: implement operations section - monitoring, troubleshooting, tuning, backup, faqs)
 
 See: [Message Bus Setup](../configuration/message-bus-setup.md)
 
@@ -538,7 +549,15 @@ Use labels to distinguish: `scheduler: muto` vs `scheduler: old`
 
 1. **Documentation**: Read relevant guide pages
 2. **GitHub Issues**: Report bugs or ask questions
+<<<<<<< HEAD
+<<<<<<< HEAD
 3. **Community**: [Slack/Discord](https://muto.io/community)
+=======
+3**Community**: [Slack/Discord](https://muto.io/community)
+>>>>>>> 3cd522b (docs: implement operations section - monitoring, troubleshooting, tuning, backup, faqs)
+=======
+3. **Community**: [Slack/Discord](https://muto.io/community)
+>>>>>>> 2c5f7d1 (fix: add missing period in faqs.md list item)
 4. **Email**: support@muto.io
 
 ### How do I report a bug?

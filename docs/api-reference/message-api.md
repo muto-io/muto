@@ -365,6 +365,43 @@ Agents typically publish messages to the message bus at key lifecycle points:
 
 #### Go Example
 
+<<<<<<< HEAD
+=======
+```go
+import (
+	"github.com/muto-io/muto/core/agent"
+	"github.com/nats-io/nats.go"
+)
+
+func agentMain(nc *nats.Conn, tenantID string, jobID string) error {
+	topic := fmt.Sprintf("tenant.%s/data-pipeline/extract/complete", tenantID)
+
+	message := map[string]interface{}{
+		"id":           "msg-12345",
+		"timestamp":    time.Now().UTC().Format(time.RFC3339),
+		"tenantID":     tenantID,
+		"jobID":        jobID,
+		"sourceAgent":  "extract-pod-1",
+		"sourceRole":   "extract",
+		"type":         "JobComplete",
+		"version":      "1.0",
+		"correlationID": "corr-abc123",
+		"payload": map[string]interface{}{
+			"status":        "succeeded",
+			"itemsProcessed": 1500,
+			"outputPath":    "s3://bucket/results.json",
+		},
+	}
+
+	data, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	return nc.Publish(topic, data)
+}
+```
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
 
 #### Python Example
 
@@ -406,6 +443,47 @@ Agents subscribe to topics and react to incoming messages:
 
 #### Go Example
 
+<<<<<<< HEAD
+=======
+```go
+func handleMessages(nc *nats.Conn, tenantID string) error {
+	topic := fmt.Sprintf("tenant.%s/data-pipeline/extract/>", tenantID)
+
+	sub, err := nc.Subscribe(topic, func(msg *nats.Msg) {
+		var message map[string]interface{}
+		if err := json.Unmarshal(msg.Data, &message); err != nil {
+			log.Printf("Failed to unmarshal: %v", err)
+			return
+		}
+
+		messageType, ok := message["type"].(string)
+		if !ok {
+			return
+		}
+
+		switch messageType {
+		case "JobComplete":
+			handleJobComplete(message)
+		case "JobError":
+			handleJobError(message)
+		}
+	})
+
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+
+	select {}
+}
+
+func handleJobComplete(message map[string]interface{}) {
+	payload := message["payload"].(map[string]interface{})
+	outputPath := payload["outputPath"].(string)
+	log.Printf("Processing output from: %s", outputPath)
+}
+```
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
 
 #### Python Example
 
@@ -484,6 +562,29 @@ Muto uses message IDs to support idempotent processing:
 
 **Example: Idempotent Database Update**
 
+<<<<<<< HEAD
+=======
+```go
+func processMessage(msg map[string]interface{}, db *Database) error {
+	messageID := msg["id"].(string)
+
+	// Check if we've already processed this message
+	if db.HasProcessedMessage(messageID) {
+		log.Printf("Message %s already processed, skipping", messageID)
+		return nil
+	}
+
+	// Process the message
+	payload := msg["payload"].(map[string]interface{})
+	if err := db.InsertResult(payload); err != nil {
+		return err
+	}
+
+	// Mark as processed
+	return db.RecordProcessedMessage(messageID)
+}
+```
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
 
 ---
 
@@ -518,11 +619,44 @@ kafka-topics --create --topic tenant.tenant-a.workflow \
 
 If a message fails to publish:
 
+<<<<<<< HEAD
+=======
+```go
+err := nc.Publish(topic, data)
+if err != nil {
+	if err == nats.ErrTimeout {
+		// Timeout: try again after backoff
+		time.Sleep(1 * time.Second)
+		nc.Publish(topic, data)
+	} else if err == nats.ErrNoServers {
+		// No servers: fatal, log and exit
+		log.Fatalf("No NATS servers available: %v", err)
+	}
+}
+```
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
 
 ### Subscription Failures
 
 If subscription encounters errors, implement reconnection logic:
 
+<<<<<<< HEAD
+=======
+```go
+for {
+	sub, err := nc.Subscribe(topic, handler)
+	if err != nil {
+		log.Printf("Subscribe failed: %v, retrying...", err)
+		time.Sleep(5 * time.Second)
+		continue
+	}
+	
+	// Block until connection lost
+	<-sub.Done()
+	log.Printf("Subscription ended, reconnecting...")
+}
+```
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
 
 ---
 
@@ -577,7 +711,15 @@ If subscription encounters errors, implement reconnection logic:
 
 ### Pattern 1: Sequential Agent Execution
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 ```
+=======
+```json
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
+=======
+```
+>>>>>>> aaf5a84 (fix: change message-api JSON blocks to plain text (contains comments))
 // Agent A (extract) publishes completion
 {
   "type": "AgentComplete",
@@ -602,7 +744,15 @@ If subscription encounters errors, implement reconnection logic:
 
 ### Pattern 2: Fan-Out/Fan-In
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 ```
+=======
+```json
+>>>>>>> 630e387 (docs: add api-reference section with 4 files)
+=======
+```
+>>>>>>> aaf5a84 (fix: change message-api JSON blocks to plain text (contains comments))
 // Coordinator publishes fan-out request
 {
   "type": "FanOutRequest",

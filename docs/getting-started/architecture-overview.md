@@ -212,9 +212,21 @@ Muto is designed to be extended:
 
 ### Custom Reconcilers
 Write your own reconciler for domain-specific logic:
+```go
+type CustomReconciler struct{}
+func (c *CustomReconciler) Reconcile(ctx context.Context, req Request) Result {
+    // Your logic here
+}
+```
 
 ### Custom Message Bus
 Plug in your own message bus implementation:
+```go
+type CustomMessageBus struct{}
+func (m *CustomMessageBus) Publish(topic string, message []byte) error {
+    // Your implementation
+}
+```
 
 ### Webhooks
 Validate or mutate jobs before creation:

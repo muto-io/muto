@@ -366,6 +366,29 @@ muto_job_retries_total{result="success_after_retry"} 23
 
 Applications typically wait for job completion:
 
+<<<<<<< HEAD
+=======
+```go
+// Poll for completion (client-side)
+for {
+    job, err := client.GetAgentJob(ctx, jobID)
+    if err != nil {
+        return err
+    }
+    
+    switch job.Status.State {
+    case "Completed":
+        return nil  // Success
+    case "Failed":
+        return fmt.Errorf("job failed: %s", job.Status.FailureReason)
+    case "Cancelled":
+        return fmt.Errorf("job cancelled")
+    }
+    
+    time.Sleep(1 * time.Second)
+}
+```
+>>>>>>> 20df041 (docs: write architecture/agent-lifecycle.md - state machine and job transitions)
 
 ### Watching for Events
 
@@ -433,6 +456,21 @@ If job exceeds timeout:
 
 Agents should handle SIGTERM:
 
+<<<<<<< HEAD
+=======
+```go
+// Go example
+sigChan := make(chan os.Signal, 1)
+signal.Notify(sigChan, syscall.SIGTERM)
+
+go func() {
+    <-sigChan
+    logger.Info("Received SIGTERM, shutting down gracefully")
+    // Finalize work
+    os.Exit(0)
+}()
+```
+>>>>>>> 20df041 (docs: write architecture/agent-lifecycle.md - state machine and job transitions)
 
 ---
 

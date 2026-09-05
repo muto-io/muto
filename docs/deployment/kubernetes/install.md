@@ -150,7 +150,15 @@ messagebus:
     maxReconnect: 10
 ```
 
+<<<<<<< HEAD
+<<<<<<< HEAD
 See [Message Bus Configuration](./helm-chart.md#message-bus-configuration) for details.
+=======
+See [Message Bus Configuration](./configuration.md#message-bus) for details.
+>>>>>>> c1f036e (docs: write deployment/kubernetes/install.md - K8s installation guide)
+=======
+See [Message Bus Configuration](./helm-chart.md#message-bus-configuration) for details.
+>>>>>>> e5a1e28 (docs: fix cross-link issues - broken anchors and placeholder files)
 
 ### Create Tenant
 

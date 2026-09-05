@@ -4,7 +4,7 @@ Get Muto up and running locally to see it in action.
 
 ## Prerequisites
 
-- **Go 1.26+**: Download from [golang.org](https://golang.org/dl/)
+- **Go 1.22+**: Download from [golang.org](https://golang.org/dl/)
 - **Docker**: [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
 - **kind**: Kubernetes in Docker — `go install sigs.k8s.io/kind@latest`
 - **kubectl**: Kubernetes CLI — `curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl`
@@ -12,7 +12,7 @@ Get Muto up and running locally to see it in action.
 
 **Verify installations:**
 ```bash
-go version          # Should show 1.26+
+go version          # Should show 1.22+
 docker version      # Should show Docker CLI and server
 kind version        # Should show kind v0.x.x
 kubectl version     # Should show client version

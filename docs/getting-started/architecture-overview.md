@@ -33,11 +33,11 @@ Muto consists of three main layers:
 2. Kubernetes API server persists it in etcd
    
 3. Muto operator watches for new AgentJobs
-   EventWatcher detects new job -> triggers reconciliation
+   EventWatcher detects new job → triggers reconciliation
    
 4. AgentJobReconciler processes the job:
    - Validates job spec (tenant, resources, etc.)
-   - Updates job status: Pending -> Scheduled
+   - Updates job status: Pending → Scheduled
    - Creates corresponding K8s Pod/Job
    
 5. Kubernetes scheduler assigns Pod to node
@@ -47,7 +47,7 @@ Muto consists of three main layers:
    EventWatcher monitors for completion
    
 7. When done, reconciler updates AgentJob status:
-   Running -> Completed (or Failed)
+   Running → Completed (or Failed)
    
 8. User can retrieve results:
    kubectl logs agentjob/job-name
@@ -132,7 +132,7 @@ START
 │ DETECT DRIFT: Compare desired vs. actual    │
 │ - Desired: AgentJob spec says "running"    │
 │ - Actual: No Pod/Task exists                │
-│ - Drift detected? -> Action needed           │
+│ - Drift detected? → Action needed           │
 └──────────────────┬──────────────────────────┘
                    │
                    ▼
@@ -211,15 +211,15 @@ Agent Job Execution
 Muto is designed to be extended:
 
 ### Custom Reconcilers
-Write your own reconciler for domain-specific logic:
+Write your own reconciler for domain-specific logic to handle custom workflows or integrate with external systems. Custom reconcilers implement the reconciliation interface and hook into the control loop.
 
 ### Custom Message Bus
-Plug in your own message bus implementation:
+Plug in your own message bus implementation to use a different transport (e.g., Redis, RabbitMQ) instead of the default NATS or Kafka. Custom implementations must support publish/subscribe semantics.
 
 ### Webhooks
 Validate or mutate jobs before creation:
-- Validation webhooks: Reject invalid jobs
-- Mutation webhooks: Modify jobs before creation
+- **Validation webhooks:** Reject invalid jobs based on custom rules
+- **Mutation webhooks:** Modify jobs before creation (e.g., inject sidecar containers)
 
 ---
 

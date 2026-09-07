@@ -16,12 +16,10 @@ This guide helps you set up a local development environment to contribute to Mut
 #### Go 1.26+
 
 The project uses Go 1.26 or later. Install from [golang.org](https://golang.org/dl/).
-
 **Verify installation:**
 ```bash
 go version
-# Expected: go version go1.26.0 (or later)
-```
+# Expected: go version go1.26.0 (or later)```
 
 #### Docker
 
@@ -410,12 +408,13 @@ Install it:
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
-## Next Steps
+## Related Documentation
 
-- Read [Contributing Guidelines](./contributing.md) for code contribution process
-- See [Testing Strategy](./testing-strategy.md) for testing best practices
-- Check [Code Style Guide](./style.md) for Go conventions
-- Review [Debugging Guide](./debugging.md) for troubleshooting techniques
+- [:octicons-book-24: **Code Style Guide**](./style.md) — Code standards and conventions
+- [:octicons-book-24: **Contributing Guide**](./contributing.md) — Code contribution process
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Testing best practices
+- [:octicons-book-24: **Debugging Guide**](./debugging.md) — Troubleshooting techniques
+- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) — Automated testing and deployment
 
 ---
 

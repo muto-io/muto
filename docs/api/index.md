@@ -97,7 +97,7 @@ The CRD API defines Kubernetes Custom Resources for Muto. Use these to declare a
 
 ### Full Reference
 
-📖 **[CRD Type Reference](../api-reference/crd-types.md)** — Complete field specifications, validation rules, and examples
+[:octicons-book-24: **CRD Type Reference**](../api-reference/crd-types.md) — Complete field specifications, validation rules, and examples
 
 **Useful kubectl Commands**
 ```bash
@@ -160,7 +160,7 @@ The Message API defines inter-agent communication protocols and message bus sema
 
 ### Full Reference
 
-📖 **[Message API Reference](../api-reference/message-api.md)** — Complete message format, routing rules, and examples
+[:octicons-book-24: **Message API Reference**](../api-reference/message-api.md) — Complete message format, routing rules, and examples
 
 ---
 
@@ -205,7 +205,7 @@ MUTO_WEBHOOK_EVENTS: job.created,job.completed,job.failed
 
 ### Full Reference
 
-📖 **[Webhook API Reference](../api-reference/webhook-api.md)** — Complete webhook specification, retry behavior, and integration examples
+[:octicons-book-24: **Webhook API Reference**](../api-reference/webhook-api.md) — Complete webhook specification, retry behavior, and integration examples
 
 ---
 
@@ -289,7 +289,7 @@ claude mcp add @muto-io/mcp-server --config "serverUrl=http://localhost:3000"
 
 ### Full Reference
 
-📖 **[MCP Tools Reference](../api-reference/mcp-tools.md)** — Complete tool specifications, authentication, and integration examples
+[:octicons-book-24: **MCP Tools Reference**](../api-reference/mcp-tools.md) — Complete tool specifications, authentication, and integration examples
 
 ---
 
@@ -342,7 +342,7 @@ For detailed specifications, use these reference documents:
 
 The Muto CRD API is fully described in OpenAPI 3.0 format for tooling integration:
 
-📄 **[openapi.yaml](./openapi.yaml)** — Machine-readable OpenAPI spec for Muto CRDs
+[:octicons-file-24: **openapi.yaml**](./openapi.yaml) — Machine-readable OpenAPI spec for Muto CRDs
 
 Use this spec with tools like:
 - Swagger UI for interactive documentation

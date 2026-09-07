@@ -357,79 +357,6 @@ Emitted when a job is cancelled.
 
 ---
 
-## Publishing Messages
-
-### From Agent Code
-
-Agents typically publish messages to the message bus at key lifecycle points:
-
-#### Go Example
-
-
-#### Python Example
-
-```python
-import json
-import time
-from datetime import datetime
-
-def agent_main(nc, tenant_id, job_id):
-    topic = f"tenant.{tenant_id}/data-pipeline/extract/complete"
-
-    message = {
-        "id": "msg-12345",
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "tenantID": tenant_id,
-        "jobID": job_id,
-        "sourceAgent": "extract-pod-1",
-        "sourceRole": "extract",
-        "type": "JobComplete",
-        "version": "1.0",
-        "correlationID": "corr-abc123",
-        "payload": {
-            "status": "succeeded",
-            "itemsProcessed": 1500,
-            "outputPath": "s3://bucket/results.json",
-        }
-    }
-
-    nc.publish(topic, json.dumps(message).encode())
-```
-
----
-
-## Subscribing to Messages
-
-### From Agent Code
-
-Agents subscribe to topics and react to incoming messages:
-
-#### Go Example
-
-
-#### Python Example
-
-```python
-def handle_messages(nc, tenant_id):
-    topic = f"tenant.{tenant_id}/data-pipeline/extract/>"
-
-    def message_handler(msg):
-        try:
-            message = json.loads(msg.data.decode())
-            message_type = message.get("type")
-
-            if message_type == "JobComplete":
-                handle_job_complete(message)
-            elif message_type == "JobError":
-                handle_job_error(message)
-        except json.JSONDecodeError:
-            pass
-
-    nc.subscribe(topic, cb=message_handler)
-```
-
----
-
 ## Topic Wildcards & Subscriptions
 
 NATS and Kafka support wildcard subscriptions:
@@ -484,7 +411,6 @@ Muto uses message IDs to support idempotent processing:
 
 **Example: Idempotent Database Update**
 
-
 ---
 
 ## Message Retention & Cleanup
@@ -518,11 +444,9 @@ kafka-topics --create --topic tenant.tenant-a.workflow \
 
 If a message fails to publish:
 
-
 ### Subscription Failures
 
 If subscription encounters errors, implement reconnection logic:
-
 
 ---
 
@@ -577,7 +501,6 @@ If subscription encounters errors, implement reconnection logic:
 
 ### Pattern 1: Sequential Agent Execution
 
-```
 // Agent A (extract) publishes completion
 {
   "type": "AgentComplete",
@@ -602,7 +525,6 @@ If subscription encounters errors, implement reconnection logic:
 
 ### Pattern 2: Fan-Out/Fan-In
 
-```
 // Coordinator publishes fan-out request
 {
   "type": "FanOutRequest",

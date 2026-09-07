@@ -231,6 +231,7 @@ For reliable coordination:
 2. **Use message IDs** to track what's been processed
 3. **Store processed message IDs** (in database or local storage)
 
+This pattern ensures that even if a message is delivered multiple times, processing it again produces the same result.
 
 ## Monitoring and Observability
 
@@ -452,7 +453,6 @@ resources:
 
 Scale based on queue depth:
 
-
 ### Cluster Capacity Planning
 
 Monitor cluster utilization:
@@ -498,7 +498,6 @@ agents:
 ### Graceful Degradation
 
 Handle missing dependencies:
-
 
 ### Idempotent Operations
 
@@ -658,7 +657,6 @@ kubectl logs agentjob/<job-name> --all-containers=true --tail=500
 
 - **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** — Job specification reference
 - **[Multi-Agent Patterns](./multi-agent-patterns.md)** — Orchestration patterns
-- **[Monitoring & Observability](../operations/monitoring-observability.md)** (coming in Phase 8) — Setup observability
 - **[Configuration](../configuration/)** — Fine-tune settings
 
 ---

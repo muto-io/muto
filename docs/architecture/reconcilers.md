@@ -65,8 +65,7 @@ A typical reconciliation flow:
 3. **Compare** — Check if actual matches desired
 4. **Act** — If drift detected, take corrective actions (create/update/delete resources)
 5. **Update status** — Record the new state in the resource
-6. **Return result** — Indicate success or schedule retry if needed
-```
+6. **Return result** — Indicate success or schedule retry if needed```
 
 ## Key Properties of Reconcilers
 
@@ -77,7 +76,6 @@ Running reconciliation twice with the same inputs produces the same result. If r
 ### Resilient to Transient Failures
 
 If reconciliation fails, it's automatically retried with exponential backoff. For example, if the API server is temporarily unavailable, reconciliation returns "requeue after 5 seconds". On the next attempt, the API server is back and the job creation succeeds.
-
 ### Observable
 
 Each reconciliation loop iteration is logged:
@@ -166,6 +164,7 @@ Ensures agent jobs are executed on the appropriate platform.
    - **Scheduled**: Check if platform started execution
    - **Running**: Check if platform reports completion
 
+The reconciliation loop continuously monitors the job state and transitions it through the state machine as the platform reports status changes.
 
 ### 3. EventWatcherReconciler
 
@@ -218,11 +217,9 @@ Handles retries for failed jobs.
    - Job remains in Failed state (terminal)
 
 **Backoff calculation:**
-
 ## Custom Reconcilers
 
 You can write custom reconcilers for domain-specific logic:
-
 
 To use custom reconcilers, configure them in Muto:
 
@@ -303,10 +300,10 @@ Every resource change is processed at least once. If a reconciliation fails, it 
 New AgentJob created
     │
     ├─ Reconciliation attempt 1: Network error
-    │   -> Retry after 5s
+    │   → Retry after 5s
     │
     ├─ Reconciliation attempt 2: API timeout
-    │   -> Retry after 10s
+    │   → Retry after 10s
     │
     └─ Reconciliation attempt 3: Success ✓
        Job scheduled
@@ -318,9 +315,9 @@ Reconciliation is idempotent, so repeated executions don't cause harm:
 ```
 Resource X in state Pending
     │
-    ├─ Reconciliation 1: Create platform resource -> Pending->Scheduled
-    ├─ Reconciliation 2: Platform resource exists -> No duplicate created
-    ├─ Reconciliation 3: No change detected -> No action
+    ├─ Reconciliation 1: Create platform resource → Pending → Scheduled
+    ├─ Reconciliation 2: Platform resource exists → No duplicate created
+    ├─ Reconciliation 3: No change detected → No action
     └─ Continue monitoring until state changes
 ```
 
@@ -332,7 +329,7 @@ Desired: Job should be running
 Current: Failed due to temporary error
 
 After reconciliation retries and automatic recovery:
-    -> Job eventually transitions to Running
+    → Job eventually transitions to Running
 ```
 
 ---

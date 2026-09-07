@@ -376,8 +376,8 @@ For NATS:
 curl http://nats:8222/connz | jq '.conns[].subs'
 
 # Should show tenant-specific subjects:
-# tenant-acme.workflow.>
-# tenant-acme.notifications.>
+# tenant-acme.workflow
+# tenant-acme.notifications
 ```
 
 For Kafka:

@@ -42,7 +42,7 @@ Branch naming conventions:
 
 ### 3. Make Changes
 
-Follow [Code Style Guide](./style.md) for code standards.
+Follow the [:octicons-book-24: **Code Style Guide**](./style.md) for formatting, naming, and code organization.
 
 Write tests for your changes:
 ```bash
@@ -146,8 +146,8 @@ Your PR must meet these criteria to be merged:
   - Unit tests for logic (in same package)
   - Integration tests for cross-component interactions
   - No test coverage decrease
-- **Linting**: `go vet` and `golangci-lint` pass
-- **Formatting**: `go fmt` and `goimports` applied
+- **Linting**: `go vet` and `golangci-lint` pass (see [:octicons-book-24: **Code Style Guide**](./style.md#linting))
+- **Formatting**: `go fmt` and `goimports` applied (see [:octicons-book-24: **Code Style Guide**](./style.md#formatting))
 - **No TODOs**: Fix issues or file them before submitting
 
 ### Documentation
@@ -201,6 +201,8 @@ See [Testing Strategy](./testing-strategy.md) for details.
 
 ### Code Comments
 
+See [:octicons-book-24: **Code Style Guide**](./style.md#comments) for detailed comment guidelines.
+
 **Exported functions** must have godoc comments:
 
 ```go
@@ -232,6 +234,8 @@ backoff := time.Duration(math.Min(
 
 ### Code Organization
 
+See [:octicons-book-24: **Code Style Guide**](./style.md#project-layout) for complete package structure guidelines.
+
 **Package structure** mirrors domain:
 - `core/agent/` — Job/Agent types and validation
 - `core/scheduler/` — Scheduling logic
@@ -248,7 +252,6 @@ type MessageBus interface {
 }
 ```
 
-See [Code Style Guide](./style.md) for naming conventions and style details.
 
 ## Common Contributions
 
@@ -330,6 +333,13 @@ Run and fix:
 ```bash
 golangci-lint run ./... --fix
 ```
+
+## Related Documentation
+
+- [:octicons-book-24: **Code Style Guide**](./style.md) — Formatting, naming, and code standards
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Test organization and practices
+- [:octicons-book-24: **Development Setup**](./setup.md) — Local environment setup
+- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) — Automated testing and deployment
 
 ## Getting Help
 

@@ -14,7 +14,7 @@ Muto uses a three-level testing strategy:
 
 ## Unit Tests
 
-Fast, focused tests for individual functions and types.
+Fast, focused tests for individual functions and types. Follow [:octicons-book-24: **Code Style Guide**](./style.md#testing-naming) for test naming conventions.
 
 ### Structure
 
@@ -465,11 +465,12 @@ go tool cover -html=coverage.out
 
 ---
 
-## Next Steps
+## Related Documentation
 
-- [Setup Guide](./setup.md) — Configure development environment
-- [Code Style](./style.md) — Coding standards
-- [Debugging Guide](./debugging.md) — Troubleshooting techniques
+- [:octicons-book-24: **Code Style Guide**](./style.md#testing-naming) — Test naming conventions
+- [:octicons-book-24: **Contributing Guide**](./contributing.md) — Contribution workflow
+- [:octicons-book-24: **Development Setup**](./setup.md) — Configure development environment
+- [:octicons-book-24: **Debugging Guide**](./debugging.md) — Troubleshooting techniques
 
 ---
 

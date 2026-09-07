@@ -32,10 +32,27 @@ Muto Core (Platform-agnostic)
 
 ## PlatformAdapter Interface
 
-The core interface that all platform adapters must implement:
+All platform adapters implement a common interface with these operations:
 
+**Job Management:**
+- **CreateJob** — Schedule a job on the platform
+- **GetJobStatus** — Retrieve current job status
+- **UpdateJobStatus** — Modify job status
+- **DeleteJob** — Terminate and clean up a job
 
-Each adapter translates Muto's generic job concepts into platform-specific resources.
+**Monitoring:**
+- **WatchEvents** — Subscribe to platform events (job status changes)
+- **GetLogs** — Retrieve job execution logs
+
+**Resource Management:**
+- **AllocateResources** — Reserve platform resources for a job
+- **ReleaseResources** — Return resources to the platform
+
+**Health & Lifecycle:**
+- **HealthCheck** — Verify the adapter can communicate with the platform
+- **Name** — Return the adapter name (e.g., "kubernetes", "cloudfoundry")
+
+Each adapter translates Muto's generic job concepts into platform-specific resources (K8s Pods, CF Tasks, etc.).
 
 ## Kubernetes Adapter
 
@@ -160,7 +177,6 @@ spec             vs actual
 #### Event Watching
 
 K8s adapter uses informer pattern to watch for events:
-
 
 ### Resource Limits and Requests
 
@@ -316,7 +332,6 @@ spec             vs actual
 
 CF doesn't have event streaming, so adapter polls:
 
-
 ### Environment Variables and Secrets
 
 CF adapter exposes CredHub secrets as environment variables:
@@ -343,7 +358,6 @@ cf run-task app \
 ## Platform Agnostic Core
 
 The scheduler and reconcilers are completely platform-agnostic:
-
 
 The scheduler:
 - Never directly creates K8s Pods

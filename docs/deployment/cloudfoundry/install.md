@@ -15,8 +15,7 @@ Deploy Muto to a CloudFoundry environment.
 ### Required Tools
 
 - **cf CLI:** Download from [CloudFoundry CLI](https://github.com/cloudfoundry/cli/wiki/V7-cli-installer-downloads)
-- **Go:** Version 1.26+ (for local development/testing)
-- **jq:** JSON query tool (optional, for script automation)
+- **Go:** Version 1.26+ (for local development/testing)- **jq:** JSON query tool (optional, for script automation)
 
 ### Credentials and Access
 

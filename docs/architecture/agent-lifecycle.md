@@ -364,28 +364,12 @@ muto_job_retries_total{result="success_after_retry"} 23
 
 ### Waiting for Completion
 
-Applications typically wait for job completion:
+Applications can wait for job completion by:
+- Polling the job status periodically
+- Watching for status change events
+- Using webhooks to be notified of state changes
 
-
-### Watching for Events
-
-Better approach: watch events:
-
-```bash
-kubectl get events --field-selector involvedObject.name=job-name -w
-```
-
-Or use MCP client (for Claude):
-
-```python
-# MCP client watches for job status changes
-job = client.get_agent_job("data-pipeline")
-while job.status.state not in ["Completed", "Failed", "Cancelled"]:
-    job = client.get_agent_job("data-pipeline")
-    await asyncio.sleep(1)
-
-print(f"Job finished: {job.status.state}")
-```
+The most efficient approach is to watch events or subscribe to webhooks rather than polling the API continuously.
 
 ### Handling Retries
 
@@ -432,7 +416,6 @@ If job exceeds timeout:
 ### Graceful Shutdown
 
 Agents should handle SIGTERM:
-
 
 ---
 

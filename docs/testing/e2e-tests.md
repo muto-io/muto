@@ -55,60 +55,15 @@ make test-integration-cf
 
 ---
 
-## Performance Analysis
+## Performance Baseline
 
-### Current E2E Workflow Times
+**Kubernetes E2E:** Average 3:58 per run  
+**CloudFoundry E2E:** Average 4:10 per run  
+**Combined Workflow:** ~4 minutes (parallel execution)
 
-**Kubernetes E2E:**
-- Average: 3:58 per run
-- Range: 3:45 - 4:10 minutes
-- Consistent execution with minimal variance
-
-**CloudFoundry E2E:**
-- Average: 4:10 per run (with anomalies)
-- Range: 0:45 - 4:30 minutes
-- High variance suggests conditional test skipping
-
-**Combined E2E Workflow:**
-- Total time: ~4 minutes (tests run in parallel at job level)
-- Status check: <1 minute
-- Expected P95: 4:30 minutes
-
-### Performance Timeline
-
-| Run | K8s Time | CF Time | Total | Notes |
-|-----|----------|---------|-------|-------|
-| 111 | 3:58 | 4:10 | 4:20 | Both jobs |
-| 110 | ~4:02 | ~4:02 | 4:02 | Both jobs |
-| 109 | ~4:14 | ~4:14 | 4:14 | Both jobs |
-| 104 | - | 1:15 | 1:15 | CF only (anomaly) |
-| 102 | - | 0:57 | 0:57 | CF only (anomaly) |
-
-### Bottleneck Analysis
-
-**K8s E2E Bottlenecks (3:58 runtime):**
-1. **Kind cluster creation:** ~1 minute
-2. **Test execution:** ~2:30 (integration tests with namespace setup)
-3. **Teardown/cleanup:** ~0:30 (critical issue - see flakiness section)
-
-**CF E2E Bottlenecks (4:10 runtime):**
-1. **Setup/environment config:** ~0:30
-2. **Test execution:** ~3:00 (mocked infrastructure)
-3. **Cleanup:** <1 minute (faster than K8s)
-
-### Resource Usage
-
-**Current Configuration:**
-- **Runner:** `ubuntu-latest` (standard GitHub Actions runner)
-- **Parallelization:** K8s and CF jobs run in parallel
-- **CPU:** Single core during test execution
-- **Memory:** ~2-3GB during kind cluster operation
-- **Disk:** ~5GB for container images and artifacts
-
-**Cost Implications:**
-- **Per run:** ~4 minutes GitHub Actions compute
-- **Frequency:** Triggered on code changes + weekly schedule
-- **Monthly estimate:** ~2-3 hours of compute (at ~10-15 triggers/week)
+**Key Bottlenecks:**
+- K8s: Kind cluster creation (~1m) + tests (~2:30) + cleanup (~0:30)
+- CF: Setup (~0:30) + tests (~3:00) + cleanup (<1m)
 
 ---
 
@@ -119,40 +74,26 @@ make test-integration-cf
 **Issue:** Kubernetes namespace stuck in "Terminating" state after A2A Gateway tests
 
 **Symptoms:**
-- Cleanup timeout gradually increased: 60s -> 120s -> 300s
+- Cleanup timeout set to 300 seconds (increased from 60s)
 - Tests occasionally fail waiting for namespace deletion
 - Resource accumulation if not properly cleaned
 
-**Related Commits:**
-- `e5646e7` - Fix A2A Gateway test cleanup to prevent namespace stuck in Terminating
-- `4b11e9a` - Increase A2A gateway test cleanup timeout (#3)
-- `0f470e6` - Increase namespace cleanup timeout to 300s
-- `e036307` - Increase namespace cleanup timeout to 120s
-- `2235129` - Fix A2A gateway integration test cleanup sequence
-
 **Current Mitigation:**
-- Cleanup timeout set to 300 seconds (5 minutes)
 - Force delete enabled as fallback
 - Proper finalizer cleanup sequence
 
-**Recommended Investigation:**
-- Profile actual cleanup times to determine root cause
-- Evaluate operator-level improvements to prevent namespace blocking
-- Consider test scope reduction to avoid cleanup delays
+**Track:** See Issue #59 for optimization plan
 
 ### E2E Test Anomalies
 
-**Issue:** CF E2E runs completing in <1 minute (runs 104, 102, 100, 99, 98, 97)
+**Issue:** CF E2E runs sometimes complete in <1 minute
 
 **Root Cause:** CF tests skip gracefully when GitHub secrets are missing
 - Tests check for `CF_API_URL`, `CF_USERNAME`, `CF_PASSWORD` secrets
 - When missing, tests skip with success status (intended behavior)
-- Mocked tests allow CI to run without real CF infrastructure
+- This is expected behavior for CI without real CF credentials
 
-**Validation:**
-- Review test code in `test/integration/cf/` for skip conditions
-- Expected behavior for CI environment without CF credentials
-- Not a bug, but should be clearly documented
+**Track:** See Issue #56 for investigation details
 
 ---
 
@@ -288,52 +229,6 @@ test/integration/cf/
 └── ...
 ```
 
----
-
-## Optimization Recommendations
-
-### Quick Wins (1-2 Days)
-
-1. **Verify test skip conditions**
-   - Validate CF tests skip gracefully when secrets missing
-   - Document expected behavior
-   - Confirm no tests are unintentionally skipped
-
-2. **Monitor namespace cleanup times**
-   - Add logging to A2A Gateway test cleanup
-   - Track actual cleanup duration vs timeout
-   - Identify if 300s timeout is necessary
-
-### Medium-term (1-2 Weeks)
-
-3. **Profile individual test cases**
-   ```bash
-   go test ./test/integration/k8s -v -cpuprofile=cpu.prof
-   go tool pprof cpu.prof
-   ```
-   - Identify slowest test cases
-   - Look for parallelization opportunities
-   - Create optimization tickets for top 5 tests
-
-4. **Optimize A2A Gateway cleanup**
-   - Investigate root cause of namespace termination delays
-   - Consider operator-level improvements
-   - Potentially reduce timeout from 300s to 60s
-
-### Long-term (1 Month+)
-
-5. **Parallelize K8s and CF E2E tests**
-   - Current: Jobs already run in parallel (good)
-   - Opportunity: Split K8s tests into focused suites
-   - Expected savings: 30-40% with better parallelization
-
-6. **Implement test execution profiling**
-   - Create dashboard for test timing trends
-   - Alert on regressions (>10% increase)
-   - Monitor P95 execution times
-
----
-
 ## Troubleshooting
 
 ### Kind Cluster Issues
@@ -376,36 +271,17 @@ docker stats  # Monitor usage
 
 ---
 
-## Performance Targets
+## Related Documentation
 
-### Execution Time Goals
+- [:octicons-book-24: **Integration Tests**](./integration-tests.md) — Integration testing guide
+- [:octicons-book-24: **Testing Overview**](./overview.md) — Testing strategy
+- [:octicons-book-24: **Running Tests Locally**](./running-locally.md) — Local test execution
+- [:octicons-book-24: **Unit Tests**](./unit-tests.md) — Unit testing best practices
 
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| K8s E2E avg | 3:58 | 3:30 | Monitor |
-| CF E2E avg | 4:10 | 3:30 | Monitor |
-| P95 combined | 4:30 | 4:00 | Monitor |
-| Total job timeout | 15m | 15m | ✓ Optimized |
-
-### Success Metrics
-
-- [x] E2E execution times documented
-- [x] Bottlenecks identified (K8s cleanup)
-- [x] Flakiness issues tracked (A2A Gateway, test anomalies)
-- [ ] 30% performance improvement (pending medium-term optimizations)
-- [ ] <1% test flakiness rate (in progress)
+**Implementation:**
+- GitHub Workflow: `.github/workflows/e2e-tests.yml`
+- Test Code: `test/integration/k8s/` and `test/integration/cf/`
 
 ---
 
-## References
-
-- **Performance Analysis:** See `performance-analysis.md` for detailed metrics
-- **Optimization Roadmap:** See `optimization-roadmap.md` for implementation plan
-- **K8s Integration Tests:** See `integration-tests.md`
-- **GitHub Workflows:** `.github/workflows/e2e-tests.yml`
-- **Test Code:** `test/integration/k8s/` and `test/integration/cf/`
-
----
-
-**Last Updated:** September 2, 2026  
-**Related Issue:** #17 - Phase 4.2: Review and Optimize Test Times
+**Last Updated:** September 6, 2026

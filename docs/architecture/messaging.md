@@ -34,8 +34,23 @@ Muto provides a message bus abstraction that enables agents to communicate relia
 
 ## MessageBus Interface
 
-All message bus implementations follow this interface:
+All message bus implementations provide the following operations:
 
+**Core Operations:**
+- **Publish** — Send a message to a topic
+- **Subscribe** — Register to receive messages from a topic (with callback handler)
+- **Unsubscribe** — Unregister from a topic
+- **HealthCheck** — Verify the message bus is operational
+- **Close** — Cleanly shut down the connection
+
+**Message Structure:**
+Each message contains:
+- **Topic** — The topic name (hierarchical, tenant-scoped)
+- **ID** — Unique message identifier (for deduplication)
+- **Timestamp** — When the message was published
+- **Tenant** — Tenant ID for isolation
+- **Headers** — Metadata key/value pairs
+- **Payload** — Message body (typically JSON-encoded)
 
 ## Topic Naming Convention
 
@@ -146,7 +161,6 @@ data:
 ### Topic Subscription
 
 Agents subscribe to topics:
-
 
 ### Advantages
 
@@ -268,7 +282,6 @@ Consumer Groups:
 
 You can implement custom message buses for specific needs:
 
-
 Examples:
 - **Google Cloud Pub/Sub**: Publish to GCP Pub/Sub topics
 - **AWS SQS/SNS**: Route messages through SQS/SNS
@@ -351,7 +364,6 @@ Kafka: ~500 bytes (persisted)
 ## Monitoring Message Bus Health
 
 Muto monitors message bus health:
-
 
 Exported metrics:
 

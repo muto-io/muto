@@ -27,7 +27,7 @@ jobs:
   k8s-e2e:
     name: Kubernetes E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -76,7 +76,7 @@ jobs:
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"
           KUBECONFIG: /tmp/kubeconfig-k8s-e2e
           MUTO_USE_EXISTING_CLUSTER: "true"
-        timeout-minutes: 30
+        timeout-minutes: 10
         continue-on-error: true
 
       - name: Upload test results
@@ -90,7 +90,7 @@ jobs:
   cf-e2e:
     name: CloudFoundry E2E Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -153,7 +153,7 @@ jobs:
           CF_E2E_USERNAME: ${{ secrets.CF_USERNAME || 'admin' }}
           CF_E2E_PASSWORD: ${{ secrets.CF_PASSWORD || 'password' }}
           KUBECONFIG: "/tmp/kind-deployment/kubeconfig"
-        timeout-minutes: 20
+        timeout-minutes: 10
         continue-on-error: true
 
       - name: Create empty test results if not present

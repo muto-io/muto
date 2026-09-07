@@ -150,7 +150,6 @@ messagebus:
     maxReconnect: 10
 ```
 
-See [Message Bus Configuration](./helm-chart.md#message-bus-configuration) for details.
 
 ### Create Tenant
 

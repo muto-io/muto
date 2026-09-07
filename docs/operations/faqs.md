@@ -409,10 +409,9 @@ Yes. Muto supports pluggable message bus implementations:
 2. **Kafka** (included, enterprise)
 3. **Custom** (implement interface)
 
-To use custom:
+To use a custom message bus, implement the message bus interface and register it with the operator. The interface requires Publish and Subscribe operations.
 
-
-See: [Message Bus Setup](../configuration/message-bus-setup.md)
+See: [Message Bus Setup](../configuration/message-bus-setup.md) for implementation details
 
 ---
 
@@ -538,7 +537,6 @@ Use labels to distinguish: `scheduler: muto` vs `scheduler: old`
 
 1. **Documentation**: Read relevant guide pages
 2. **GitHub Issues**: Report bugs or ask questions
-3. **Community**: [Slack/Discord](https://muto.io/community)
 4. **Email**: support@muto.io
 
 ### How do I report a bug?

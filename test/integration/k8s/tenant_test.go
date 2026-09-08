@@ -33,7 +33,16 @@ var _ = Describe("Tenant", func() {
 		})
 
 		AfterEach(func() {
+			// Delete the tenant and wait for it to be fully removed
 			_ = k8sClient.Delete(ctx, tenant)
+
+			// Wait for the tenant to be fully deleted before the next test
+			// This prevents the "already exists" error when BeforeEach tries to create it again
+			Eventually(func() bool {
+				t := &v1alpha1.Tenant{}
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: "integration-tenant"}, t)
+				return err != nil
+			}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 		})
 
 		It("creates the target namespace with muto.io/tenant label", func() {

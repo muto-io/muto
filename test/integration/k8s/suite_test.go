@@ -53,6 +53,16 @@ var _ = BeforeSuite(func() {
 		Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
 	}
 
+	// Opt the a2a-gateway Deployment into a 5s pod termination grace period
+	// (instead of the Kubernetes default of 30s). This test tears down a real
+	// pod on a real cluster for every spec's AfterEach, so shaving 25s off
+	// each pod's graceful shutdown meaningfully speeds up and stabilizes
+	// cleanup. See TenantReconciler.a2aGatewayTerminationGracePeriodSeconds
+	// for why this is safe only in a test context.
+	if err := os.Setenv("MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD", "true"); err != nil {
+		Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
+	}
+
 	var err error
 	var kubeconfigPath string
 

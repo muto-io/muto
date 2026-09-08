@@ -268,7 +268,7 @@ Settings -> Secrets and Variables -> Actions
 
 The workflow:
 1. Checks out latest code
-2. Sets up Go 1.21 environment
+2. Sets up Go 1.26 environment
 3. Runs K8s e2e tests (always)
 4. Runs CF e2e tests (if CF credentials available)
 5. Uploads test results as artifacts (30-day retention)

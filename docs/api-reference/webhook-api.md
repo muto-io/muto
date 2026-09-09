@@ -871,6 +871,5 @@ jq --slurpfile patch patch.json '.patch = $patch | .' input.json
 
 ---
 
-**Last Updated:** 2026-09-03  
 **Webhook API Version**: admission.k8s.io/v1  
 **JSON Patch Format**: RFC 6902

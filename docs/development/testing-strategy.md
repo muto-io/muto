@@ -473,5 +473,3 @@ go tool cover -html=coverage.out
 - [:octicons-book-24: **Debugging Guide**](./debugging.md) — Troubleshooting techniques
 
 ---
-
-**Last Updated:** 2026-09-03

@@ -673,5 +673,3 @@ spec:
 - **[Platform Design](./platform-design.md)** — How isolation is implemented per platform
 - **[Agent Lifecycle](./agent-lifecycle.md)** — State transitions with security boundaries
 - **[Messaging](./messaging.md)** — Topic-based isolation in message bus
-
-**Last Updated:** 2026-09-03

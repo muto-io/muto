@@ -652,5 +652,3 @@ spec:
 - **[Examples](./examples/)** — See real-world usage patterns
 
 ---
-
-**Last Updated:** 2026-09-03

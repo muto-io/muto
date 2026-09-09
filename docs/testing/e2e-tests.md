@@ -283,5 +283,3 @@ docker stats  # Monitor usage
 - Test Code: `test/integration/k8s/` and `test/integration/cf/`
 
 ---
-
-**Last Updated:** September 6, 2026

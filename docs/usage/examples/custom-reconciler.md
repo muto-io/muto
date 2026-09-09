@@ -575,5 +575,3 @@ WithEventFilter(predicate....)
 - **[Monitoring](../../operations/monitoring-observability.md)** (coming in Phase 8) — Monitor reconcilers
 
 ---
-
-**Last Updated:** 2026-09-03

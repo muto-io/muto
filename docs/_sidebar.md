@@ -62,6 +62,9 @@
 - [Debugging Guide](development/debugging.md)
 - [Code Style Guide](development/style.md)
 
+## Team
+- [Onboarding Guide](team/onboarding.md)
+
 ## Testing
 - [End-to-End Testing](testing/e2e-tests.md)
 - [Performance Analysis](testing/performance-analysis.md)

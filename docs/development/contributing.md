@@ -369,5 +369,3 @@ Current maintainers:
 - @muto-io/core-team
 
 ---
-
-**Last Updated:** 2026-09-03

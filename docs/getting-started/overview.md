@@ -137,5 +137,3 @@ Each tenant has complete isolation:
 4. **Architecture Overview** — Deep dive into system design (coming in Phase 2)
 
 ---
-
-**Last Updated:** 2026-09-03

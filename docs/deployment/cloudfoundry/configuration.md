@@ -550,5 +550,3 @@ cf running-security-groups
 ```
 
 ---
-
-**Last Updated:** 2026-09-03

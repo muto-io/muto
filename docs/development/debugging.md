@@ -550,5 +550,3 @@ kubectl top pod -n nats-io  # or -n kafka
 - [Code Style](./style.md) — Coding standards
 
 ---
-
-**Last Updated:** 2026-09-03

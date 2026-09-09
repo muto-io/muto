@@ -49,9 +49,6 @@ platform/k8s/reconcilers/agentjob_reconciler.go @muto-io/maintainers @muto-io/pl
 platform/k8s/reconcilers/tenant_reconciler.go @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
 platform/k8s/reconcilers/agentfleet_reconciler.go @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
 
-# CloudFoundry platform
-platform/cf/ @muto-io/maintainers @muto-io/platform-team @muto-io/cf-team
-
 # A2A Gateway integration
 platform/*/a2a*.go @muto-io/maintainers @muto-io/platform-team
 

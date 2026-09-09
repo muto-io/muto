@@ -538,5 +538,3 @@ export MUTO_MAX_CONCURRENT_JOBS=500
 - [Deployment: Production Checklist](../deployment/production-checklist.md) — Pre-launch verification
 
 ---
-
-**Last Updated:** 2026-09-03

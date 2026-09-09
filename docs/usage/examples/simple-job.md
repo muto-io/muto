@@ -352,5 +352,3 @@ For reference, complete example files are available in the Muto repository:
 - `examples/jobs/error-handling.yaml` — Error recovery patterns
 
 ---
-
-**Last Updated:** 2026-09-03

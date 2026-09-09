@@ -660,5 +660,3 @@ kubectl logs agentjob/<job-name> --all-containers=true --tail=500
 - **[Configuration](../configuration/)** — Fine-tune settings
 
 ---
-
-**Last Updated:** 2026-09-03

@@ -593,8 +593,6 @@ Muto follows semantic versioning:
 
 ---
 
-**Last Updated:** 2026-09-03
-
 **See Also:**
 - [Troubleshooting Guide](./troubleshooting.md) — Detailed solutions
 - [Monitoring](./monitoring-observability.md) — Observability setup

@@ -706,5 +706,3 @@ go test ./test/integration/k8s/... -p 1
 - [:octicons-book-24: **Development Setup**](../development/setup.md) — Environment setup
 
 ---
-
-**Last Updated:** 2026-09-06

@@ -326,5 +326,3 @@ All tests must pass before merging to main.
 - **[Running Tests Locally](./running-locally.md)** — Local testing setup
 
 ---
-
-**Last Updated:** 2026-09-06

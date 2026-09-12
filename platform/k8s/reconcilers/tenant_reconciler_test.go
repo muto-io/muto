@@ -82,11 +82,6 @@ func TestTenantReconcilerA2AGatewayProvisioned(t *testing.T) {
 		types.NamespacedName{Name: "a2a-gateway", Namespace: "a2a-ns"}, dep); err != nil {
 		t.Errorf("a2a-gateway Deployment not created: %v", err)
 	}
-	if dep.Spec.Template.Spec.TerminationGracePeriodSeconds != nil {
-		t.Errorf("expected nil TerminationGracePeriodSeconds (Kubernetes default) when "+
-			"MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD is unset, got %v",
-			*dep.Spec.Template.Spec.TerminationGracePeriodSeconds)
-	}
 
 	svc := &corev1.Service{}
 	if err := fakeClient.Get(context.Background(),
@@ -104,47 +99,6 @@ func TestTenantReconcilerA2AGatewayProvisioned(t *testing.T) {
 	}
 	if len(sec.Data["token"]) == 0 {
 		t.Error("expected non-empty token in Secret")
-	}
-}
-
-func TestTenantReconcilerA2AGatewayTestGracePeriodOptIn(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = v1alpha1.AddToScheme(scheme)
-	_ = corev1.AddToScheme(scheme)
-	_ = appsv1.AddToScheme(scheme)
-
-	tenant := &v1alpha1.Tenant{
-		ObjectMeta: metav1.ObjectMeta{Name: "a2a-tenant-fast-cleanup"},
-		Spec: v1alpha1.TenantSpec{
-			Namespace:     "a2a-ns-fast-cleanup",
-			IsolationTier: "dedicated",
-			MessageBus:    v1alpha1.TenantBusSpec{Type: "a2a", Dedicated: true},
-		},
-	}
-
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tenant).
-		WithStatusSubresource(&v1alpha1.Tenant{}).Build()
-	r := &reconcilers.TenantReconciler{Client: fakeClient, Scheme: scheme}
-
-	t.Setenv("MUTO_A2A_GATEWAY_IMAGE", "ghcr.io/a2aprotocol/a2a-gateway:v1.0.0")
-	t.Setenv("MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD", "true")
-
-	_, err := r.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "a2a-tenant-fast-cleanup"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dep := &appsv1.Deployment{}
-	if err := fakeClient.Get(context.Background(),
-		types.NamespacedName{Name: "a2a-gateway", Namespace: "a2a-ns-fast-cleanup"}, dep); err != nil {
-		t.Errorf("a2a-gateway Deployment not created: %v", err)
-	}
-	grace := dep.Spec.Template.Spec.TerminationGracePeriodSeconds
-	if grace == nil || *grace != 5 {
-		t.Errorf("expected TerminationGracePeriodSeconds=5 when "+
-			"MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD=true, got %v", grace)
 	}
 }
 

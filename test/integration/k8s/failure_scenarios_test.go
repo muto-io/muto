@@ -257,21 +257,33 @@ var _ = Describe("Failure Scenarios", func() {
 
 	Describe("Namespace Termination", func() {
 		var (
-			nsName string
-			ns     *corev1.Namespace
+			nsName     string
+			tenantName string
+			ns         *corev1.Namespace
 		)
 
 		BeforeEach(func() {
 			testCounter++
 			nsName = fmt.Sprintf("failure-terminating-%d", testCounter)
+			tenantName = fmt.Sprintf("term-tenant-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
+		})
+
+		AfterEach(func() {
+			// Tenants are cluster-scoped and outlive the namespace; delete this one
+			// so reruns on the same cluster don't collide with it.
+			_ = k8sClient.Delete(ctx, &v1alpha1.Tenant{ObjectMeta: metav1.ObjectMeta{Name: tenantName}})
+			Eventually(func() bool {
+				err := k8sClient.Get(ctx, client.ObjectKey{Name: tenantName}, &v1alpha1.Tenant{})
+				return apierrors.IsNotFound(err)
+			}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).Should(BeTrue())
 		})
 
 		It("should handle resources in terminating namespace", func() {
 			// Create tenant and job in the namespace
 			tenant := &v1alpha1.Tenant{
-				ObjectMeta: metav1.ObjectMeta{Name: "term-tenant", Namespace: nsName},
+				ObjectMeta: metav1.ObjectMeta{Name: tenantName},
 				Spec: v1alpha1.TenantSpec{
 					Namespace:     nsName,
 					IsolationTier: "shared",

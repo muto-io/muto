@@ -71,21 +71,6 @@ make test-integration-cf
 
 ## Known Flakiness Issues
 
-### A2A Gateway Namespace Cleanup (Critical)
-
-**Issue:** Kubernetes namespace stuck in "Terminating" state after A2A Gateway tests
-
-**Symptoms:**
-- Cleanup timeout set to 300 seconds (increased from 60s)
-- Tests occasionally fail waiting for namespace deletion
-- Resource accumulation if not properly cleaned
-
-**Current Mitigation:**
-- Force delete enabled as fallback
-- Proper finalizer cleanup sequence
-
-**Track:** See Issue #59 for optimization plan
-
 ### E2E Test Anomalies
 
 **Issue:** CF E2E runs sometimes complete in <1 minute

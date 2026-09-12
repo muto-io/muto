@@ -12,6 +12,7 @@ import (
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/testcontainers/testcontainers-go"
 	tck3s "github.com/testcontainers/testcontainers-go/modules/k3s"
 
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
@@ -48,19 +49,13 @@ var _ = BeforeSuite(func() {
 	// Initialize logger to suppress controller-runtime warnings
 	ctrl.SetLogger(logr.Discard())
 
-	// Set required env vars for reconcilers
-	if err := os.Setenv("MUTO_A2A_GATEWAY_IMAGE", "ghcr.io/a2aprotocol/a2a-gateway:v0.1.0"); err != nil {
-		Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
-	}
-
-	// Opt the a2a-gateway Deployment into a 5s pod termination grace period
-	// (instead of the Kubernetes default of 30s). This test tears down a real
-	// pod on a real cluster for every spec's AfterEach, so shaving 25s off
-	// each pod's graceful shutdown meaningfully speeds up and stabilizes
-	// cleanup. See TenantReconciler.a2aGatewayTerminationGracePeriodSeconds
-	// for why this is safe only in a test context.
-	if err := os.Setenv("MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD", "true"); err != nil {
-		Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
+	// The TenantReconciler requires a gateway image for A2A tenants. No test
+	// needs a working gateway, so default to a tiny, pullable stand-in that
+	// exits promptly on SIGTERM; set MUTO_A2A_GATEWAY_IMAGE to use a real one.
+	if os.Getenv("MUTO_A2A_GATEWAY_IMAGE") == "" {
+		if err := os.Setenv("MUTO_A2A_GATEWAY_IMAGE", "registry.k8s.io/pause:3.10"); err != nil {
+			Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
+		}
 	}
 
 	var err error
@@ -83,7 +78,11 @@ var _ = BeforeSuite(func() {
 	} else {
 		// Start k3s cluster via testcontainers k3s module
 		GinkgoLogr.Info("Starting k3s cluster via testcontainers")
-		k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1")
+		// Disable the bundled metrics-server: until its APIService is available
+		// (~1 min after start), discovery is incomplete and namespace deletion
+		// blocks (NamespaceDeletionDiscoveryFailure). No test uses it.
+		k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1",
+			testcontainers.WithCmdArgs("--disable=metrics-server"))
 		if err != nil {
 			Skip("Kubernetes cluster not available: failed to start k3s container: " + err.Error())
 		}

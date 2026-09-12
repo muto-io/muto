@@ -72,7 +72,6 @@ jobs:
         run: |
           make test-integration-k8s
         env:
-          MUTO_A2A_GATEWAY_IMAGE: ghcr.io/a2aprotocol/a2a-gateway:v0.1.0
           GOFLAGS: "-mod=mod"
           DOCKER_HOST: "unix:///var/run/docker.sock"
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: "/var/run/docker.sock"

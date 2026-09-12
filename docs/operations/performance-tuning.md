@@ -124,7 +124,6 @@ data:
   MUTO_RECONCILER_WORKERS: "2"
   MUTO_RECONCILER_POLL_INTERVAL_SECONDS: "5"
   MUTO_SCHEDULER_WORKERS: "1"
-  MUTO_LOG_LEVEL: "warn"
 ```
 
 **Trade-off:** Higher job scheduling latency.
@@ -408,26 +407,26 @@ echo "Throughput: $THROUGHPUT jobs/minute"
 
 ### Metrics to Monitor
 
-During load testing, monitor these metrics:
+During load testing, monitor these metrics. Muto has no job-level metrics yet ([#79](https://github.com/muto-io/muto/issues/79)), so use controller-runtime's reconcile metrics and container metrics:
 
 ```promql
-# Jobs per second
-rate(muto_jobs_total[1m])
+# AgentJob reconciliations per second
+sum(rate(controller_runtime_reconcile_total{controller="agentjob"}[1m]))
 
-# P95 job latency
-histogram_quantile(0.95, rate(muto_job_duration_seconds_bucket[1m]))
+# P95 AgentJob reconcile latency
+histogram_quantile(0.95, sum by (le) (rate(controller_runtime_reconcile_time_seconds_bucket{controller="agentjob"}[1m])))
+
+# Reconcile backlog
+sum by (controller) (workqueue_depth)
+
+# Reconciliation errors per second
+sum by (controller) (rate(controller_runtime_reconcile_errors_total[1m]))
 
 # Operator CPU usage
-container_cpu_usage_seconds_total
+rate(container_cpu_usage_seconds_total{namespace="muto-system", container="muto-operator"}[1m])
 
 # Operator memory usage
-container_memory_usage_bytes
-
-# Reconciliation error rate
-rate(muto_reconciliations_total{result="error"}[1m])
-
-# Message bus latency
-rate(muto_message_bus_latency_seconds[1m])
+container_memory_working_set_bytes{namespace="muto-system", container="muto-operator"}
 ```
 
 ### Performance Profiling

@@ -114,8 +114,7 @@ kubectl logs -n muto-system deployment/muto-operator | grep -i reconciler
 # Check for errors in reconciliation loop
 kubectl logs -n muto-system deployment/muto-operator | grep -i "error"
 
-# Increase log level to debug
-kubectl set env deployment/muto-operator -n muto-system MUTO_LOG_LEVEL=debug
+# Follow logs (verbosity is fixed; there is no debug level yet)
 kubectl logs -n muto-system deployment/muto-operator -f
 ```
 

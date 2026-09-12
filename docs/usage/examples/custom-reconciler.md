@@ -513,12 +513,11 @@ func TestJobStatusTrackerReconciler(t *testing.T) {
 
 ## Debugging Custom Reconcilers
 
-### Enable Debug Logging
+### Watch Reconciler Logs
+
+The operator's log verbosity is fixed, so log at `V(0)` (plain `log.Info`) while debugging; `log.V(1)` messages are discarded.
 
 ```bash
-# Run with debug logging
-MUTO_LOG_LEVEL=debug ./bin/muto-operator
-
 # Watch reconciliation logs
 kubectl logs -f deployment/muto-operator -n muto-system | grep "JobStatusTracker"
 ```
@@ -533,8 +532,9 @@ kubectl get jobmonitoringpolicies
 kubectl describe agentjob test-job
 
 # View reconciler metrics
-kubectl port-forward -n muto-system svc/muto-operator 8080:8080
-curl http://localhost:8080/metrics | grep custom_reconciler
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
+# Metrics are labelled with the controller name: the lowercased kind passed to For(), or the name set with Named()
+curl -s http://localhost:8080/metrics | grep 'controller="<controller-name>"'
 ```
 
 ### Common Issues

@@ -638,11 +638,10 @@ kubectl delete secret muto-webhook-tls -n muto-system
 
 ### Monitoring for Security Issues
 
-Monitor for suspicious activity:
+Muto doesn't export security-specific metrics (authentication failures, RBAC denials); use the Kubernetes API server audit log for those. The operator's own API calls are counted in `rest_client_requests_total`, so RBAC problems of the operator's service account show up as `403` responses:
 
 ```yaml
-# Alert on failed authentication attempts
-apiVersion: v1
+apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: muto-security-alerts
@@ -650,20 +649,11 @@ spec:
   groups:
   - name: muto.security
     rules:
-    - alert: AuthenticationFailureRate
-      expr: rate(muto_auth_failures_total[5m]) > 0.1
+    - alert: MutoOperatorForbiddenRequests
+      expr: sum(rate(rest_client_requests_total{code="403"}[5m])) > 0
+      for: 10m
       annotations:
-        summary: "High authentication failure rate"
-    
-    - alert: UnauthorizedAccess
-      expr: increase(muto_rbac_denials_total[5m]) > 10
-      annotations:
-        summary: "Unusual RBAC denials detected"
-    
-    - alert: ServiceAccountTokenLeak
-      expr: muto_service_account_token_created > 1
-      annotations:
-        summary: "Suspicious service account token creation"
+        summary: "Muto operator API requests are denied by RBAC"
 ```
 
 ---

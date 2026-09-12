@@ -78,27 +78,13 @@ Running reconciliation twice with the same inputs produces the same result. If r
 If reconciliation fails, it's automatically retried with exponential backoff. For example, if the API server is temporarily unavailable, reconciliation returns "requeue after 5 seconds". On the next attempt, the API server is back and the job creation succeeds.
 ### Observable
 
-Each reconciliation loop iteration is logged:
+Reconciliations are logged as plain-text key/value lines that carry controller-runtime's context (`controller`, `namespace`, `name`, `reconcileID`), for example:
 
-```json
-{
-  "timestamp": "2026-09-03T10:30:05Z",
-  "level": "info",
-  "component": "agentjob-reconciler",
-  "action": "reconcile_start",
-  "resource": "default/data-pipeline",
-  "state": "Pending"
-}
-{
-  "timestamp": "2026-09-03T10:30:05.523Z",
-  "level": "info",
-  "component": "agentjob-reconciler",
-  "action": "reconcile_success",
-  "resource": "default/data-pipeline",
-  "new_state": "Scheduled",
-  "duration_ms": 523
-}
 ```
+2026/09/12 09:46:39 "level"=0 "msg"="adding tenant finalizer" "controller"="tenant" "controllerGroup"="muto.io" "controllerKind"="Tenant" "Tenant"={"name"="demo-tenant"} "namespace"="" "name"="demo-tenant" "reconcileID"="c0c3b48e-78e4-42f5-86ae-334acbd8aa8f" "tenant"="demo-tenant" "finalizer"="muto.io/tenant-cleanup"
+```
+
+Reconcile counts, errors and durations are exported as `controller_runtime_reconcile_*` metrics; see [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ## Built-in Reconcilers
 

@@ -515,5 +515,3 @@ cf delete-org muto-platform
 - **[Configuration Guide](../../configuration/)** — Environment variables and tuning
 
 ---
-
-**Last Updated:** 2026-09-03

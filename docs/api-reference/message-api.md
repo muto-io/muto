@@ -561,6 +561,5 @@ If subscription encounters errors, implement reconnection logic:
 
 ---
 
-**Last Updated:** 2026-09-03  
 **API Version**: v1  
 **Message Schema Version**: 1.0

@@ -732,5 +732,3 @@ kubectl top pods -l job=workflow
 - **[Configuration](../configuration/multi-tenant-setup.md)** — Multi-tenant orchestration
 
 ---
-
-**Last Updated:** 2026-09-03

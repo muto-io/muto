@@ -754,5 +754,3 @@ kafka-consumer-groups.sh --bootstrap-server kafka:9092 --group <group> --describ
 - [Architecture: Security Model](../architecture/security-model.md) — How isolation works
 
 ---
-
-**Last Updated:** 2026-09-03

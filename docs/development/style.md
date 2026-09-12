@@ -583,5 +583,3 @@ go test ./...
 - [Google Go Style Guide](https://google.github.io/styleguide/go/)
 
 ---
-
-**Last Updated:** 2026-09-03

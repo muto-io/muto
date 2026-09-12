@@ -339,5 +339,3 @@ After reconciliation retries and automatic recovery:
 - **[Agent Lifecycle](./agent-lifecycle.md)** — State transitions that reconcilers drive
 - **[Platform Design](./platform-design.md)** — Adapters called by reconcilers
 - **[Concepts (Control Loop)](../getting-started/concepts.md#control-loop)** — Return to concepts
-
-**Last Updated:** 2026-09-03

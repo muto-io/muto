@@ -424,5 +424,3 @@ Agents should handle SIGTERM:
 - **[Reconcilers](./reconcilers.md)** — How reconciliation drives job lifecycle
 - **[Platform Design](./platform-design.md)** — Platform-specific implementations
 - **[Concepts (Job States)](../getting-started/concepts.md#job-states)** — Return to concepts
-
-**Last Updated:** 2026-09-03

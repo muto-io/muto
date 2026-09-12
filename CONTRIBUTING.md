@@ -51,57 +51,16 @@ See [test/integration/README.md](test/integration/README.md) for comprehensive t
 - Test debugging and troubleshooting
 - Performance baselines and timeout configuration
 
-## Review SLAs
+## Review Process & Team Structure
 
-We maintain Service Level Agreements (SLAs) for code review to ensure timely feedback and maintain project momentum. These SLAs apply to all pull requests from external contributors and internal team members.
+For detailed information about:
+- **Review SLAs and expectations**: See [Team Onboarding Guide - Review Process](docs/team/onboarding.md#review-process)
+- **Team structure and responsibilities**: See [Team Onboarding Guide - Team Structure](docs/team/onboarding.md#team-structure-overview)
+- **Code ownership and CODEOWNERS**: See [Team Onboarding Guide - Code Ownership](docs/team/onboarding.md#code-ownership--codeowners)
+- **Dependabot workflow**: See [Team Onboarding Guide - Understanding Dependabot](docs/team/onboarding.md#understanding-dependabot)
+- **Escalation procedures**: See [Team Onboarding Guide - Escalation Path](docs/team/onboarding.md#escalation-path)
 
-### PR Review Turnaround
-
-- **First Response**: Within 2 business days
-  - A review comment, question, or acknowledgment that indicates active review has begun
-- **Final Decision**: Within 5 business days
-  - Approval, request for changes, or clear feedback on next steps
-
-**Note:** Business days exclude weekends and recognized holidays. For distributed teams across timezones, we aim to have at least one reviewer available during working hours.
-
-### Dependabot PRs
-
-Dependabot pull requests follow an expedited, automated SLA to keep dependencies current and secure:
-
-- **Patch Updates** (e.g., 1.2.3 -> 1.2.4):
-  - Automatically approved and merged if all checks pass
-  - No manual review required
-  - Merged within minutes of tests passing
-  - Commit squashed for clean history
-
-- **Minor Updates** (e.g., 1.2.3 -> 1.3.0):
-  - Automatically approved and merged if all checks pass
-  - No manual review required
-  - Merged within minutes of tests passing
-
-- **Major Version Updates** (e.g., 1.2.3 -> 2.0.0):
-  - Flagged for manual review
-  - Require explicit approval within 3 business days
-  - Reviewer checks for breaking changes and compatibility
-
-- **Security Updates**:
-  - Treated as high priority regardless of version bump
-  - Auto-merged if patch or minor; manual review for major versions
-  - Target approval within 1 business day for major security patches
-
-### Escalation Path
-
-If a pull request is not reviewed within the SLA window:
-
-1. **After 5 business days without review**: PR is automatically labeled `sla-warning`
-2. **After 7 business days without review**: Automated reminder is posted to the PR and the `@muto-io/maintainers` group is mentioned
-3. **If still blocked after 9 business days**: Issue is escalated to the project lead for manual intervention and discussed in the next team standup
-
-### Team Availability Guidelines
-
-To maintain responsive review coverage, we aim for:
-
-- **Geographic Coverage**: At least 1 active reviewers available during each 8-hour window across major timezones
+**Quick reference**: Pull requests are reviewed by code owners from our team structure. All required reviewers must approve before merge. Expected response time is within 4 hours during business hours, or next business day outside business hours.
 
 ## Pull Request Guidelines
 
@@ -276,135 +235,21 @@ helm lint deploy/helm/muto
 
 ## Dependabot Automation
 
-Muto uses GitHub Dependabot to keep dependencies current and secure with automated pull requests and intelligent workflows.
+Muto uses GitHub Dependabot to keep dependencies current and secure. See [Team Onboarding Guide - Understanding Dependabot](docs/team/onboarding.md#understanding-dependabot) for:
 
-### Automated Dependency Updates
+- How Dependabot creates and manages pull requests
+- Automated SLA for patch and minor updates
+- Manual review process for major version updates
+- Security update handling and prioritization
+- Troubleshooting common Dependabot scenarios
 
-Dependabot creates pull requests for:
-
-- **Go module updates** — Twice weekly (Monday and Thursday)
-- **GitHub Actions updates** — Weekly
-- **Docker image updates** — As available
-
-### Dependabot PR Workflow
-
-All Dependabot PRs follow an automated SLA for fast, secure merges:
-
-#### Patch Updates (e.g., 1.2.3 → 1.2.4)
-
-- Automatically approved and merged if all checks pass
-- Merged within minutes of CI passing
-- Commits squashed for clean history
-- Entirely automated (no manual review required)
-
-#### Minor Updates (e.g., 1.2.3 → 1.3.0)
-
-- Automatically approved and merged if all checks pass
-- Merged within minutes of CI passing
-- Entirely automated (no manual review required)
-
-#### Major Version Updates (e.g., 1.2.3 → 2.0.0)
-
-- Flagged for manual review
-- Requires explicit approval within 3 business days
-- Reviewers check for breaking changes and compatibility issues
-- Requires explicit approval before merge
-
-#### Security Updates
-
-- Treated as high priority regardless of version bump
-- Auto-merged if patch or minor version
-- Manual review required for major security versions
-- Target approval within 1 business day for critical security patches
-
-### Automation Configuration
-
-**File:** `.github/workflows/dependabot-auto-merge.yaml`
-
-The automation:
-1. Monitors all Dependabot pull requests
-2. Approves patch and minor updates automatically
-3. Allows major updates to be reviewed manually
-4. Merges approved PRs when all checks pass
-5. Flags security updates for priority review
-
-### SLA Escalation
-
-If any pull request is not reviewed within the SLA window:
-
-1. **After 5 business days**: Automatically labeled `sla-warning`
-2. **After 7 business days**: Automated reminder posted to PR and `@muto-io/maintainers` mentioned
-3. **After 9 business days**: Escalated to project lead for manual intervention
+**Configuration file:** `.github/dependabot.yml`
 
 ## Team Structure & Code Ownership
 
-Muto organizes responsibilities by component and platform using GitHub's CODEOWNERS mechanism.
+See [Team Onboarding Guide - Team Structure Overview](docs/team/onboarding.md#team-structure-overview) for detailed team organization, responsibilities, and code ownership information.
 
-### Team Organization
-
-**Maintainers** (`@muto-io/maintainers`)
-- Final approval on all code changes
-- Release management and versioning
-- Cross-component architecture decisions
-
-**Platform Team** (`@muto-io/platform-team`)
-- Platform adapters architecture
-- Multi-platform consistency
-- Platform-independent abstractions
-
-**Kubernetes Team** (`@muto-io/k8s-team`)
-- Kubernetes-specific implementation
-- K8s integration tests
-- Kubernetes operator development
-
-**Cloud Foundry Team** (`@muto-io/cf-team`)
-- Cloud Foundry platform adapter
-- CF integration tests
-- CF-specific features and optimizations
-
-**Core Team** (`@muto-io/core-team`)
-- Agent runtime and execution
-- Message bus integration
-- Core business logic
-
-**QA Team** (`@muto-io/qa-team`)
-- Test infrastructure development
-- Integration test coverage
-- Test automation and frameworks
-
-**DevOps Team** (`@muto-io/devops-team`)
-- CI/CD pipeline management
-- Deployment automation
-- Infrastructure and Helm charts
-
-### Code Ownership Map
-
-```
-.
-├── core/                      → @core-team @maintainers
-├── platform/                  → @platform-team @maintainers
-│   ├── k8s/                   → @k8s-team @platform-team @maintainers
-│   └── cf/                    → @cf-team @platform-team @maintainers
-├── test/                      → @qa-team @maintainers
-│   ├── integration/k8s/       → @qa-team @k8s-team @maintainers
-│   └── integration/cf/        → @qa-team @cf-team @maintainers
-├── .github/                   → @devops-team @maintainers
-├── .github/workflows/         → @devops-team @maintainers
-├── .github/dependabot.yml     → @devops-team @maintainers
-├── Makefile                   → @devops-team @maintainers
-├── deploy/                    → @devops-team @maintainers
-└── deploy/helm/               → @devops-team @maintainers
-```
-
-### Review Assignment
-
-- **Platform changes**: Multiple owners must approve
-- **Core logic changes**: Core team + maintainers approval required
-- **Test infrastructure**: QA team review recommended
-- **Deployment/CI**: DevOps team review recommended
-- **Cross-component changes**: All affected teams notified via CODEOWNERS
-
-See [.github/CODEOWNERS](.github/CODEOWNERS) for the authoritative ownership configuration.
+The authoritative code ownership configuration is at [.github/CODEOWNERS](.github/CODEOWNERS).
 
 ## Testing Best Practices
 

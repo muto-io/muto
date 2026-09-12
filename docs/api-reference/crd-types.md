@@ -573,5 +573,4 @@ Current version: **v1alpha1**
 
 ---
 
-**Last Updated:** 2026-09-03  
 **API Version:** v1alpha1

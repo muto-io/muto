@@ -391,5 +391,3 @@ muto_message_bus_latency_ms{} 2.5
 - **[Security Model](./security-model.md)** — How multi-tenancy is enforced on message topics
 - **[Platform Design](./platform-design.md)** — How agents are deployed
 - **[Concepts (Message Bus)](../getting-started/concepts.md#message-bus)** — Return to concepts
-
-**Last Updated:** 2026-09-03

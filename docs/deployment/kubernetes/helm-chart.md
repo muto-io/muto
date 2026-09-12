@@ -538,5 +538,3 @@ helm show values muto/muto-operator
 Or check the chart's `values.yaml` in the [Muto GitHub repository](https://github.com/muto-io/helm-charts).
 
 ---
-
-**Last Updated:** 2026-09-03

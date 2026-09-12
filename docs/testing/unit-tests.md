@@ -514,5 +514,3 @@ If you're mocking more than 2 dependencies, it's a sign the unit is too coupled:
 - [:octicons-book-24: **Contributing Guide**](../development/contributing.md) — Contribution workflow
 
 ---
-
-**Last Updated:** 2026-09-06

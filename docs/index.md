@@ -154,7 +154,19 @@ Develop, test, and contribute to Muto. Includes setup, testing strategy, debuggi
 
 ---
 
-### 8. Operations
+### 8. Team
+
+Resources for team members joining the Muto project. Includes onboarding guides and team documentation.
+
+| File | Purpose | Audience |
+|------|---------|----------|
+| [Onboarding Guide](team/onboarding.md) | Comprehensive guide for new team members | New team members |
+
+**Next steps:** If you're new to the team, start here to get up to speed with development workflows, tools, and best practices.
+
+---
+
+### 9. Operations
 
 Run Muto in production. Includes monitoring, troubleshooting, performance tuning, backup/recovery, and FAQs.
 
@@ -170,7 +182,7 @@ Run Muto in production. Includes monitoring, troubleshooting, performance tuning
 
 ---
 
-### Bonus: Testing
+### 10. Testing
 
 Testing infrastructure and analysis. Part of the development workflow.
 
@@ -181,25 +193,6 @@ Testing infrastructure and analysis. Part of the development workflow.
 | [Optimization Roadmap](testing/optimization-roadmap.md) | Future testing improvements and roadmap | Contributors |
 
 **Next steps:** See [Development/Setup](development/setup.md) for test environment setup, then review the [Optimization Roadmap](testing/optimization-roadmap.md).
-
----
-
-## Documentation at a Glance
-
-| Section | Files | Lines | Purpose | Start Here |
-|---------|-------|-------|---------|-----------|
-| **Getting Started** | 5 | 1,068 | Learn Muto basics | [Overview](getting-started/overview.md) |
-| **Architecture** | 5 | 2,689 | Understand the design | [Platform Design](architecture/platform-design.md) |
-| **Deployment** | 9 | 506 | Deploy to production | [K8s](deployment/kubernetes/install.md) / [CF](deployment/cloudfoundry/install.md) |
-| **Configuration** | 5 | 3,726 | Configure your setup | [Environment Variables](configuration/environment-variables.md) |
-| **Usage** | 6 | 2,123 | Use Muto | [Best Practices](usage/best-practices.md) |
-| **API Reference** | 4 | 2,932 | API details | [CRD Types](api-reference/crd-types.md) |
-| **Development** | 5 | 2,402 | Develop & contribute | [Setup](development/setup.md) |
-| **Operations** | 5 | 2,941 | Run in production | [Monitoring](operations/monitoring-observability.md) |
-| **Testing** | 3 | 787 | Test & validate | [Performance Analysis](testing/performance-analysis.md) |
-| **TOTAL** | **47** | **19,174** | Complete Muto docs | — |
-
----
 
 ## Navigation by Audience
 
@@ -270,6 +263,17 @@ Read these to understand Muto's design and capabilities:
 5. [Performance Analysis](testing/performance-analysis.md) (scalability)
 
 **Typical path:** Getting Started -> Architecture -> Operations
+
+---
+
+### I'm a New Team Member — Joining the Muto Team
+Start here to get up to speed with the team and project:
+1. [Team Onboarding Guide](team/onboarding.md) (development setup, workflows, standards)
+2. [Development Setup](development/setup.md) (prepare your environment)
+3. [Contributing Guidelines](development/contributing.md) (how to contribute)
+4. [Testing Strategy](development/testing-strategy.md) (our testing approach)
+
+**Typical path:** Team Onboarding -> Development Setup -> Contributing -> (Architecture/Usage as needed)
 
 ---
 
@@ -348,9 +352,7 @@ Muto is licensed under the **Apache License 2.0**. See [LICENSE](https://github.
 
 ---
 
-**Documentation Version:** 1.0.0  
-**Last Updated:** 2026-09-03  
-**Generated with:** Muto Documentation Hub Generator Phase 9
+**Documentation Version:** 1.0.0
 
 ---
 
@@ -365,8 +367,9 @@ Muto is licensed under the **Apache License 2.0**. See [LICENSE](https://github.
    - [Usage](#5-usage)
    - [API Reference](#6-api-reference)
    - [Development](#7-development)
-   - [Operations](#8-operations)
-   - [Testing](#bonus-testing)
+   - [Team](#8-team)
+   - [Operations](#9-operations)
+   - [Testing](#10-testing)
 3. [At a Glance](#documentation-at-a-glance)
 4. [Navigation by Audience](#navigation-by-audience)
 5. [Quick Reference](#quick-reference)

@@ -952,5 +952,3 @@ export MUTO_TRACING_ENABLED=true
 - [Architecture Overview](../architecture/overview.md) — How configuration is used
 
 ---
-
-**Last Updated:** 2026-09-03

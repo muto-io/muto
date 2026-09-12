@@ -638,5 +638,3 @@ kubectl get agentjob data-pipeline-daily -o json | \
 - **[Custom Reconciler Example](./custom-reconciler.md)** — Write custom orchestration logic
 
 ---
-
-**Last Updated:** 2026-09-03

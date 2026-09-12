@@ -706,5 +706,3 @@ kafka-topics.sh --delete --topic old-topic --bootstrap-server kafka:9092
 - [Multi-Tenant Setup](./multi-tenant-setup.md) — Tenant-scoped topics
 
 ---
-
-**Last Updated:** 2026-09-03

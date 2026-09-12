@@ -321,5 +321,3 @@ kubectl logs -n muto-system deployment/muto-operator | grep -i "pending\|schedul
 - **[Configuration Guide](../../configuration/)** — Environment variables and tuning
 
 ---
-
-**Last Updated:** 2026-09-03

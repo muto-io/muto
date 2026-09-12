@@ -711,6 +711,5 @@ Breaking changes will follow semantic versioning:
 
 ---
 
-**Last Updated:** 2026-09-03  
 **Tool Version**: v1  
 **MCP Protocol Version**: 1.0+

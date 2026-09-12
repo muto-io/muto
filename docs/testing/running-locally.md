@@ -556,5 +556,3 @@ make help            # Show all targets
 - [:octicons-book-24: **Contributing Guide**](../development/contributing.md) — Contribution workflow
 
 ---
-
-**Last Updated:** 2026-09-06

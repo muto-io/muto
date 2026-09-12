@@ -422,5 +422,3 @@ The core scheduler, reconcilers, and message bus don't change — they work with
 - **[Agent Lifecycle](./agent-lifecycle.md)** — Job states and transitions
 - **[Reconcilers](./reconcilers.md)** — How adapters are used in reconciliation loops
 - **[Concepts (Platform)](../getting-started/concepts.md#platform)** — Return to core concepts
-
-**Last Updated:** 2026-09-03

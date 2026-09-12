@@ -756,5 +756,3 @@ openssl s_client \
 - [Kubernetes Secrets Documentation](https://kubernetes.io/docs/concepts/configuration/secret/) — Official K8s secrets guide
 
 ---
-
-**Last Updated:** 2026-09-03

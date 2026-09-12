@@ -56,12 +56,12 @@ Each tenant has complete isolation:
 - Network policies and RBAC boundaries
 - No cross-tenant data leakage
 
-### Observable by Default
+### Observable
 
-- Structured JSON logging for all operations
-- Prometheus metrics for job status, throughput, latency
-- Distributed tracing support (OpenTelemetry)
-- Built-in dashboards and alerting patterns
+- Kubernetes liveness and readiness probes (`/healthz`, `/readyz`)
+- Prometheus metrics for reconcile rate, errors, latency and work queues (controller-runtime built-in)
+- Key/value operator logs on stderr
+- Planned: Muto-specific job metrics, JSON logs and OpenTelemetry tracing ([#79](https://github.com/muto-io/muto/issues/79))
 
 ### Extensible Architecture
 

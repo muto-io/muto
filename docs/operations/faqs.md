@@ -172,20 +172,13 @@ See: [Multi-Tenant Setup](../configuration/multi-tenant-setup.md)
 
 ### How do I change configuration without restarting?
 
-Some parameters are hot-reloadable:
+You can't. The operator is configured through environment variables, which can't change inside a running container. `kubectl set env` updates the Deployment, which rolls out a new operator pod:
 
-**Hot-reloadable:**
 ```bash
-# Change log level without restart
-kubectl set env deployment/muto-operator MUTO_LOG_LEVEL=debug
+kubectl set env deployment/muto-operator -n muto-system MUTO_NAMESPACE=muto-agents
 ```
 
-**Requires restart:**
-```bash
-# Platform, message bus type
-kubectl set env deployment/muto-operator MUTO_PLATFORM=cloudfoundry
-kubectl rollout restart deployment/muto-operator -n muto-system
-```
+The log level isn't configurable yet (see [Monitoring and Observability](./monitoring-observability.md#logging)).
 
 Check [Configuration Reference](../configuration/environment-variables.md) for each parameter.
 
@@ -195,22 +188,21 @@ Check [Configuration Reference](../configuration/environment-variables.md) for e
 
 ### How do I monitor Muto?
 
-Muto exports observability data via three channels:
+The operator currently provides:
 
-1. **Metrics**: Prometheus-compatible at `/metrics`
-2. **Logs**: Structured JSON to stdout
-3. **Traces**: OpenTelemetry exports to OTLP endpoint
+1. **Health probes**: `/healthz` and `/readyz` on port `8081`
+2. **Metrics**: controller-runtime's built-in Prometheus metrics (reconcile rate, errors, latency, work queues) at `:8080/metrics`
+3. **Logs**: plain-text key/value lines on stderr
+
+Custom `muto_*` metrics, JSON logs and OpenTelemetry tracing aren't implemented yet ([#79](https://github.com/muto-io/muto/issues/79)).
 
 ```bash
 # View metrics
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
 curl http://localhost:8080/metrics
 
 # View logs
 kubectl logs -n muto-system deployment/muto-operator
-
-# Configure tracing
-export MUTO_OTEL_ENABLED=true
-export MUTO_OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
 ```
 
 See: [Monitoring and Observability](./monitoring-observability.md)

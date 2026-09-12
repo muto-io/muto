@@ -1,99 +1,206 @@
 # Monitoring and Observability
 
-Understand how to monitor Muto in production, including logs, metrics, tracing, dashboards, and alerting strategies.
+How to monitor the Muto operator as it works today: health probes, Prometheus metrics, and logs.
+
+!!! note "Current state"
+    Muto currently ships only the observability that controller-runtime provides out of the box. Custom `muto_*` metrics, JSON logs with configurable levels, and OpenTelemetry tracing are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
 
 ## Overview
 
-Muto is designed to be observable by default. The operator exports structured logs, Prometheus metrics, and OpenTelemetry traces that enable comprehensive monitoring of agent job execution and system health.
+| Signal | Status | Where |
+|---|---|---|
+| Health probes | ✅ Available | `:8081/healthz`, `:8081/readyz` |
+| Prometheus metrics | ⚠️ controller-runtime built-in metrics only | `:8080/metrics` |
+| Logs | ⚠️ Plain-text key/value lines, fixed level and format | stderr (container logs) |
+| Custom `muto_*` metrics | ❌ Planned ([#79]) | — |
+| Distributed tracing (OpenTelemetry) | ❌ Planned ([#79]) | — |
 
-**Three pillars of observability:**
-- **Logs**: Structured JSON events for debugging and audit trails
-- **Metrics**: Prometheus metrics for monitoring job health, throughput, and latency
-- **Traces**: Distributed tracing via OpenTelemetry for request flow visualization
+This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health, metrics or tracing endpoints.
 
-## Structured Logging
+Both ports are hard-coded in `cmd/muto-operator/main.go`. No flag or environment variable changes them.
 
-### Log Configuration
+The commands on this page assume the chart was installed with `helm install muto ...`, which creates the Deployment `muto` in `muto-system`. Adjust the name if you used a different release name.
 
-Muto outputs JSON-structured logs by default, configurable via environment variables:
+## Health Checks
 
-**MUTO_LOG_LEVEL** (`debug`, `info`, `warn`, `error`)
+The operator serves its probe endpoints on port **8081**:
+
+| Endpoint | Purpose | Healthy response |
+|---|---|---|
+| `/healthz` | Liveness | `200 ok` |
+| `/readyz` | Readiness | `200 ok` |
+
+Both endpoints use controller-runtime's `healthz.Ping` check. They confirm that the operator process is running and serving HTTP. They do **not** check API server connectivity or informer cache sync.
+
+The Helm chart configures the probes on the named container port `health` (`healthProbe.port`, default `8081`):
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: health
+  initialDelaySeconds: 15
+  periodSeconds: 20
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: health
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+The operator image is distroless (no shell, no `curl`), so check the endpoints with a port-forward:
+
 ```bash
-# Development (verbose)
-export MUTO_LOG_LEVEL=debug
-
-# Production (important events only)
-export MUTO_LOG_LEVEL=info
+kubectl port-forward -n muto-system deployment/muto 8081:8081 &
+curl http://localhost:8081/healthz   # ok
+curl http://localhost:8081/readyz    # ok
 ```
 
-**MUTO_LOG_FORMAT** (`json`, `text`)
+!!! warning "Operator builds before the fix for #80"
+    Earlier builds didn't register any health checks, so `/healthz` and `/readyz` returned `404`. The operator pod never became Ready, and the liveness probe restarted it about every minute. See [#80](https://github.com/muto-io/muto/issues/80).
+
+### CloudFoundry
+
+`deploy/cf/manifest.yml` runs the operator with `no-route: true` and `health-check-type: process`, so CF only checks that the process is alive. Don't switch to an `http` health check. CF sends HTTP health checks to the app port (`8080` by default), which is the operator's metrics server, and `/healthz` returns `404` there.
+
+## Prometheus Metrics
+
+The operator serves Prometheus metrics at `:8080/metrics` over plain HTTP without authentication. These are the metrics that controller-runtime and client-go register by default. Muto doesn't register any metrics of its own yet.
+
+### Available Metrics
+
+**Reconciliation.** The `controller` label is `tenant`, `agentjob` or `agentfleet`.
+
+| Metric | Type | Description |
+|---|---|---|
+| `controller_runtime_reconcile_total` | counter | Reconciliations by `controller` and `result` (`success`, `error`, `requeue`, `requeue_after`) |
+| `controller_runtime_reconcile_errors_total` | counter | Reconciliations that returned an error |
+| `controller_runtime_terminal_reconcile_errors_total` | counter | Reconciliations that returned a terminal (not retried) error |
+| `controller_runtime_reconcile_panics_total` | counter | Panics recovered in a reconciler |
+| `controller_runtime_reconcile_timeouts_total` | counter | Reconciliations that hit the reconcile timeout |
+| `controller_runtime_reconcile_time_seconds` | histogram | Reconcile duration |
+| `controller_runtime_active_workers` | gauge | Workers currently reconciling |
+| `controller_runtime_max_concurrent_reconciles` | gauge | Maximum number of concurrent reconciles per controller |
+
+**Work queues.** Labels are `controller` and `name`; `workqueue_depth` also has `priority`.
+
+| Metric | Type | Description |
+|---|---|---|
+| `workqueue_depth` | gauge | Objects waiting to be reconciled |
+| `workqueue_adds_total` | counter | Objects added to the queue |
+| `workqueue_retries_total` | counter | Objects re-queued after an error or requeue |
+| `workqueue_queue_duration_seconds` | histogram | Time an object waits in the queue before it is reconciled |
+| `workqueue_work_duration_seconds` | histogram | Time spent reconciling an object |
+| `workqueue_unfinished_work_seconds` | gauge | Seconds of reconcile work in progress |
+| `workqueue_longest_running_processor_seconds` | gauge | Duration of the longest-running reconcile |
+
+**Kubernetes API client**
+
+| Metric | Type | Description |
+|---|---|---|
+| `rest_client_requests_total` | counter | Requests to the API server by `code`, `method` and `host` |
+
+The endpoint also exposes Go runtime (`go_*`) and process (`process_*`) metrics. The `certwatcher_*` and `controller_runtime_*webhook_panics_total` counters stay at `0` because the operator serves no webhooks.
+
+Labeled histograms and gauges appear only after their first observation. For example, `controller_runtime_reconcile_time_seconds` and `workqueue_depth` show up once the operator has reconciled an object.
+
+Job-level metrics aren't available yet. These include job counts by result, job duration, running agents, per-tenant labels, and message bus metrics; they're planned in [#79]. Until then, the `agentjob` reconcile metrics are the closest signal.
+
+### Scraping
+
+When `metrics.enabled` is `true` (the default), the Helm chart adds these annotations to the operator pod:
+
+```yaml
+prometheus.io/scrape: "true"
+prometheus.io/port: "8080"
+prometheus.io/path: "/metrics"
+```
+
+Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` only removes the annotations; the operator still serves `:8080/metrics`.
+
+The chart doesn't create a Service, so a `ServiceMonitor` has nothing to select. With the Prometheus Operator, use a `PodMonitor` on the operator pod's `metrics` port:
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: muto-operator
+  namespace: muto-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: muto
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+```
+
+Depending on your Prometheus Operator configuration, the `PodMonitor` may need a label that your `Prometheus` resource selects, for example `release: kube-prometheus-stack`.
+
+Quick check:
+
 ```bash
-# Structured JSON (production)
-export MUTO_LOG_FORMAT=json
-
-# Human-readable (development)
-export MUTO_LOG_FORMAT=text
+kubectl port-forward -n muto-system deployment/muto 8080:8080 &
+curl -s http://localhost:8080/metrics | grep '^controller_runtime_reconcile_total'
 ```
 
-### Standard Log Events
+Excerpt after creating a Tenant and an AgentJob:
 
-Muto emits structured events for major lifecycle phases:
-
-#### Operator Startup
-```json
-{
-  "timestamp": "2026-09-03T10:30:45.123Z",
-  "level": "info",
-  "component": "operator",
-  "event": "started",
-  "version": "0.1.0",
-  "platform": "kubernetes",
-  "reconcilers": ["TenantReconciler", "AgentJobReconciler"]
-}
+```
+controller_runtime_reconcile_total{controller="agentjob",result="requeue_after"} 6
+controller_runtime_reconcile_total{controller="agentjob",result="success"} 1
+controller_runtime_reconcile_total{controller="tenant",result="success"} 2
 ```
 
-#### Job Scheduling
-```json
-{
-  "timestamp": "2026-09-03T10:35:20.456Z",
-  "level": "info",
-  "component": "scheduler",
-  "event": "job_scheduled",
-  "jobID": "job-abc123",
-  "tenantID": "tenant-a",
-  "phase": "Scheduled",
-  "agents": ["agent-a", "agent-b"]
-}
+### PromQL Queries
+
+**Reconcile rate per controller:**
+```promql
+sum by (controller) (rate(controller_runtime_reconcile_total[5m]))
 ```
 
-#### Job Completion
-```json
-{
-  "timestamp": "2026-09-03T10:40:15.789Z",
-  "level": "info",
-  "component": "reconciler",
-  "event": "job_completed",
-  "jobID": "job-abc123",
-  "tenantID": "tenant-a",
-  "status": "Completed",
-  "duration_seconds": 295,
-  "agents_completed": 2
-}
+**Reconcile error ratio:**
+```promql
+sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))
+/
+sum by (controller) (rate(controller_runtime_reconcile_total[5m]))
 ```
 
-#### Reconciliation Errors
-```json
-{
-  "timestamp": "2026-09-03T10:45:30.111Z",
-  "level": "error",
-  "component": "reconciler",
-  "event": "reconciliation_failed",
-  "jobID": "job-xyz789",
-  "error": "failed to create pod: insufficient resources",
-  "retry_attempt": 3,
-  "next_retry_seconds": 32
-}
+**P99 reconcile duration:**
+```promql
+histogram_quantile(0.99, sum by (controller, le) (rate(controller_runtime_reconcile_time_seconds_bucket[5m])))
 ```
+
+**Reconcile backlog:**
+```promql
+sum by (controller) (workqueue_depth)
+```
+
+**P95 time objects wait in the queue:**
+```promql
+histogram_quantile(0.95, sum by (controller, le) (rate(workqueue_queue_duration_seconds_bucket[5m])))
+```
+
+**Failed API server requests by status code:**
+```promql
+sum by (code) (rate(rest_client_requests_total{code!~"2.."}[5m]))
+```
+
+## Logging
+
+Both binaries log through go-logr with the [`stdr`](https://github.com/go-logr/stdr) backend, which writes to **stderr** using Go's standard `log` package. Each line has a timestamp, the logger name, and key/value pairs:
+
+```
+2026/09/12 09:43:29 muto-operator: "level"=0 "msg"="starting muto-operator" "platform"="k8s"
+2026/09/12 09:46:39 "level"=0 "msg"="adding tenant finalizer" "controller"="tenant" "controllerGroup"="muto.io" "controllerKind"="Tenant" "Tenant"={"name"="demo-tenant"} "namespace"="" "name"="demo-tenant" "reconcileID"="c0c3b48e-78e4-42f5-86ae-334acbd8aa8f" "tenant"="demo-tenant" "finalizer"="muto.io/tenant-cleanup"
+```
+
+- The format is fixed. Logs are **not JSON**, and there are no `MUTO_LOG_LEVEL` or `MUTO_LOG_FORMAT` settings.
+- Verbosity is fixed at `0`. Messages logged with `V(1)` or higher are discarded.
+- Errors are logged with an `"error"` key.
+- Timestamps have second precision and no time zone. The distroless image has no time zone data, so they are UTC.
 
 ### Viewing Logs
 
@@ -101,484 +208,120 @@ Muto emits structured events for major lifecycle phases:
 
 ```bash
 # Operator logs
-kubectl logs -n muto-system deployment/muto-operator
+kubectl logs -n muto-system deployment/muto
 
-# Follow logs in real-time
-kubectl logs -n muto-system deployment/muto-operator -f
+# Follow logs in real time
+kubectl logs -n muto-system deployment/muto -f
 
-# View logs from specific time
-kubectl logs -n muto-system deployment/muto-operator --since=1h
+# Logs from the last hour
+kubectl logs -n muto-system deployment/muto --since=1h
 
-# View logs for specific pod
-kubectl logs -n muto-system pod/muto-operator-abc123
-
-# Get logs from all replicas
-kubectl logs -n muto-system deployment/muto-operator --all-containers
+# Logs from before the last container restart
+kubectl logs -n muto-system deployment/muto --previous
 ```
 
 #### CloudFoundry
 
+The operator writes to stderr, so its lines appear as `ERR` in `cf logs`.
+
 ```bash
-# View application logs
-cf logs muto-operator
+# Recent logs
+cf logs muto-operator --recent
 
 # Stream logs
-cf logs muto-operator --follow
+cf logs muto-operator
+```
 
-# View logs from specific instance
-cf logs muto-operator --instance 0
+### Filtering Logs
+
+```bash
+# Errors only
+kubectl logs -n muto-system deployment/muto | grep '"error"='
+
+# One reconciler
+kubectl logs -n muto-system deployment/muto | grep '"controller"="agentjob"'
+
+# One object
+kubectl logs -n muto-system deployment/muto | grep '"name"="my-job"'
+
+# One reconciliation
+kubectl logs -n muto-system deployment/muto | grep '"reconcileID"="<id>"'
 ```
 
 ### Log Aggregation
 
-For production, aggregate logs to a centralized system:
-
-**Elasticsearch + Logstash + Kibana (ELK):**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: logstash-config
-  namespace: muto-system
-data:
-  logstash.conf: |
-    input {
-      kubernetes {
-        namespace => "muto-system"
-        pod_name_regexp => "^muto-operator"
-      }
-    }
-    filter {
-      json {
-        source => "message"
-      }
-    }
-    output {
-      elasticsearch {
-        hosts => ["elasticsearch:9200"]
-        index => "muto-logs-%{+YYYY.MM.dd}"
-      }
-    }
-```
-
-**Loki + Promtail (Grafana):**
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: promtail-config
-  namespace: muto-system
-data:
-  config.yaml: |
-    clients:
-      - url: http://loki:3100/loki/api/v1/push
-    scrape_configs:
-      - job_name: kubernetes-pods
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_namespace]
-            target_label: namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
-```
-
-## Prometheus Metrics
-
-### Metric Types
-
-Muto exports the following metric families:
-
-#### Counter Metrics
-
-**muto_jobs_total** — Total number of jobs processed
-```
-muto_jobs_total{tenant="tenant-a",status="completed"} 1024
-muto_jobs_total{tenant="tenant-a",status="failed"} 12
-```
-
-**muto_reconciliations_total** — Total reconciliation attempts
-```
-muto_reconciliations_total{reconciler="AgentJobReconciler",result="success"} 5000
-muto_reconciliations_total{reconciler="AgentJobReconciler",result="error"} 45
-```
-
-#### Gauge Metrics
-
-**muto_agents_running** — Current number of running agents
-```
-muto_agents_running{tenant="tenant-a"} 42
-muto_agents_running{tenant="tenant-b"} 28
-```
-
-**muto_job_queue_depth** — Jobs waiting to be scheduled
-```
-muto_job_queue_depth{tenant="tenant-a"} 12
-```
-
-#### Histogram Metrics
-
-**muto_job_duration_seconds** — Job execution time distribution
-```
-muto_job_duration_seconds_bucket{le="1",tenant="tenant-a"} 100
-muto_job_duration_seconds_bucket{le="10",tenant="tenant-a"} 450
-muto_job_duration_seconds_bucket{le="60",tenant="tenant-a"} 980
-muto_job_duration_seconds_sum{tenant="tenant-a"} 25000
-muto_job_duration_seconds_count{tenant="tenant-a"} 1024
-```
-
-**muto_reconciliation_duration_seconds** — Reconciliation loop latency
-```
-muto_reconciliation_duration_seconds_bucket{le="0.1",reconciler="AgentJobReconciler"} 1000
-muto_reconciliation_duration_seconds_bucket{le="1",reconciler="AgentJobReconciler"} 4950
-```
-
-### Scraping Metrics
-
-#### Kubernetes (Prometheus Operator)
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  selector:
-    matchLabels:
-      app: muto-operator
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
-```
-
-#### Standalone Prometheus
-
-```yaml
-scrape_configs:
-  - job_name: 'muto-operator'
-    static_configs:
-      - targets: ['localhost:8080']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-```
-
-### PromQL Queries
-
-**Job success rate (past 24h):**
-```promql
-sum(rate(muto_jobs_total{status="completed"}[24h])) 
-/ 
-sum(rate(muto_jobs_total[24h]))
-```
-
-**Average job duration:**
-```promql
-histogram_quantile(0.5, rate(muto_job_duration_seconds_bucket[5m]))
-```
-
-**P99 job duration:**
-```promql
-histogram_quantile(0.99, rate(muto_job_duration_seconds_bucket[5m]))
-```
-
-**Active agents per tenant:**
-```promql
-sum(muto_agents_running) by (tenant)
-```
-
-**Reconciliation error rate:**
-```promql
-sum(rate(muto_reconciliations_total{result="error"}[5m]))
-/
-sum(rate(muto_reconciliations_total[5m]))
-```
+Any collector that ships container logs works, such as Fluent Bit, Grafana Alloy/Promtail, Vector, or Filebeat. The lines aren't JSON, so parse them with a regex or logfmt-style parser rather than a JSON parser.
 
 ## Distributed Tracing
 
-### OpenTelemetry Setup
-
-Muto supports OpenTelemetry for distributed tracing. Configure via environment variables:
-
-**MUTO_OTEL_ENABLED** (`true`, `false`)
-```bash
-export MUTO_OTEL_ENABLED=true
-```
-
-**MUTO_OTEL_EXPORTER_OTLP_ENDPOINT**
-```bash
-export MUTO_OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-```
-
-**MUTO_OTEL_SERVICE_NAME**
-```bash
-export MUTO_OTEL_SERVICE_NAME=muto-operator
-```
-
-### Trace Structure
-
-Each job execution generates a trace spanning the entire lifecycle:
-
-```
-Trace: job-abc123
-├─ Span: scheduler.schedule_job
-│  ├─ Span: tenant.validate
-│  ├─ Span: resource_allocation.compute
-│  └─ Span: platform_adapter.create_job
-├─ Span: reconciler.reconcile
-│  ├─ Span: platform_adapter.get_status
-│  ├─ Span: status_update.persist
-│  └─ Span: event.watch
-└─ Span: completion.record
-```
-
-### Jaeger Integration
-
-Deploy Jaeger for trace visualization:
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: jaeger
-  namespace: muto-system
-spec:
-  ports:
-    - name: otlp-grpc
-      port: 4317
-      targetPort: 4317
-    - name: web
-      port: 16686
-      targetPort: 16686
-  selector:
-    app: jaeger
-```
-
-Access Jaeger UI: `http://localhost:16686`
+Tracing isn't implemented. The operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` or `MUTO_OTEL_*` environment variables have no effect. The `go.opentelemetry.io` modules in `go.mod` are indirect dependencies of the test tooling. OpenTelemetry tracing with OTLP export is planned in [#79].
 
 ## Dashboards
 
-### Grafana Dashboard
+Muto doesn't ship dashboards. The metrics above are standard controller-runtime metrics, so generic controller-runtime dashboards work, such as those generated by Kubebuilder's Grafana plugin. You can also build panels from the [PromQL queries](#promql-queries) above.
 
-**Job Overview Dashboard:**
-
-```json
-{
-  "title": "Muto Job Overview",
-  "panels": [
-    {
-      "title": "Jobs Completed (24h)",
-      "targets": [
-        {
-          "expr": "sum(rate(muto_jobs_total{status=\"completed\"}[24h]))"
-        }
-      ]
-    },
-    {
-      "title": "Job Success Rate",
-      "targets": [
-        {
-          "expr": "sum(rate(muto_jobs_total{status=\"completed\"}[24h])) / sum(rate(muto_jobs_total[24h]))"
-        }
-      ]
-    },
-    {
-      "title": "P50 Job Duration",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.5, rate(muto_job_duration_seconds_bucket[5m]))"
-        }
-      ]
-    },
-    {
-      "title": "P99 Job Duration",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99, rate(muto_job_duration_seconds_bucket[5m]))"
-        }
-      ]
-    },
-    {
-      "title": "Active Agents by Tenant",
-      "targets": [
-        {
-          "expr": "sum(muto_agents_running) by (tenant)"
-        }
-      ]
-    },
-    {
-      "title": "Reconciliation Error Rate",
-      "targets": [
-        {
-          "expr": "sum(rate(muto_reconciliations_total{result=\"error\"}[5m])) / sum(rate(muto_reconciliations_total[5m]))"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Kubernetes Dashboard
-
-Kubernetes provides native dashboards. Access via:
-
-```bash
-kubectl top nodes
-kubectl top pods -n muto-system
-```
+For resource usage, use the container metrics of the operator pod (`container_cpu_usage_seconds_total`, `container_memory_working_set_bytes`) and `kubectl top pods -n muto-system`.
 
 ## Alerting
 
-### Alert Rules (Prometheus)
-
-**High job failure rate:**
-```yaml
-alert: MutoJobFailureRateHigh
-expr: |
-  sum(rate(muto_jobs_total{status="failed"}[5m]))
-  /
-  sum(rate(muto_jobs_total[5m]))
-  > 0.05
-for: 5m
-annotations:
-  summary: "Muto job failure rate > 5%"
-  description: "{{ $value | humanizePercentage }} of jobs are failing"
-```
-
-**High reconciliation error rate:**
-```yaml
-alert: MutoReconciliationErrorRateHigh
-expr: |
-  sum(rate(muto_reconciliations_total{result="error"}[5m]))
-  /
-  sum(rate(muto_reconciliations_total[5m]))
-  > 0.1
-for: 2m
-annotations:
-  summary: "Muto reconciliation error rate > 10%"
-```
-
-**Job queue backlog:**
-```yaml
-alert: MutoJobQueueBacklog
-expr: muto_job_queue_depth > 100
-for: 10m
-annotations:
-  summary: "Muto job queue has {{ $value }} pending jobs"
-```
-
-**Operator down:**
-```yaml
-alert: MutoOperatorDown
-expr: up{job="muto-operator"} == 0
-for: 1m
-annotations:
-  summary: "Muto operator is down"
-```
-
-### Alertmanager Configuration
+Example Prometheus rules using the available metrics. Adjust thresholds, and the `job` label in `MutoOperatorDown`, to your setup.
 
 ```yaml
-global:
-  resolve_timeout: 5m
+groups:
+  - name: muto-operator
+    rules:
+      - alert: MutoOperatorDown
+        expr: absent(up{job="muto-operator"} == 1)
+        for: 5m
+        annotations:
+          summary: "Muto operator metrics endpoint is not being scraped"
 
-route:
-  receiver: 'default'
-  group_by: ['alertname', 'cluster']
-  group_wait: 10s
-  group_interval: 10s
-  repeat_interval: 12h
-  routes:
-    - match:
-        alertname: MutoOperatorDown
-      receiver: 'critical'
-      group_wait: 1s
-      repeat_interval: 1h
+      - alert: MutoReconcileErrorRateHigh
+        expr: |
+          sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))
+          /
+          sum by (controller) (rate(controller_runtime_reconcile_total[5m]))
+          > 0.1
+        for: 10m
+        annotations:
+          summary: "More than 10% of {{ $labels.controller }} reconciliations fail"
 
-receivers:
-  - name: 'default'
-    slack_configs:
-      - api_url: 'https://hooks.slack.com/...'
-        channel: '#muto-alerts'
-  - name: 'critical'
-    slack_configs:
-      - api_url: 'https://hooks.slack.com/...'
-        channel: '#muto-critical'
-    pagerduty_configs:
-      - service_key: 'abc123...'
+      - alert: MutoWorkqueueBacklog
+        expr: sum by (controller) (workqueue_depth) > 100
+        for: 10m
+        annotations:
+          summary: "{{ $labels.controller }} work queue has {{ $value }} pending objects"
+
+      - alert: MutoReconcilePanics
+        expr: increase(controller_runtime_reconcile_panics_total[15m]) > 0
+        annotations:
+          summary: "The {{ $labels.controller }} reconciler panicked"
+
+      # Requires kube-state-metrics
+      - alert: MutoOperatorRestarting
+        expr: increase(kube_pod_container_status_restarts_total{namespace="muto-system", container="muto-operator"}[30m]) > 2
+        annotations:
+          summary: "Muto operator restarted more than twice in 30 minutes"
 ```
 
-## Health Checks
+## Known Limitations
 
-### Kubernetes Liveness and Readiness Probes
-
-The Helm chart configures these probes. The health endpoints listen on port `8081`:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  template:
-    spec:
-      containers:
-      - name: operator
-        image: muto-operator:latest
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 5
-```
-
-### Health Check Endpoints
-
-The operator serves the health endpoints on port `8081` and metrics on port `8080`. The image is distroless (no shell or `curl`), so port-forward first:
-
-```bash
-kubectl port-forward -n muto-system deployment/muto-operator 8081:8081 8080:8080 &
-```
-
-**Liveness:** `/healthz` (is the operator running?)
-```bash
-curl http://localhost:8081/healthz
-# Output: ok
-```
-
-**Readiness:** `/readyz` (is the operator ready to handle jobs?)
-```bash
-curl http://localhost:8081/readyz
-# Output: ok
-```
-
-**Metrics:** `/metrics` (Prometheus metrics)
-```bash
-curl http://localhost:8080/metrics
-# Output: Prometheus metrics in text format
-```
+- The metrics (`:8080`) and health probe (`:8081`) addresses are fixed. The Helm values `metrics.port` and `healthProbe.port` only change the container port declarations, so changing them breaks scraping or the probes.
+- `metrics.enabled: false` doesn't turn off the metrics server.
+- The metrics endpoint is plain HTTP without authentication. Restrict access with a NetworkPolicy.
+- `/readyz` doesn't reflect API server connectivity or cache sync.
+- There are no Muto-specific metrics, no JSON logs or log levels, and no tracing yet ([#79]).
+- `muto-mcp` has no observability endpoints.
 
 ---
 
 ## Best Practices
 
-1. **Use structured JSON logs** — Query logs programmatically in aggregation systems
-2. **Alert on job failure rates** — Not individual failures, but sustained error trends
-3. **Set up traces early** — Distributed tracing is invaluable for debugging production issues
-4. **Export metrics continuously** — Use Prometheus scraping, not polling from the operator
-5. **Create per-tenant dashboards** — Multi-tenant systems need per-tenant visibility
-6. **Monitor queue depth** — Watch for scheduler bottlenecks early
-7. **Set realistic SLOs** — Define SLOs based on your actual requirements, not defaults
-8. **Test alerting** — Verify alert routing and notification delivery before production
+1. **Alert on sustained error ratios.** Don't page on individual reconcile errors.
+2. **Watch queue depth and queue latency.** A growing `workqueue_depth` is the earliest sign of a backlog.
+3. **Keep the chart's port defaults.** The binary doesn't read `metrics.port` or `healthProbe.port`.
+4. **Parse logs as key/value text.** A JSON parser drops or mangles the operator's lines.
+5. **Restrict access to `:8080`.** The metrics endpoint is unauthenticated.
 
 ---
 
@@ -586,3 +329,5 @@ curl http://localhost:8080/metrics
 - [Configuration: Environment Variables](../configuration/environment-variables.md)
 - [Troubleshooting](./troubleshooting.md) — Common issues and diagnosis
 - [Performance Tuning](./performance-tuning.md) — Optimizing Muto for your workload
+
+[#79]: https://github.com/muto-io/muto/issues/79

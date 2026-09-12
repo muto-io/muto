@@ -191,32 +191,22 @@ messagebus:
 
 ## Observability Configuration
 
-### Metrics
+### Metrics and Health Probes
 
 ```yaml
 metrics:
-  enabled: true
-  port: 8080
-  path: /metrics
-  
-prometheus:
-  enabled: true
-  serviceMonitor:
-    enabled: false  # Enable if using Prometheus Operator
-    interval: 30s
+  enabled: true   # adds prometheus.io/* scrape annotations to the operator pod
+  port: 8080      # container port declaration; must match the operator's fixed metrics port
+
+healthProbe:
+  port: 8081      # container port used by the liveness and readiness probes
 ```
+
+The operator binds metrics to `:8080` and the health probes to `:8081`. These addresses aren't configurable yet, so keep the defaults: changing `metrics.port` or `healthProbe.port` only changes the container port declarations and breaks scraping or the probes. `metrics.enabled: false` removes the scrape annotations but doesn't turn off the metrics endpoint. The chart doesn't create a Service or ServiceMonitor; see [Monitoring and Observability](../../operations/monitoring-observability.md#scraping) for a `PodMonitor` example.
 
 ### Logging
 
-```yaml
-logging:
-  level: info  # debug, info, warn, error
-  format: json  # json or text
-  
-audit:
-  enabled: true
-  maxAgeInDays: 30
-```
+The chart has no logging values. The operator writes plain-text key/value lines to stderr; level and format aren't configurable yet ([#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Storage Configuration
 

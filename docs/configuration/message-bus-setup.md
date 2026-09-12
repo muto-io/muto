@@ -471,9 +471,6 @@ kafka-consumer-groups.sh --bootstrap-server kafka:9092 --group muto-operator --d
 ```bash
 # Check if message bus is connected
 kubectl logs -n muto-system deployment/muto-operator | grep -i "message bus"
-
-# Monitor message throughput
-kubectl exec -n muto-system deployment/muto-operator -- curl localhost:8081/metrics | grep -i message
 ```
 
 ---
@@ -621,22 +618,10 @@ export MUTO_KAFKA_COMPRESSION_TYPE=lz4
 
 ### Key Metrics to Monitor
 
-```promql
-# Messages published per second
-rate(muto_message_bus_publish_total[1m])
+Muto doesn't export message bus metrics yet; they're planned in [#79](https://github.com/muto-io/muto/issues/79). Use the monitoring of the bus itself:
 
-# Messages received per second
-rate(muto_message_bus_receive_total[1m])
-
-# Publish latency (p95)
-histogram_quantile(0.95, muto_message_bus_publish_duration_seconds)
-
-# Message bus connection count
-muto_message_bus_connections
-
-# Consumer lag (Kafka only)
-muto_kafka_consumer_lag_bytes
-```
+- **NATS:** the server monitoring endpoint (`:8222/varz`, `/connz`, `/subsz`) or the NATS Prometheus exporter
+- **Kafka:** broker metrics and consumer-group lag (`kafka-consumer-groups.sh --describe`)
 
 ### Common Issues and Solutions
 

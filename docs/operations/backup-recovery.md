@@ -523,13 +523,7 @@ echo "Backup completed: $BACKUP_DIR"
 
 ### Backup Health Monitoring
 
-```promql
-# Alert if backup is stale
-time() - muto_last_backup_timestamp_seconds > 86400
-
-# Alert if backup fails
-muto_backup_failures_total > 0
-```
+Muto doesn't export backup metrics. Monitor backups with your backup tool's metrics, for example Velero's `velero_backup_last_successful_timestamp` and `velero_backup_failure_total`.
 
 ## Best Practices
 

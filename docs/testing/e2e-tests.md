@@ -12,6 +12,10 @@ E2E tests run as a separate workflow (`e2e-tests.yml`) triggered by changes to c
 
 ## Test Infrastructure
 
+### Parallel Execution
+
+K8s and CF E2E tests run in parallel (no job dependencies) using isolated kubeconfigs and environments.
+
 ### Kubernetes E2E Tests
 
 **Setup:**
@@ -64,8 +68,6 @@ make test-integration-cf
 **Key Bottlenecks:**
 - K8s: Kind cluster creation (~1m) + tests (~2:30) + cleanup (~0:30)
 - CF: Setup (~0:30) + tests (~3:00) + cleanup (<1m)
-
----
 
 ## Known Flakiness Issues
 

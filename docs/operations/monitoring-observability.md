@@ -19,7 +19,7 @@ This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over s
 
 Both ports are hard-coded in `cmd/muto-operator/main.go`. No flag or environment variable changes them.
 
-The commands on this page assume the chart was installed with `helm install muto ...`, which creates the Deployment `muto` in `muto-system`. Adjust the name if you used a different release name.
+The commands on this page assume the chart was installed with `helm install muto-operator ...`, which creates the Deployment `muto-operator` in `muto-system`. Adjust the name if you used a different release name.
 
 ## Health Checks
 
@@ -52,7 +52,7 @@ readinessProbe:
 The operator image is distroless (no shell, no `curl`), so check the endpoints with a port-forward:
 
 ```bash
-kubectl port-forward -n muto-system deployment/muto 8081:8081 &
+kubectl port-forward -n muto-system deployment/muto-operator 8081:8081 &
 curl http://localhost:8081/healthz   # ok
 curl http://localhost:8081/readyz    # ok
 ```
@@ -142,7 +142,7 @@ Depending on your Prometheus Operator configuration, the `PodMonitor` may need a
 Quick check:
 
 ```bash
-kubectl port-forward -n muto-system deployment/muto 8080:8080 &
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
 curl -s http://localhost:8080/metrics | grep '^controller_runtime_reconcile_total'
 ```
 
@@ -208,16 +208,16 @@ Both binaries log through go-logr with the [`stdr`](https://github.com/go-logr/s
 
 ```bash
 # Operator logs
-kubectl logs -n muto-system deployment/muto
+kubectl logs -n muto-system deployment/muto-operator
 
 # Follow logs in real time
-kubectl logs -n muto-system deployment/muto -f
+kubectl logs -n muto-system deployment/muto-operator -f
 
 # Logs from the last hour
-kubectl logs -n muto-system deployment/muto --since=1h
+kubectl logs -n muto-system deployment/muto-operator --since=1h
 
 # Logs from before the last container restart
-kubectl logs -n muto-system deployment/muto --previous
+kubectl logs -n muto-system deployment/muto-operator --previous
 ```
 
 #### CloudFoundry
@@ -236,16 +236,16 @@ cf logs muto-operator
 
 ```bash
 # Errors only
-kubectl logs -n muto-system deployment/muto | grep '"error"='
+kubectl logs -n muto-system deployment/muto-operator | grep '"error"='
 
 # One reconciler
-kubectl logs -n muto-system deployment/muto | grep '"controller"="agentjob"'
+kubectl logs -n muto-system deployment/muto-operator | grep '"controller"="agentjob"'
 
 # One object
-kubectl logs -n muto-system deployment/muto | grep '"name"="my-job"'
+kubectl logs -n muto-system deployment/muto-operator | grep '"name"="my-job"'
 
 # One reconciliation
-kubectl logs -n muto-system deployment/muto | grep '"reconcileID"="<id>"'
+kubectl logs -n muto-system deployment/muto-operator | grep '"reconcileID"="<id>"'
 ```
 
 ### Log Aggregation

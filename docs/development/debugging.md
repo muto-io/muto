@@ -267,8 +267,7 @@ kubectl get events -n muto-system --sort-by='.lastTimestamp'
 
 **Check operator logs:**
 ```bash
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.jobID == "job-123")'
+kubectl logs deployment/muto-operator -n muto-system | grep '"name"="job-123"'
 ```
 
 **Check agent status:**
@@ -279,9 +278,8 @@ kubectl describe agentjob job-123
 
 **Check reconciler status:**
 ```bash
-# Watch reconciliation attempts
-kubectl logs deployment/muto-operator -n muto-system -f | \
-    jq 'select(.msg | contains("reconcile"))'
+# Watch AgentJob reconciliations
+kubectl logs deployment/muto-operator -n muto-system -f | grep '"controller"="agentjob"'
 ```
 
 ### Message Bus Connection Failures
@@ -306,13 +304,9 @@ nc -zv kafka-broker 9092
 kubectl logs statefulset/kafka -n kafka
 ```
 
-**In operator logs, look for:**
-```json
-{
-    "level": "error",
-    "msg": "failed to connect to message bus",
-    "error": "connection refused"
-}
+**In operator logs, look for errors:**
+```bash
+kubectl logs deployment/muto-operator -n muto-system | grep '"error"='
 ```
 
 ### Tests Failing with Timeout
@@ -484,16 +478,14 @@ cf task task-id
 
 ### Measure scheduler latency
 
-```bash
-# Extract scheduling times from logs
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.msg == "job scheduled") | .duration_ms'
+The operator doesn't log per-job scheduling durations. Use the reconcile latency metrics instead:
 
-# Calculate statistics
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.msg == "job scheduled") | .duration_ms' | \
-    awk '{sum+=$1; count++} END {print "Avg: " sum/count "ms"}'
+```bash
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
+curl -s localhost:8080/metrics | grep -E '^controller_runtime_reconcile_time_seconds_(sum|count)\{controller="agentjob"\}'
 ```
+
+Divide `_sum` by `_count` for the average AgentJob reconcile duration, or use the PromQL queries in [Monitoring and Observability](../operations/monitoring-observability.md#promql-queries).
 
 ### Check resource usage
 

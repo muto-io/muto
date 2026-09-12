@@ -28,6 +28,8 @@ jobs:
     name: Kubernetes E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Runs in parallel with cf-e2e (no explicit dependency)
+    # Isolated via dedicated kubeconfig file and Docker socket
 
     steps:
       - name: Checkout code
@@ -91,6 +93,8 @@ jobs:
     name: CloudFoundry E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Runs in parallel with k8s-e2e (no explicit dependency)
+    # Isolated via separate kubeconfig path and independent environment
 
     steps:
       - name: Checkout code
@@ -177,6 +181,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [k8s-e2e, cf-e2e]
     if: always()
+    # Waits for both k8s-e2e and cf-e2e to complete (they run in parallel)
+    # Reports combined E2E test status
 
     steps:
       - name: K8s Tests Status

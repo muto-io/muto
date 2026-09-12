@@ -144,12 +144,7 @@ applications:
     stack: cflinuxfs4
     buildpack: go_buildpack
     command: ./bin/muto-operator
-    
-    health-check-type: http
-    health-check-http-endpoint: /healthz
-    health-check-timeout: 180
-    health-check-interval: 10
-    
+    health-check-type: process
     timeout: 180
     
     env:

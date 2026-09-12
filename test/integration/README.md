@@ -662,15 +662,6 @@ Logf("Task state: %s", taskState.State)
 
 ---
 
-## Performance Baselines
-
-Typical test execution times:
-- **K8s suite** — 15-20 minutes (includes k3s startup)
-- **CF suite** — 5-10 minutes (requires existing CF instance)
-- **Full e2e** — 25-30 minutes
-
----
-
 ## Troubleshooting
 
 ### K8s Tests Fail

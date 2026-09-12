@@ -184,7 +184,9 @@ func (r *AgentJobReconciler) buildPod(
 		Env:   envVars,
 	}
 	if roleSpec.Image == "busybox:latest" {
-		container.Command = []string{"sh", "-c", "sleep 30"}
+		// sh runs as PID 1, which ignores SIGTERM unless trapped; without the
+		// trap every pod deletion waits out the full 30s grace period.
+		container.Command = []string{"sh", "-c", "trap 'exit 0' TERM; sleep 30 & wait"}
 	}
 
 	return &corev1.Pod{

@@ -208,12 +208,6 @@ func (r *TenantReconciler) ensureA2ADeployment(ctx context.Context, ns string, o
 					Labels: map[string]string{"muto.io/component": "a2a-gateway"},
 				},
 				Spec: corev1.PodSpec{
-					// TerminationGracePeriodSeconds is left at the Kubernetes default
-					// (nil -> 30s) for production. Integration tests opt into a much
-					// shorter grace period (see a2aGatewayTerminationGracePeriodSeconds)
-					// to cut cleanup time, since graceful shutdown semantics aren't
-					// under test and the pod is torn down at the end of every test run.
-					TerminationGracePeriodSeconds: a2aGatewayTerminationGracePeriodSeconds(),
 					Containers: []corev1.Container{{
 						Name:  "a2a-gateway",
 						Image: image,
@@ -224,25 +218,6 @@ func (r *TenantReconciler) ensureA2ADeployment(ctx context.Context, ns string, o
 		},
 	}
 	return r.Create(ctx, dep)
-}
-
-// a2aGatewayTerminationGracePeriodSeconds returns the pod termination grace
-// period to use for the a2a-gateway Deployment. Production runs (muto-operator)
-// never set MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD, so this returns nil and the
-// Deployment falls back to the standard Kubernetes default of 30 seconds.
-//
-// Test environments (see test/integration/k8s/suite_test.go) opt in by setting
-// MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD=true, reducing the grace period to 5
-// seconds. This is safe there because the a2a-gateway test image does no
-// meaningful graceful-shutdown work and tests do not depend on it — cutting
-// the grace period from 30s to 5s saves 20-25s of pod termination time on
-// every test namespace teardown. Production deployments are unaffected.
-func a2aGatewayTerminationGracePeriodSeconds() *int64 {
-	if os.Getenv("MUTO_A2A_GATEWAY_TEST_GRACE_PERIOD") != "true" {
-		return nil
-	}
-	grace := int64(5)
-	return &grace
 }
 
 func (r *TenantReconciler) ensureA2AService(ctx context.Context, ns string, owner metav1.OwnerReference) error {

@@ -126,10 +126,10 @@ func StartCFClusterViaKind(ctx context.Context) (*CFCluster, error) {
 		}
 	}
 
-	// Wait for CF API to be ready
-	if err := waitForCFReady(ctx, apiURL); err != nil {
-		// Log but continue - CF might be deployed but not fully ready
-		fmt.Printf("CF API not immediately ready: %v, will attempt connection anyway\n", err)
+	// Check that the CF API host resolves
+	if err := checkCFAPIResolves(ctx, apiURL); err != nil {
+		// Log but continue; creating the client below reports whether the API is usable
+		fmt.Printf("CF API host check failed: %v, will attempt connection anyway\n", err)
 	}
 
 	// Try to create CF client
@@ -178,34 +178,16 @@ func isServiceReachable(ctx context.Context, url string, timeout time.Duration) 
 	return true
 }
 
-// waitForCFReady polls the CF API until it responds.
-// Times out quickly (2 minutes) to avoid blocking test suite.
-func waitForCFReady(ctx context.Context, apiURL string) error {
-	deadline := time.Now().Add(2 * time.Minute)
-	for time.Now().Before(deadline) {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		// Try to resolve the host
-		host := parseHost(apiURL)
-		if addrs, err := net.LookupHost(host); err == nil && len(addrs) > 0 {
-			// Host resolves; API should be ready
-			return nil
-		}
-
-		// Try direct TCP connection to API
-		conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:443", host), 2*time.Second)
-		if err == nil {
-			conn.Close()
-			return nil
-		}
-
-		time.Sleep(1 * time.Second)
+// checkCFAPIResolves returns an error if the CF API host doesn't resolve.
+// It doesn't retry: a host that doesn't resolve won't start resolving while
+// the suite waits, and retrying until a deadline delayed every CI run by two
+// minutes before the suite fell back to the mock server.
+func checkCFAPIResolves(ctx context.Context, apiURL string) error {
+	host := parseHost(apiURL)
+	if _, err := net.DefaultResolver.LookupHost(ctx, host); err != nil {
+		return fmt.Errorf("CF API host %s does not resolve: %w", host, err)
 	}
-	return fmt.Errorf("timeout waiting for CF API to be ready at %s (CF cluster not available)", apiURL)
+	return nil
 }
 
 func parseHost(apiURL string) string {

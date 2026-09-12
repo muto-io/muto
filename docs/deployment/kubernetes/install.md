@@ -182,11 +182,13 @@ kubectl get tenants -n muto-system
 
 ### Health Checks
 
-Check operator health endpoint:
+Check the operator's health endpoints (port `8081`):
 
 ```bash
-kubectl port-forward -n muto-system svc/muto-operator 8080:8080 &
-curl http://localhost:8080/healthz
+kubectl port-forward -n muto-system deployment/muto 8081:8081 &
+curl http://localhost:8081/healthz
+# Expected: "ok"
+curl http://localhost:8081/readyz
 # Expected: "ok"
 ```
 

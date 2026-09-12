@@ -14,8 +14,10 @@ import (
 	"github.com/muto-io/muto/core/scheduler"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -26,17 +28,35 @@ func init() {
 	_ = v1alpha1.AddToScheme(scheme)
 }
 
+// newManager creates the controller manager serving Prometheus metrics on
+// metricsAddr and the /healthz and /readyz probes on probeAddr.
+// controller-runtime only mounts the probe endpoints once a check is
+// registered, so both checks must be added here.
+func newManager(cfg *rest.Config, metricsAddr, probeAddr string) (ctrl.Manager, error) {
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		HealthProbeBindAddress: probeAddr,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("adding healthz check: %w", err)
+	}
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		return nil, fmt.Errorf("adding readyz check: %w", err)
+	}
+	return mgr, nil
+}
+
 func main() {
 	ctrl.SetLogger(stdr.New(log.Default()))
 	log := ctrl.Log.WithName("muto-operator")
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: ":8080",
-		},
-		HealthProbeBindAddress: ":8081",
-	})
+	mgr, err := newManager(ctrl.GetConfigOrDie(), ":8080", ":8081")
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		os.Exit(1)

@@ -289,18 +289,13 @@ cf apps
 
 ### Health Checks
 
-Check operator endpoint:
+The operator in `deploy/cf/manifest.yml` runs without a route (`no-route: true`) and uses CF's `process` health check. Its HTTP endpoints (`:8080/metrics`, `:8081/healthz`, `:8081/readyz`) are only reachable inside the container:
 
 ```bash
-OPERATOR_URL=$(cf app muto-operator | grep routes | awk '{print "https://"$2}')
-curl -k $OPERATOR_URL/healthz
+cf ssh muto-operator -c 'curl -s localhost:8081/healthz'
 # Expected: "ok"
-```
 
-Check metrics endpoint:
-
-```bash
-curl -k $OPERATOR_URL/metrics | head -20
+cf ssh muto-operator -c 'curl -s localhost:8080/metrics | head -20'
 # Expected: Prometheus metrics output
 ```
 
@@ -333,7 +328,7 @@ cf tasks muto-operator
 ### Success Indicators
 
 - [ ] `cf app muto-operator` shows status "started"
-- [ ] Health endpoint (`/healthz`) returns 200 OK
+- [ ] Health endpoint (`localhost:8081/healthz` via `cf ssh`) returns `ok`
 - [ ] Message bus connectivity verified
 - [ ] Tenant apps are running
 - [ ] Test task completes successfully

@@ -513,7 +513,7 @@ receivers:
 
 ### Kubernetes Liveness and Readiness Probes
 
-Configure health checks in the operator deployment:
+The Helm chart configures these probes. The health endpoints listen on port `8081`:
 
 ```yaml
 apiVersion: apps/v1
@@ -530,30 +530,34 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8080
+            port: 8081
           initialDelaySeconds: 15
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /readyz
-            port: 8080
+            port: 8081
           initialDelaySeconds: 5
           periodSeconds: 5
 ```
 
 ### Health Check Endpoints
 
-Muto exposes health check endpoints:
+The operator serves the health endpoints on port `8081` and metrics on port `8080`. The image is distroless (no shell or `curl`), so port-forward first:
+
+```bash
+kubectl port-forward -n muto-system deployment/muto-operator 8081:8081 8080:8080 &
+```
 
 **Liveness:** `/healthz` (is the operator running?)
 ```bash
-curl http://localhost:8080/healthz
+curl http://localhost:8081/healthz
 # Output: ok
 ```
 
 **Readiness:** `/readyz` (is the operator ready to handle jobs?)
 ```bash
-curl http://localhost:8080/readyz
+curl http://localhost:8081/readyz
 # Output: ok
 ```
 

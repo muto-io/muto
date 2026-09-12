@@ -58,8 +58,7 @@ Three options:
 
 **Option 1: Helm (Kubernetes, recommended)**
 ```bash
-helm repo add muto https://charts.muto.io
-helm install muto muto/muto -n muto-system --create-namespace
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto -n muto-system --create-namespace
 ```
 
 **Option 2: kubectl apply (Kubernetes)**
@@ -83,7 +82,7 @@ Yes. Muto uses Kubernetes' standard rolling update mechanism. During upgrade:
 
 ```bash
 # Helm
-helm upgrade muto muto/muto -n muto-system
+helm upgrade muto-operator oci://ghcr.io/muto-io/charts/muto -n muto-system
 
 # kubectl
 kubectl set image deployment/muto-operator \

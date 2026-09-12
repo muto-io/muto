@@ -107,7 +107,7 @@ applications:
     buildpack: go_buildpack
     command: ./bin/muto-operator
     env:
-      MUTO_PLATFORM: cloudfoundry
+      MUTO_PLATFORM: cf
       MUTO_ORG: muto-platform
       MUTO_MESSAGEBUS_TYPE: nats
     services:
@@ -131,7 +131,7 @@ applications:
     stack: cflinuxfs4
     env:
       BP_GO_BUILD_FLAGS: "-ldflags '-s -w'"
-      MUTO_PLATFORM: cloudfoundry
+      MUTO_PLATFORM: cf
 ```
 
 ## Step 3: Set Up Services
@@ -233,7 +233,7 @@ applications:
     buildpack: go_buildpack
     command: ./bin/muto-mcp
     env:
-      MUTO_PLATFORM: cloudfoundry
+      MUTO_PLATFORM: cf
       MCP_PORT: 3000
 ```
 

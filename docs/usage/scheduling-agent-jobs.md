@@ -315,7 +315,7 @@ spec:
 
 ```bash
 # Monitor retry rate (requires Prometheus)
-kubectl logs -l app=muto-operator | grep "retry attempt"
+kubectl logs -n muto-system -l app.kubernetes.io/name=muto | grep "retry attempt"
 ```
 
 ## Monitoring Job Progress

@@ -664,10 +664,11 @@ Logf("Task state: %s", taskState.State)
 
 ## Performance Baselines
 
-Typical test execution times:
-- **K8s suite** — 15-20 minutes (includes k3s startup)
-- **CF suite** — 5-10 minutes (requires existing CF instance)
-- **Full e2e** — 25-30 minutes
+Measured in CI (GitHub-hosted `ubuntu-latest`, 5 E2E runs on 2026-09-12):
+- **K8s suite** — ~70 s for 45 specs on a pre-created kind cluster (~90 s locally, including ~20 s k3s startup)
+- **CF suite** — ~190 s for 36 specs. 120 s of that is `BeforeSuite` waiting for an unreachable CF API before it falls back to the mock server ([#87](https://github.com/muto-io/muto/issues/87)); ~70 s without it
+
+Run `make test-profile` to measure your own setup. See [Test Profiling](../../docs/testing/test-profiling.md) for the slowest specs and their follow-up issues.
 
 ---
 

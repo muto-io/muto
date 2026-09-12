@@ -425,6 +425,18 @@ git diff --name-only | xargs -I {} dirname {} | sort -u | \
 
 ## Performance Tips
 
+### Find the Slowest Tests
+
+Profile the integration suites to see which specs take the most time and CPU:
+
+```bash
+make test-profile                                              # both suites, top 5
+scripts/test-profile.sh --suite k8s --top 10                   # K8s only, top 10
+scripts/test-profile.sh --report test-results/k8s/report.json  # analyze an existing report
+```
+
+The report is written to `test-results/profile/profile.md`. See [Test Profiling](./test-profiling.md) for the current baseline and optimization targets.
+
 ### Speed Up Tests
 
 1. **Run in parallel:**

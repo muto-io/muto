@@ -282,7 +282,7 @@ operation=schedule
 **Check logs:**
 ```bash
 kubectl logs -p deployment/muto-operator -n muto-system  # Previous logs
-kubectl describe pod -n muto-system -l app=muto-operator  # Events
+kubectl describe pod -n muto-system -l app.kubernetes.io/name=muto  # Events
 ```
 
 **Common causes:**
@@ -535,7 +535,7 @@ kubectl logs deployment/muto-operator -n muto-system | \
 
 ```bash
 # Operator resource usage
-kubectl top pod -n muto-system -l app=muto-operator
+kubectl top pod -n muto-system -l app.kubernetes.io/name=muto
 
 # Message bus usage
 kubectl top pod -n nats-io  # or -n kafka

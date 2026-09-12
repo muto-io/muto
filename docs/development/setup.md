@@ -194,9 +194,9 @@ kubectl get nodes
 Option 1: Use Helm chart (recommended):
 ```bash
 kubectl create namespace muto-system
-helm install muto ./deploy/helm/muto \
+helm install muto-operator ./deploy/helm/muto \
   --namespace muto-system \
-  --values ./deploy/helm/values.yaml
+  --values ./deploy/helm/muto/values.yaml
 ```
 
 Option 2: Apply CRDs and run operator locally:

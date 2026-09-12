@@ -4,7 +4,7 @@ VERSION        ?= $(shell git describe --tags --always --dirty)
 BINARY_DIR     := bin
 SHELL          := /bin/bash
 
-.PHONY: generate build test-unit test-integration test-integration-k8s test-integration-cf test-e2e kind-up kind-down docker-build docker-push
+.PHONY: generate build test-unit test-integration test-integration-k8s test-integration-cf test-e2e test-profile kind-up kind-down docker-build docker-push
 
 generate:
 	$(CONTROLLER_GEN) crd paths="./platform/k8s/types/..." output:crd:artifacts:config=deploy/crds
@@ -20,16 +20,21 @@ test-unit:
 
 test-integration-k8s:
 	mkdir -p test-results/k8s
-	go test ./test/integration/k8s/... -tags integration -v -timeout 20m -args -ginkgo.v | tee test-results/k8s/results.log; exit $${PIPESTATUS[0]}
+	go test ./test/integration/k8s/... -tags integration -v -timeout 20m -args -ginkgo.v -ginkgo.json-report=$(CURDIR)/test-results/k8s/report.json | tee test-results/k8s/results.log; exit $${PIPESTATUS[0]}
 
 test-integration-cf:
 	mkdir -p test-results/cf
-	go test ./test/integration/cf/... -tags integration -v -timeout 10m -args -ginkgo.v | tee test-results/cf/results.log; exit $${PIPESTATUS[0]}
+	go test ./test/integration/cf/... -tags integration -v -timeout 10m -args -ginkgo.v -ginkgo.json-report=$(CURDIR)/test-results/cf/report.json | tee test-results/cf/results.log; exit $${PIPESTATUS[0]}
 
 test-integration:
 	go test ./test/integration/... -tags integration -v -timeout 20m
 
 test-e2e: test-integration-k8s test-integration-cf
+
+# Profile the integration suites; see docs/testing/test-profiling.md.
+# Example: make test-profile PROFILE_ARGS="--suite k8s --top 10"
+test-profile:
+	scripts/test-profile.sh $(PROFILE_ARGS)
 
 kind-up:
 	kind create cluster --config deploy/kind/kind-config.yaml --name muto-dev

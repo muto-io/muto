@@ -54,6 +54,7 @@ nav:
       - Integration Tests: testing/integration-tests.md
       - E2E Tests: testing/e2e-tests.md
       - Running Tests Locally: testing/running-locally.md
+      - Test Profiling: testing/test-profiling.md
   - Deployment:
       - Kubernetes: deployment/k8s.md
       - CloudFoundry: deployment/cf.md

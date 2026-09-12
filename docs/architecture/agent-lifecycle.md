@@ -322,43 +322,18 @@ kubectl get agentjob job-name -o json | jq '.status'
 
 ### Observability
 
-Job lifecycle events are exported as structured logs and metrics:
-
-```json
-// Structured log (running on Kubernetes)
-{
-  "timestamp": "2026-09-03T10:30:10Z",
-  "level": "info",
-  "component": "agentjob-reconciler",
-  "event": "JobTransitioned",
-  "jobName": "data-pipeline",
-  "jobId": "k8s-default-data-pipeline-0",
-  "tenant": "tenant-a",
-  "fromState": "Scheduled",
-  "toState": "Running",
-  "duration_ms": 5000
-}
-```
-
-Prometheus metrics:
+Job lifecycle transitions are recorded in the `AgentJob` status (`kubectl get agentjobs -w`). The operator exposes controller-runtime's reconcile metrics for the `agentjob` controller:
 
 ```
-# Counter: Total jobs by end state
-muto_jobs_total{state="completed"} 1523
-muto_jobs_total{state="failed"} 42
-muto_jobs_total{state="cancelled"} 8
+# AgentJob reconciliations by result
+controller_runtime_reconcile_total{controller="agentjob",result="success"} 1
+controller_runtime_reconcile_total{controller="agentjob",result="requeue_after"} 6
 
-# Histogram: Job duration by state
-muto_job_duration_seconds_bucket{state="completed", le="60"} 1200
-muto_job_duration_seconds_bucket{state="completed", le="300"} 1500
-
-# Gauge: Jobs currently running
-muto_jobs_running{tenant="tenant-a"} 5
-muto_jobs_running{tenant="tenant-b"} 3
-
-# Gauge: Retry attempts
-muto_job_retries_total{result="success_after_retry"} 23
+# AgentJob reconcile duration
+controller_runtime_reconcile_time_seconds_count{controller="agentjob"} 7
 ```
+
+Job-level metrics (jobs by end state, job duration, running jobs per tenant) and structured lifecycle log events are planned in [#79](https://github.com/muto-io/muto/issues/79).
 
 ## Common Patterns
 

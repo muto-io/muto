@@ -9,7 +9,6 @@ Muto is configured through environment variables that control:
 - Message bus connections (NATS or Kafka)
 - Reconciliation behavior (worker counts, timeouts, retries)
 - Resource management (quotas, limits)
-- Observability (logging, metrics, tracing)
 - Security (TLS, authentication, isolation)
 
 ## Core Settings
@@ -28,49 +27,6 @@ export MUTO_PLATFORM=kubernetes
 
 # CloudFoundry
 export MUTO_PLATFORM=cloudfoundry
-```
-
-### MUTO_LOG_LEVEL
-
-**Type:** `string`  
-**Default:** `info`  
-**Valid Values:** `debug`, `info`, `warn`, `error`
-
-Controls verbosity of operator logs.
-
-```bash
-# Development (verbose)
-export MUTO_LOG_LEVEL=debug
-
-# Production (important events only)
-export MUTO_LOG_LEVEL=info
-```
-
-### MUTO_LOG_FORMAT
-
-**Type:** `string`  
-**Default:** `json`  
-**Valid Values:** `json`, `text`
-
-Output format for logs.
-
-```bash
-# Structured JSON (recommended for production)
-export MUTO_LOG_FORMAT=json
-
-# Human-readable text (development)
-export MUTO_LOG_FORMAT=text
-```
-
-### MUTO_OPERATOR_BIND_ADDRESS
-
-**Type:** `string`  
-**Default:** `0.0.0.0:8080`
-
-HTTP server bind address for health checks and metrics.
-
-```bash
-export MUTO_OPERATOR_BIND_ADDRESS=0.0.0.0:8080
 ```
 
 ### MUTO_WEBHOOK_PORT
@@ -683,64 +639,16 @@ export MUTO_MTLS_CLIENT_KEY_FILE=/etc/muto/certs/client.key
 
 ## Observability
 
-### MUTO_METRICS_ENABLED
+The operator doesn't read any observability-related environment variables yet. Its endpoints and log output are fixed:
 
-**Type:** `boolean`  
-**Default:** `true`
+| Setting | Current behavior |
+|---|---|
+| Metrics endpoint | `:8080/metrics` (controller-runtime built-in metrics), not configurable |
+| Health probes | `:8081/healthz` and `:8081/readyz`, not configurable |
+| Logs | Plain-text key/value lines on stderr; level and format not configurable |
+| Tracing | Not implemented |
 
-Enable Prometheus metrics export.
-
-```bash
-export MUTO_METRICS_ENABLED=true
-```
-
-### MUTO_METRICS_PORT
-
-**Type:** `integer`  
-**Default:** `8081`
-
-Port for Prometheus metrics server.
-
-```bash
-export MUTO_METRICS_PORT=8081
-```
-
-### MUTO_TRACING_ENABLED
-
-**Type:** `boolean`  
-**Default:** `false`
-
-Enable OpenTelemetry distributed tracing.
-
-```bash
-export MUTO_TRACING_ENABLED=true
-```
-
-### MUTO_TRACING_JAEGER_ENDPOINT
-
-**Type:** `string`  
-**Default:** (none)
-
-Jaeger collector endpoint for tracing.
-
-```bash
-export MUTO_TRACING_JAEGER_ENDPOINT=http://jaeger-collector.monitoring:14268/api/traces
-```
-
-### MUTO_TRACING_SAMPLE_RATE
-
-**Type:** `float`  
-**Default:** `0.1`
-
-Sampling rate for traces (0.0 = none, 1.0 = all).
-
-```bash
-# Sample 10% of traces
-export MUTO_TRACING_SAMPLE_RATE=0.1
-
-# Sample all traces
-export MUTO_TRACING_SAMPLE_RATE=1.0
-```
+Configurable logging (`MUTO_LOG_LEVEL`, `MUTO_LOG_FORMAT`), configurable bind addresses, custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ---
 
@@ -874,7 +782,6 @@ export MUTO_TENANT_NAMESPACE_PREFIX=tenant-
 ```bash
 # Local development with NATS
 export MUTO_PLATFORM=kubernetes
-export MUTO_LOG_LEVEL=debug
 export MUTO_MESSAGE_BUS_TYPE=nats
 export MUTO_NATS_URL=nats://localhost:4222
 export MUTO_RECONCILER_WORKER_COUNT=2
@@ -885,7 +792,6 @@ export MUTO_RECONCILER_WORKER_COUNT=2
 ```bash
 # Production K8s with Kafka and high availability
 export MUTO_PLATFORM=kubernetes
-export MUTO_LOG_LEVEL=info
 export MUTO_MESSAGE_BUS_TYPE=kafka
 export MUTO_KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
 export MUTO_KAFKA_SASL_ENABLED=true
@@ -894,8 +800,6 @@ export MUTO_KAFKA_TLS_ENABLED=true
 export MUTO_RECONCILER_WORKER_COUNT=20
 export MUTO_K8S_LEADER_ELECTION_ENABLED=true
 export MUTO_TLS_ENABLED=true
-export MUTO_METRICS_ENABLED=true
-export MUTO_TRACING_ENABLED=true
 export MUTO_MAX_CONCURRENT_JOBS=500
 ```
 
@@ -906,14 +810,12 @@ export MUTO_MAX_CONCURRENT_JOBS=500
 export MUTO_PLATFORM=cloudfoundry
 export MUTO_CF_API_URL=https://api.cf.production.com
 export MUTO_CF_USERNAME=muto-service-account
-export MUTO_LOG_LEVEL=info
 export MUTO_MESSAGE_BUS_TYPE=kafka
 export MUTO_KAFKA_BROKERS=kafka-1:9092,kafka-2:9092
 export MUTO_KAFKA_SASL_ENABLED=true
 export MUTO_KAFKA_TLS_ENABLED=true
 export MUTO_RECONCILER_WORKER_COUNT=15
 export MUTO_TLS_ENABLED=true
-export MUTO_TRACING_ENABLED=true
 ```
 
 ---
@@ -937,8 +839,6 @@ export MUTO_TRACING_ENABLED=true
 5. **Test configuration changes** in a staging environment first.
 
 6. **Use TLS in production** — never disable `MUTO_TLS_ENABLED` in production.
-
-7. **Enable tracing** for troubleshooting, but adjust sampling rate for performance.
 
 ---
 

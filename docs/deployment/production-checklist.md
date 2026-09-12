@@ -172,10 +172,10 @@ Complete this checklist before deploying Muto to production.
 
 ### Metrics Collection
 
-- [ ] Prometheus/metrics endpoint enabled
+- [ ] Operator metrics endpoint (`:8080/metrics`) scraped by Prometheus
 - [ ] Metrics collected for:
-  - [ ] Job success/failure rates
-  - [ ] Job latency (p50, p95, p99)
+  - [ ] Reconcile success/error rates (`controller_runtime_reconcile_*`)
+  - [ ] Reconcile latency (p50, p95, p99) and work queue depth
   - [ ] Agent CPU/memory usage
   - [ ] Message bus throughput and latency
   - [ ] Database query performance
@@ -191,19 +191,13 @@ Complete this checklist before deploying Muto to production.
 - [ ] Centralized log aggregation configured
   - [ ] Tool: __ (ELK, Splunk, CloudWatch, etc.)
   - [ ] Retention: __ days
-- [ ] Structured logging (JSON) configured
-- [ ] Log levels appropriate for production
+- [ ] Log parser handles the operator's plain-text key/value lines (logs aren't JSON)
 - [ ] Sensitive data masked in logs
 - [ ] Log search and alerting configured
-- [ ] Debug logging disabled in prod
 
 ### Distributed Tracing
 
-- [ ] Tracing infrastructure deployed (if using)
-  - [ ] Tool: __ (Jaeger, Zipkin, DataDog, etc.)
-- [ ] Tracing configured for Muto operator
-- [ ] Trace sampling rate set: __ %
-- [ ] Traces accessible for debugging
+- [ ] Not available yet: OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79)
 
 ### Dashboards
 

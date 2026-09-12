@@ -237,29 +237,17 @@ This pattern ensures that even if a message is delivered multiple times, process
 
 ### Key Metrics to Track
 
-Monitor these metrics for production health:
+Muto doesn't export job- or agent-level metrics yet ([#79](https://github.com/muto-io/muto/issues/79)). Track operator health with controller-runtime's built-in metrics, and agent resource usage with container metrics (cAdvisor, kube-state-metrics):
 
 ```
-# Job Execution
-muto_jobs_total{status="completed"}      # Successful jobs
-muto_jobs_total{status="failed"}         # Failed jobs
-muto_job_duration_seconds               # Job execution time
-muto_job_retries_total                  # Retry rate
+# Reconciliation
+controller_runtime_reconcile_total{controller="agentjob"}          # Reconciliations by result
+controller_runtime_reconcile_errors_total{controller="agentjob"}   # Failed reconciliations
+controller_runtime_reconcile_time_seconds{controller="agentjob"}   # Reconcile latency
 
-# Agent Performance
-muto_agents_running                     # Agents actively running
-muto_agent_duration_seconds             # Agent execution time
-muto_agent_errors_total                 # Agent error count
-
-# Resource Usage
-muto_job_cpu_usage_cores                # CPU consumption
-muto_job_memory_usage_bytes             # Memory consumption
-muto_job_storage_usage_bytes            # Storage usage
-
-# Message Bus
-muto_message_bus_publish_latency_ms     # Message publish latency
-muto_message_bus_subscribe_latency_ms   # Message subscribe latency
-muto_message_bus_queue_depth            # Pending messages
+# Backlog
+workqueue_depth{controller="agentjob"}                             # Pending reconciliations
+workqueue_queue_duration_seconds{controller="agentjob"}            # Time waiting in the queue
 ```
 
 ### Alert Rules
@@ -272,30 +260,21 @@ groups:
   - name: muto-alerts
     interval: 30s
     rules:
-      # Alert: High job failure rate
-      - alert: HighJobFailureRate
+      # Alert: High reconcile error rate
+      - alert: HighReconcileErrorRate
         expr: |
-          rate(muto_jobs_total{status="failed"}[5m]) /
-          rate(muto_jobs_total[5m]) > 0.05
+          sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m])) /
+          sum by (controller) (rate(controller_runtime_reconcile_total[5m])) > 0.05
         for: 5m
         annotations:
-          summary: "More than 5% of jobs are failing"
-      
-      # Alert: Job timeout rate
-      - alert: HighTimeoutRate
-        expr: |
-          rate(muto_job_retries_total{reason="timeout"}[5m]) > 0.1
-        for: 5m
+          summary: "More than 5% of reconciliations are failing"
+
+      # Alert: Reconcile backlog
+      - alert: ReconcileBacklog
+        expr: sum by (controller) (workqueue_depth) > 100
+        for: 10m
         annotations:
-          summary: "More than 10% retry rate due to timeouts"
-      
-      # Alert: Message bus latency
-      - alert: HighMessageLatency
-        expr: |
-          histogram_quantile(0.95, muto_message_bus_publish_latency_ms) > 1000
-        for: 5m
-        annotations:
-          summary: "Message publish latency p95 > 1 second"
+          summary: "Reconcile work queue is backing up"
 ```
 
 ### Logging Strategy

@@ -40,7 +40,7 @@ export MUTO_RECONCILER_WORKER_COUNT=20
 - Increase worker count if reconciliation queue is growing
 - Decrease if CPU or memory usage is too high
 - Each worker uses approximately 50MB of memory
-- Monitor queue depth: `muto_reconciliation_queue_depth` metric
+- Monitor queue depth: `workqueue_depth` metric (per `controller`)
 
 ### Sync Period
 
@@ -395,23 +395,23 @@ kubectl apply -f reconciler-config.yaml
 
 ### Key Metrics
 
-Monitor these Prometheus metrics to understand reconciler health:
+Monitor these Prometheus metrics (controller-runtime built-in, labelled by `controller`) to understand reconciler health:
 
 ```promql
 # Reconciliation queue depth
-muto_reconciliation_queue_depth
+workqueue_depth
 
 # Reconciliation latency
-muto_reconciliation_duration_seconds
+controller_runtime_reconcile_time_seconds
 
 # Failed reconciliations
-muto_reconciliation_errors_total
+controller_runtime_reconcile_errors_total
 
 # Retry attempts
-muto_reconciliation_retries_total
+workqueue_retries_total
 
 # Worker utilization
-muto_reconciler_workers_active
+controller_runtime_active_workers / controller_runtime_max_concurrent_reconciles
 ```
 
 ### Alerting Rules
@@ -424,19 +424,19 @@ groups:
     interval: 30s
     rules:
       - alert: ReconciliationQueueBacklog
-        expr: muto_reconciliation_queue_depth > 100
+        expr: sum by (controller) (workqueue_depth) > 100
         for: 5m
         annotations:
           summary: "Reconciliation queue is backing up"
-          
+
       - alert: HighReconciliationErrors
-        expr: rate(muto_reconciliation_errors_total[5m]) > 0.1
+        expr: sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m])) > 0.1
         for: 5m
         annotations:
           summary: "High reconciliation error rate"
-          
+
       - alert: SlowReconciliation
-        expr: histogram_quantile(0.95, muto_reconciliation_duration_seconds) > 10
+        expr: histogram_quantile(0.95, sum by (controller, le) (rate(controller_runtime_reconcile_time_seconds_bucket[5m]))) > 10
         for: 5m
         annotations:
           summary: "Reconciliation is slow (>10s p95)"
@@ -448,11 +448,9 @@ groups:
 # Check operator logs
 kubectl logs -n muto-system deployment/muto-operator -f
 
-# Check reconciler metrics
-kubectl exec -n muto-system deployment/muto-operator -- curl localhost:8081/metrics | grep reconcil
-
-# Check event watcher queue
-kubectl exec -n muto-system deployment/muto-operator -- curl localhost:8081/metrics | grep event_watcher
+# Check reconciler metrics (the image has no shell or curl, so port-forward)
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
+curl -s localhost:8080/metrics | grep -E '^(controller_runtime_reconcile|workqueue_depth)'
 
 # Get reconciler configuration
 kubectl get reconcilerconfigs -A

@@ -67,6 +67,7 @@
 
 ## Testing
 - [End-to-End Testing](testing/e2e-tests.md)
+- [Test Profiling](testing/test-profiling.md)
 - [Performance Analysis](testing/performance-analysis.md)
 - [Optimization Roadmap](testing/optimization-roadmap.md)
 

@@ -10,7 +10,7 @@ CloudFoundry environment variables are set in the manifest or via `cf set-env`.
 
 ```bash
 # Operator settings
-cf set-env muto-operator MUTO_PLATFORM cloudfoundry
+cf set-env muto-operator MUTO_PLATFORM cf
 cf set-env muto-operator MUTO_LOG_LEVEL info
 cf set-env muto-operator MUTO_API_PORT 8080
 cf set-env muto-operator MUTO_METRICS_PORT 9090
@@ -122,7 +122,7 @@ applications:
     timeout: 180
     
     env:
-      MUTO_PLATFORM: cloudfoundry
+      MUTO_PLATFORM: cf
       MUTO_LOG_LEVEL: info
       CF_API_ENDPOINT: https://api.cf.example.com
       
@@ -148,7 +148,7 @@ applications:
     timeout: 180
     
     env:
-      MUTO_PLATFORM: cloudfoundry
+      MUTO_PLATFORM: cf
       MUTO_LOG_LEVEL: info
       MUTO_METRICS_PORT: 9090
       

@@ -4,19 +4,19 @@ Complete reference for customizing the Muto Helm chart.
 
 ## Chart Overview
 
-- **Chart name:** `muto-operator`
+- **Chart name:** `muto`
 - **Chart version:** 0.1.0
 - **App version:** 0.1.0
-- **Repository:** `https://charts.muto.io`
+- **Repository:** `oci://ghcr.io/muto-io/charts`
 
 ## Default Values
 
 The Helm chart includes sensible defaults for most deployments. Customize by creating a `values.yaml` file:
 
 ```bash
-helm show values muto/muto-operator > values.yaml
+helm show values oci://ghcr.io/muto-io/charts/muto > values.yaml
 # Edit values.yaml
-helm install muto muto/muto-operator -f values.yaml
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto -f values.yaml
 ```
 
 ## Global Configuration
@@ -443,7 +443,7 @@ affinity:
 Upgrade without downtime:
 
 ```bash
-helm upgrade muto muto/muto-operator \
+helm upgrade muto-operator oci://ghcr.io/muto-io/charts/muto \
   -f values.yaml \
   --wait \
   --timeout 5m
@@ -461,7 +461,7 @@ For zero-downtime upgrades with multiple replicas:
 
 ```bash
 # Create new release on different label
-helm install muto-blue muto/muto-operator \
+helm install muto-blue oci://ghcr.io/muto-io/charts/muto \
   -f values-prod.yaml \
   --set blueGreen.active=blue
 
@@ -532,7 +532,7 @@ podAnnotations:
 For full details on all available values, see:
 
 ```bash
-helm show values muto/muto-operator
+helm show values oci://ghcr.io/muto-io/charts/muto
 ```
 
 Or check the chart's `values.yaml` in the [Muto GitHub repository](https://github.com/muto-io/helm-charts).

@@ -628,7 +628,7 @@ Simplest deployment - entire cluster for one tenant.
 **Cons:** Higher infrastructure cost, underutilization possible
 
 ```bash
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 export MUTO_K8S_NAMESPACE=muto-system
 # Single tenant namespace
 export MUTO_TENANT_NAMESPACE_PREFIX=production-

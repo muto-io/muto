@@ -17,17 +17,17 @@ Muto is configured through environment variables that control:
 ### MUTO_PLATFORM
 
 **Type:** `string`  
-**Default:** `kubernetes`  
-**Valid Values:** `kubernetes`, `cloudfoundry`
+**Default:** `k8s`  
+**Valid Values:** `k8s`, `cf`
 
 Selects the underlying platform for agent execution.
 
 ```bash
 # Kubernetes
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 
 # CloudFoundry
-export MUTO_PLATFORM=cloudfoundry
+export MUTO_PLATFORM=cf
 ```
 
 ### MUTO_LOG_LEVEL
@@ -408,7 +408,7 @@ export MUTO_WEBHOOK_EVENTS=job.created,job.started,job.completed,job.failed
 ### Development Setup
 
 ```bash
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 export MUTO_LOG_LEVEL=debug
 export MUTO_LOG_FORMAT=text
 export MUTO_MESSAGE_BUS_TYPE=nats
@@ -421,7 +421,7 @@ export MUTO_TLS_ENABLED=false
 ### Production Setup
 
 ```bash
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 export MUTO_LOG_LEVEL=info
 export MUTO_LOG_FORMAT=json
 export MUTO_MESSAGE_BUS_TYPE=kafka

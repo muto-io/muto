@@ -70,19 +70,16 @@ kubectl create secret docker-registry muto-registry \
 
 ## Step 3: Install Muto Using Helm
 
-### Add Muto Helm Repository
+### Chart Location
 
-```bash
-helm repo add muto https://charts.muto.io
-helm repo update
-```
+The release workflow publishes the chart to `oci://ghcr.io/muto-io/charts/muto`. Helm pulls OCI charts directly, so no `helm repo add` is needed.
 
 ### Install Muto
 
 Basic installation with default values:
 
 ```bash
-helm install muto muto/muto-operator \
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto \
   --namespace muto-system \
   --create-namespace
 ```
@@ -90,7 +87,7 @@ helm install muto muto/muto-operator \
 **Custom namespace:**
 
 ```bash
-helm install muto muto/muto-operator \
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto \
   --namespace my-operators \
   --create-namespace
 ```
@@ -98,7 +95,7 @@ helm install muto muto/muto-operator \
 **With custom values file:**
 
 ```bash
-helm install muto muto/muto-operator \
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto \
   -f values.yaml \
   --namespace muto-system
 ```
@@ -185,7 +182,7 @@ kubectl get tenants -n muto-system
 Check the operator's health endpoints (port `8081`):
 
 ```bash
-kubectl port-forward -n muto-system deployment/muto 8081:8081 &
+kubectl port-forward -n muto-system deployment/muto-operator 8081:8081 &
 curl http://localhost:8081/healthz
 # Expected: "ok"
 curl http://localhost:8081/readyz
@@ -235,7 +232,7 @@ kubectl logs agentjob/test-deployment
 To upgrade to a new version:
 
 ```bash
-helm upgrade muto muto/muto-operator \
+helm upgrade muto-operator oci://ghcr.io/muto-io/charts/muto \
   --namespace muto-system \
   --version 0.2.0
 ```
@@ -271,7 +268,7 @@ kubectl logs -n muto-system deployment/muto-operator --tail=50
 
 Check pod events:
 ```bash
-kubectl describe pod -n muto-system -l app=muto-operator
+kubectl describe pod -n muto-system -l app.kubernetes.io/name=muto
 ```
 
 ### CRDs not registered

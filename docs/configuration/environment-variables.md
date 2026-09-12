@@ -17,17 +17,17 @@ Muto is configured through environment variables that control:
 ### MUTO_PLATFORM
 
 **Type:** `string`  
-**Default:** `kubernetes`  
-**Valid Values:** `kubernetes`, `cloudfoundry`
+**Default:** `k8s`  
+**Valid Values:** `k8s`, `cf`
 
 Selects the underlying platform for agent execution.
 
 ```bash
 # Kubernetes
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 
 # CloudFoundry
-export MUTO_PLATFORM=cloudfoundry
+export MUTO_PLATFORM=cf
 ```
 
 ### MUTO_LOG_LEVEL
@@ -873,7 +873,7 @@ export MUTO_TENANT_NAMESPACE_PREFIX=tenant-
 
 ```bash
 # Local development with NATS
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 export MUTO_LOG_LEVEL=debug
 export MUTO_MESSAGE_BUS_TYPE=nats
 export MUTO_NATS_URL=nats://localhost:4222
@@ -884,7 +884,7 @@ export MUTO_RECONCILER_WORKER_COUNT=2
 
 ```bash
 # Production K8s with Kafka and high availability
-export MUTO_PLATFORM=kubernetes
+export MUTO_PLATFORM=k8s
 export MUTO_LOG_LEVEL=info
 export MUTO_MESSAGE_BUS_TYPE=kafka
 export MUTO_KAFKA_BROKERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
@@ -903,7 +903,7 @@ export MUTO_MAX_CONCURRENT_JOBS=500
 
 ```bash
 # Production CloudFoundry with secure configuration
-export MUTO_PLATFORM=cloudfoundry
+export MUTO_PLATFORM=cf
 export MUTO_CF_API_URL=https://api.cf.production.com
 export MUTO_CF_USERNAME=muto-service-account
 export MUTO_LOG_LEVEL=info

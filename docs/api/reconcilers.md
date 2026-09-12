@@ -115,7 +115,7 @@ MUTO_RECONCILE_INTERVAL=5s
 MUTO_WORKER_THREADS=4
 
 # Platform-specific settings
-MUTO_PLATFORM=kubernetes  # or 'cloudfoundry'
+MUTO_PLATFORM=k8s  # or 'cf'
 MUTO_KUBECONFIG=/path/to/kubeconfig
 ```
 

@@ -227,7 +227,7 @@ kubectl rollout restart deployment/muto-operator -n muto-system
 
 # 4. Verify recovery
 kubectl wait --for=condition=ready pod \
-  -l app=muto-operator -n muto-system --timeout=300s
+  -l app.kubernetes.io/name=muto -n muto-system --timeout=300s
 
 # 5. Monitor reconciliation
 kubectl logs -n muto-system deployment/muto-operator -f
@@ -375,8 +375,8 @@ kubectl rollout restart deployment/muto-operator -n muto-system
 
 **Testing:** Kill operator pod, verify recovery
 ```bash
-kubectl delete pod -n muto-system -l app=muto-operator
-kubectl wait --for=condition=ready pod -l app=muto-operator -n muto-system
+kubectl delete pod -n muto-system -l app.kubernetes.io/name=muto
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=muto -n muto-system
 ```
 
 ### Tier 2: Component Cluster Failure (RTO: 15 min)

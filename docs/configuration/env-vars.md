@@ -9,7 +9,6 @@ Muto is configured through environment variables that control:
 - Message bus connections (NATS or Kafka)
 - Reconciliation behavior (worker counts, timeouts, retries)
 - Resource management (quotas, limits)
-- Observability (logging, metrics, tracing)
 - Security (TLS, authentication, isolation)
 
 ## Core Settings
@@ -28,38 +27,6 @@ export MUTO_PLATFORM=kubernetes
 
 # CloudFoundry
 export MUTO_PLATFORM=cloudfoundry
-```
-
-### MUTO_LOG_LEVEL
-
-**Type:** `string`  
-**Default:** `info`  
-**Valid Values:** `debug`, `info`, `warn`, `error`
-
-Controls verbosity of operator logs.
-
-```bash
-# Development (verbose)
-export MUTO_LOG_LEVEL=debug
-
-# Production (important events only)
-export MUTO_LOG_LEVEL=info
-```
-
-### MUTO_LOG_FORMAT
-
-**Type:** `string`  
-**Default:** `json`  
-**Valid Values:** `json`, `text`
-
-Log output format. JSON is structured and better for automated parsing.
-
-```bash
-# Structured logging (recommended for production)
-export MUTO_LOG_FORMAT=json
-
-# Human-readable (recommended for development)
-export MUTO_LOG_FORMAT=text
 ```
 
 ## Message Bus Configuration
@@ -278,49 +245,16 @@ export MUTO_CF_ORG=my-org
 
 ## Observability
 
-### MUTO_METRICS_ENABLED
+The operator doesn't read any observability-related environment variables yet. Its endpoints and log output are fixed:
 
-**Type:** `boolean`  
-**Default:** `true`
+| Setting | Current behavior |
+|---|---|
+| Metrics endpoint | `:8080/metrics` (controller-runtime built-in metrics), not configurable |
+| Health probes | `:8081/healthz` and `:8081/readyz`, not configurable |
+| Logs | Plain-text key/value lines on stderr; level and format not configurable |
+| Tracing | Not implemented |
 
-Enable Prometheus metrics collection.
-
-```bash
-export MUTO_METRICS_ENABLED=true
-```
-
-### MUTO_METRICS_PORT
-
-**Type:** `integer`  
-**Default:** `8080`
-
-Port for Prometheus metrics endpoint.
-
-```bash
-export MUTO_METRICS_PORT=9090
-```
-
-### MUTO_TRACING_ENABLED
-
-**Type:** `boolean`  
-**Default:** `false`
-
-Enable distributed tracing (OpenTelemetry).
-
-```bash
-export MUTO_TRACING_ENABLED=true
-```
-
-### MUTO_JAEGER_ENDPOINT
-
-**Type:** `string`  
-**Default:** `http://localhost:6831`
-
-Jaeger collector endpoint for tracing.
-
-```bash
-export MUTO_JAEGER_ENDPOINT=http://jaeger:6831
-```
+Configurable logging (`MUTO_LOG_LEVEL`, `MUTO_LOG_FORMAT`), configurable bind addresses, custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ## Security
 
@@ -409,12 +343,9 @@ export MUTO_WEBHOOK_EVENTS=job.created,job.started,job.completed,job.failed
 
 ```bash
 export MUTO_PLATFORM=kubernetes
-export MUTO_LOG_LEVEL=debug
-export MUTO_LOG_FORMAT=text
 export MUTO_MESSAGE_BUS_TYPE=nats
 export MUTO_NATS_URL=nats://localhost:4222
 export MUTO_RECONCILER_WORKER_COUNT=2
-export MUTO_METRICS_ENABLED=true
 export MUTO_TLS_ENABLED=false
 ```
 
@@ -422,15 +353,10 @@ export MUTO_TLS_ENABLED=false
 
 ```bash
 export MUTO_PLATFORM=kubernetes
-export MUTO_LOG_LEVEL=info
-export MUTO_LOG_FORMAT=json
 export MUTO_MESSAGE_BUS_TYPE=kafka
 export MUTO_KAFKA_BROKERS=kafka1:9092,kafka2:9092,kafka3:9092
 export MUTO_RECONCILER_WORKER_COUNT=20
 export MUTO_MAX_JOBS_PER_TENANT=1000
-export MUTO_METRICS_ENABLED=true
-export MUTO_TRACING_ENABLED=true
-export MUTO_JAEGER_ENDPOINT=http://jaeger:6831
 export MUTO_TLS_ENABLED=true
 export MUTO_WEBHOOKS_ENABLED=true
 export MUTO_WEBHOOK_URLS=https://monitor:443/webhooks

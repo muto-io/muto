@@ -11,9 +11,7 @@ CloudFoundry environment variables are set in the manifest or via `cf set-env`.
 ```bash
 # Operator settings
 cf set-env muto-operator MUTO_PLATFORM cloudfoundry
-cf set-env muto-operator MUTO_LOG_LEVEL info
 cf set-env muto-operator MUTO_API_PORT 8080
-cf set-env muto-operator MUTO_METRICS_PORT 9090
 
 # Organization and space
 cf set-env muto-operator CF_ORG muto-platform
@@ -76,17 +74,7 @@ cf set-env muto-operator RECONCILER_RETRY_MAX_RETRIES 15
 
 ### Logging Configuration
 
-```bash
-# Log format
-cf set-env muto-operator LOG_FORMAT json
-
-# Log level
-cf set-env muto-operator LOG_LEVEL debug
-
-# Structured logging
-cf set-env muto-operator LOG_INCLUDE_TIMESTAMP true
-cf set-env muto-operator LOG_INCLUDE_CALLER true
-```
+Logging isn't configurable: the operator writes plain-text key/value lines to stderr at a fixed verbosity, and variables such as `LOG_FORMAT` or `LOG_LEVEL` have no effect. Configurable logging is planned in [#79](https://github.com/muto-io/muto/issues/79).
 
 ### Resource Management
 
@@ -123,7 +111,6 @@ applications:
     
     env:
       MUTO_PLATFORM: cloudfoundry
-      MUTO_LOG_LEVEL: info
       CF_API_ENDPOINT: https://api.cf.example.com
       
     services:
@@ -149,8 +136,6 @@ applications:
     
     env:
       MUTO_PLATFORM: cloudfoundry
-      MUTO_LOG_LEVEL: info
-      MUTO_METRICS_PORT: 9090
       
       CF_API_ENDPOINT: https://api.cf.example.com
       CF_SKIP_SSL_VALIDATION: false

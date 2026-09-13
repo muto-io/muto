@@ -189,22 +189,23 @@ Message Bus
 
 ## Monitoring & Observability
 
-Muto exports structured observability data:
+The operator exposes the observability that controller-runtime provides:
 
 ```
-Agent Job Execution
+Muto Operator
         │
-        ├─ Structured Logs (JSON)
-        │  └─ Event: "job scheduled", "status updated", "error occurred"
+        ├─ Logs (plain-text key/value, stderr)
+        │  └─ e.g. "adding tenant finalizer", reconcile errors
         │
-        ├─ Prometheus Metrics
-        │  ├─ muto_jobs_total (counter)
-        │  ├─ muto_job_duration_seconds (histogram)
-        │  └─ muto_agents_running (gauge)
+        ├─ Prometheus Metrics (:8080/metrics)
+        │  ├─ controller_runtime_reconcile_total (counter)
+        │  ├─ controller_runtime_reconcile_time_seconds (histogram)
+        │  └─ workqueue_depth (gauge)
         │
-        └─ Distributed Tracing (OpenTelemetry)
-           └─ Trace user request through all components
+        └─ Health Probes (:8081/healthz, :8081/readyz)
 ```
+
+Muto-specific job metrics and OpenTelemetry tracing are planned ([#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Extensibility
 

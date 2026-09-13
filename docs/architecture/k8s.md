@@ -263,11 +263,7 @@ LAST SEEN   TYPE      REASON          MESSAGE
 ```
 
 ### Metrics
-Controller exports Prometheus metrics:
-- `muto_job_duration_seconds` — Job execution time
-- `muto_job_retries_total` — Retry count by outcome
-- `muto_pods_created_total` — Pod creation rate
-- `muto_tenant_resource_usage` — Tenant resource consumption
+The operator exports controller-runtime's built-in Prometheus metrics on `:8080/metrics`, such as `controller_runtime_reconcile_total`, `controller_runtime_reconcile_time_seconds` and `workqueue_depth`, labelled by `controller` (`tenant`, `agentjob`, `agentfleet`). Job- and tenant-level `muto_*` metrics are planned ([#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Advantages of Kubernetes Platform
 

@@ -399,27 +399,14 @@ kubectl get agentjobs --sort-by=metadata.creationTimestamp | tail -20
 
 ### Metrics and Observability
 
-Muto exports Prometheus metrics for monitoring:
+Job-level Prometheus metrics (job counts, durations, retries) aren't available yet; they're planned in [#79](https://github.com/muto-io/muto/issues/79). Follow a job through its status and the operator logs instead:
 
-```
-# Job counts
-muto_jobs_total{status="completed"}
-muto_jobs_total{status="failed"}
-muto_jobs_total{status="running"}
-
-# Job duration
-muto_job_duration_seconds_bucket{job_name="my-job"}
-muto_job_duration_seconds_sum{job_name="my-job"}
-
-# Agent counts
-muto_agents_running{job_name="my-job"}
-muto_agent_duration_seconds{agent_name="processor"}
-
-# Retry metrics
-muto_job_retries_total{reason="timeout"}
-muto_job_retries_total{reason="error"}
+```bash
+kubectl get agentjob my-job -o jsonpath='{.status.phase}'
+kubectl logs -n muto-system deployment/muto-operator | grep '"name"="my-job"'
 ```
 
+Overall scheduling activity shows up in the operator's reconcile metrics for the `agentjob` controller, such as `controller_runtime_reconcile_total{controller="agentjob"}`. See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ## Cancellation
 

@@ -109,7 +109,6 @@ applications:
     env:
       MUTO_PLATFORM: cloudfoundry
       MUTO_ORG: muto-platform
-      MUTO_LOG_LEVEL: info
       MUTO_MESSAGEBUS_TYPE: nats
     services:
       - muto-nats
@@ -133,7 +132,6 @@ applications:
     env:
       BP_GO_BUILD_FLAGS: "-ldflags '-s -w'"
       MUTO_PLATFORM: cloudfoundry
-      MUTO_LOG_LEVEL: info
 ```
 
 ## Step 3: Set Up Services
@@ -197,10 +195,10 @@ Monitor deployment:
 cf logs muto-operator --recent
 ```
 
-Expected output:
+The operator writes plain-text key/value lines to stderr, which `cf logs` shows as `ERR`. A successful start ends with:
+
 ```
-2026-09-03T10:30:45.123Z [APP/PROC/WEB/0] OUT INFO: muto-operator started version=0.1.0
-2026-09-03T10:30:46.456Z [APP/PROC/WEB/0] OUT INFO: listening on :8080
+[APP/PROC/WEB/0] ERR 2026/09/03 10:30:45 muto-operator: "level"=0 "msg"="starting muto-operator" "platform"="cf"
 ```
 
 ### Verify Deployment
@@ -236,7 +234,6 @@ applications:
     command: ./bin/muto-mcp
     env:
       MUTO_PLATFORM: cloudfoundry
-      MUTO_LOG_LEVEL: info
       MCP_PORT: 3000
 ```
 

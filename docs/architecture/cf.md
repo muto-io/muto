@@ -205,11 +205,7 @@ task.failed    -> Task failed
 ```
 
 ### Metrics
-Exported from muto-controller:
-- `muto_task_duration_seconds` — Task execution time
-- `muto_task_failures_total` — Failed task count
-- `muto_space_usage_percent` — Space quota utilization
-- `muto_service_binding_errors` — Service binding failures
+CF-specific metrics (task duration, task failures, quota usage, service binding errors) aren't exported yet; they're planned in [#79](https://github.com/muto-io/muto/issues/79). The operator's built-in controller-runtime metrics are served on `:8080/metrics` inside the container.
 
 ## Advantages of CloudFoundry Platform
 

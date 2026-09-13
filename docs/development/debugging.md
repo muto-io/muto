@@ -4,19 +4,19 @@ Techniques for debugging, profiling, and troubleshooting Muto.
 
 ## Local Debugging
 
-### Run with Verbose Logging
+### Run Locally
 
-Enable debug-level logging:
+Run the binaries against the cluster of your current kubeconfig context:
 
 ```bash
-# Run operator with debug logs
-LOGGER_LEVEL=debug ./bin/muto-operator
+# Run operator
+./bin/muto-operator
 
-# Or for MCP server
-LOGGER_LEVEL=debug ./bin/muto-mcp
+# Or the MCP server
+./bin/muto-mcp
 ```
 
-Check available log levels in your component's main.go.
+Log verbosity is fixed at `0`, so there is no debug level to enable yet; see [Verbose Logging](#verbose-logging).
 
 ### Using Delve Debugger
 
@@ -57,10 +57,7 @@ Create `.vscode/launch.json`:
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/cmd/muto-operator",
-            "env": {
-                "LOGGER_LEVEL": "debug"
-            }
+            "program": "${workspaceFolder}/cmd/muto-operator"
         }
     ]
 }
@@ -90,11 +87,12 @@ dlv test ./core/scheduler -- -test.run TestSchedule
 
 ### Structured Logging with go-logr
 
-Muto uses go-logr for structured logging. Log messages include:
-- Timestamp
-- Level (Info, Debug, Warn, Error)
+Muto uses go-logr for structured logging with the [`stdr`](https://github.com/go-logr/stdr) backend, which writes to stderr. Log lines include:
+- Timestamp (second precision)
+- Logger name
+- Verbosity (`"level"=0`; messages logged with `V(1)` or higher are currently discarded)
 - Message
-- Key-value pairs
+- Key-value pairs (errors are logged with an `"error"` key)
 
 **Examples:**
 
@@ -120,42 +118,27 @@ log.Error(err, "failed to schedule job",
 
 ### Log Parsing
 
-Logs are JSON-formatted for machine parsing:
+Logs are plain-text key/value lines, not JSON:
 
-```json
-{
-    "level": "info",
-    "ts": "2026-09-03T10:30:45.123Z",
-    "logger": "scheduler",
-    "msg": "job scheduled",
-    "jobID": "job-123",
-    "tenant": "tenant-a",
-    "agents": 2
-}
+```
+2026/09/12 09:46:39 "level"=0 "msg"="adding tenant finalizer" "controller"="tenant" "controllerGroup"="muto.io" "controllerKind"="Tenant" "Tenant"={"name"="demo-tenant"} "namespace"="" "name"="demo-tenant" "reconcileID"="c0c3b48e-78e4-42f5-86ae-334acbd8aa8f" "tenant"="demo-tenant" "finalizer"="muto.io/tenant-cleanup"
 ```
 
 **Filter logs:**
 ```bash
 # Show only errors
-kubectl logs deployment/muto-operator -n muto-system | jq 'select(.level == "error")'
+kubectl logs deployment/muto-operator -n muto-system | grep '"error"='
 
-# Show logs for specific job
-kubectl logs deployment/muto-operator -n muto-system | jq 'select(.jobID == "job-123")'
+# Show logs for a specific object
+kubectl logs deployment/muto-operator -n muto-system | grep '"name"="my-job"'
 
-# Show last 100 errors
-kubectl logs deployment/muto-operator -n muto-system --tail=1000 | \
-    jq 'select(.level == "error")' | tail -100
+# Show logs of one reconciler
+kubectl logs deployment/muto-operator -n muto-system | grep '"controller"="agentjob"'
 ```
 
-### Enable Verbose Logging in Kubernetes
+### Verbose Logging
 
-Edit the operator deployment:
-
-```bash
-kubectl set env deployment/muto-operator \
-    -n muto-system \
-    LOGGER_LEVEL=debug
-```
+Log verbosity is fixed at `0`: `log.V(1).Info(...)` and higher are discarded, and no environment variable raises the level. While debugging, log at `V(0)` (see below) or use a debugger. Configurable log levels are planned in [#79](https://github.com/muto-io/muto/issues/79).
 
 View logs:
 ```bash
@@ -248,31 +231,12 @@ go tool pprof http://localhost:6060/debug/pprof/profile
 
 ## Tracing
 
-### Enable Distributed Tracing
+Distributed tracing isn't implemented yet: the operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` environment variables have no effect. OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79).
 
-Muto supports OpenTelemetry for tracing. Set environment variables:
+To follow a single reconciliation, filter the logs by its `reconcileID`:
 
 ```bash
-# Enable OTLP exporter
-OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-OTEL_SERVICE_NAME=muto-operator
-
-# Start operator
-./bin/muto-operator
-```
-
-### View Traces
-
-**With Jaeger UI:**
-1. Open http://localhost:16686
-2. Select service: `muto-operator`
-3. Find traces by tag or operation name
-
-**Example trace tags:**
-```
-jobID=job-123
-tenant=tenant-a
-operation=schedule
+kubectl logs deployment/muto-operator -n muto-system | grep '"reconcileID"="<id>"'
 ```
 
 ## Common Issues and Solutions
@@ -303,8 +267,7 @@ kubectl get events -n muto-system --sort-by='.lastTimestamp'
 
 **Check operator logs:**
 ```bash
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.jobID == "job-123")'
+kubectl logs deployment/muto-operator -n muto-system | grep '"name"="job-123"'
 ```
 
 **Check agent status:**
@@ -315,9 +278,8 @@ kubectl describe agentjob job-123
 
 **Check reconciler status:**
 ```bash
-# Watch reconciliation attempts
-kubectl logs deployment/muto-operator -n muto-system -f | \
-    jq 'select(.msg | contains("reconcile"))'
+# Watch AgentJob reconciliations
+kubectl logs deployment/muto-operator -n muto-system -f | grep '"controller"="agentjob"'
 ```
 
 ### Message Bus Connection Failures
@@ -342,13 +304,9 @@ nc -zv kafka-broker 9092
 kubectl logs statefulset/kafka -n kafka
 ```
 
-**In operator logs, look for:**
-```json
-{
-    "level": "error",
-    "msg": "failed to connect to message bus",
-    "error": "connection refused"
-}
+**In operator logs, look for errors:**
+```bash
+kubectl logs deployment/muto-operator -n muto-system | grep '"error"='
 ```
 
 ### Tests Failing with Timeout
@@ -520,16 +478,14 @@ cf task task-id
 
 ### Measure scheduler latency
 
-```bash
-# Extract scheduling times from logs
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.msg == "job scheduled") | .duration_ms'
+The operator doesn't log per-job scheduling durations. Use the reconcile latency metrics instead:
 
-# Calculate statistics
-kubectl logs deployment/muto-operator -n muto-system | \
-    jq 'select(.msg == "job scheduled") | .duration_ms' | \
-    awk '{sum+=$1; count++} END {print "Avg: " sum/count "ms"}'
+```bash
+kubectl port-forward -n muto-system deployment/muto-operator 8080:8080 &
+curl -s localhost:8080/metrics | grep -E '^controller_runtime_reconcile_time_seconds_(sum|count)\{controller="agentjob"\}'
 ```
+
+Divide `_sum` by `_count` for the average AgentJob reconcile duration, or use the PromQL queries in [Monitoring and Observability](../operations/monitoring-observability.md#promql-queries).
 
 ### Check resource usage
 

@@ -562,25 +562,27 @@ spec:
 
 ## Monitoring and Observability
 
-### Service Monitor for Prometheus
+### Prometheus Scraping
 
-Enable Prometheus scraping:
+The operator serves controller-runtime's built-in metrics at `:8080/metrics`. The Helm chart adds `prometheus.io/scrape`, `prometheus.io/port` and `prometheus.io/path` annotations to the operator pod but doesn't create a Service, so a `ServiceMonitor` has nothing to select. With the Prometheus Operator, use a `PodMonitor`:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
   name: muto-operator
   namespace: muto-system
 spec:
   selector:
     matchLabels:
-      app: muto-operator
-  endpoints:
+      app.kubernetes.io/name: muto
+  podMetricsEndpoints:
     - port: metrics
-      interval: 30s
       path: /metrics
+      interval: 30s
 ```
+
+See [Monitoring and Observability](../../operations/monitoring-observability.md#prometheus-metrics) for the available metrics.
 
 ### Log Collection with Fluentd
 

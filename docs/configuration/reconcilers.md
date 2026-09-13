@@ -40,7 +40,7 @@ export MUTO_RECONCILER_WORKER_COUNT=20
 - Increase worker count if reconciliation queue is growing
 - Decrease if CPU or memory usage is too high
 - Each worker uses approximately 50MB of memory
-- Monitor queue depth: `muto_reconciliation_queue_depth` metric
+- Monitor queue depth: `workqueue_depth` metric (per `controller`)
 
 ### Sync Period
 
@@ -281,32 +281,26 @@ export MUTO_RECONCILER_MAX_RETRIES=5
 
 ### Key Metrics
 
-Monitor these Prometheus metrics:
+Monitor these Prometheus metrics (controller-runtime built-in, labelled by `controller`):
 
-- `muto_reconciliation_queue_depth` — Number of pending reconciliations
-- `muto_reconciliation_duration_seconds` — Time to complete reconciliations
-- `muto_reconciliation_errors_total` — Failed reconciliation count
-- `muto_reconciler_workers_busy` — Number of active workers
-- `muto_event_buffer_size` — Number of buffered events
+- `workqueue_depth` — Number of pending reconciliations
+- `controller_runtime_reconcile_time_seconds` — Time to complete reconciliations
+- `controller_runtime_reconcile_errors_total` — Failed reconciliation count
+- `controller_runtime_active_workers` — Number of active workers
+- `workqueue_queue_duration_seconds` — Time an event waits before it is reconciled
 
 ### Alerts to Configure
 
 **Alert: High Reconciliation Queue Depth**
 
 ```
-muto_reconciliation_queue_depth > 100
+sum by (controller) (workqueue_depth) > 100
 ```
 
 **Alert: Reconciliation Taking Too Long**
 
 ```
-moto_reconciliation_duration_seconds > 30s
-```
-
-**Alert: Event Buffer Approaching Capacity**
-
-```
-muto_event_buffer_size > 9000
+histogram_quantile(0.95, sum by (controller, le) (rate(controller_runtime_reconcile_time_seconds_bucket[5m]))) > 30
 ```
 
 ## Troubleshooting
@@ -314,7 +308,7 @@ muto_event_buffer_size > 9000
 ### Problem: Reconciliation Queue Growing
 
 **Symptoms:**
-- `muto_reconciliation_queue_depth` steadily increasing
+- `workqueue_depth` steadily increasing
 - Jobs slow to start or become stuck in Pending
 
 **Solutions:**

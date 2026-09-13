@@ -201,7 +201,8 @@ var _ = Describe("CF Adapter E2E", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Wait for task to complete
-			time.Sleep(300 * time.Millisecond)
+			err = WaitForTaskState(ctx, mockClient, agentID, "SUCCEEDED", 5*time.Second)
+			Expect(err).NotTo(HaveOccurred())
 
 			// Try to terminate - should not error even though it's already succeeded
 			err = adapter.TerminateAgent(ctx, agentID)

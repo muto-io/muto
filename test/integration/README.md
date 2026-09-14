@@ -664,9 +664,9 @@ Logf("Task state: %s", taskState.State)
 
 ## Performance Baselines
 
-Measured in CI (GitHub-hosted `ubuntu-latest`, 5 E2E runs on 2026-09-12):
+Measured in CI (GitHub-hosted `ubuntu-latest`, E2E runs on 2026-09-12 to 2026-09-14):
 - **K8s suite** — ~70 s for 45 specs on a pre-created kind cluster (~90 s locally, including ~20 s k3s startup)
-- **CF suite** — ~190 s for 36 specs. 120 s of that is `BeforeSuite` waiting for an unreachable CF API before it falls back to the mock server ([#87](https://github.com/muto-io/muto/issues/87)); ~70 s without it
+- **CF suite** — ~70 s for 36 specs against the mock server. Before [#93](https://github.com/muto-io/muto/pull/93) it took ~190 s, 120 s of it in `BeforeSuite` waiting for an unreachable CF API ([#87](https://github.com/muto-io/muto/issues/87))
 
 Run `make test-profile` to measure your own setup. See [Test Profiling](../../docs/testing/test-profiling.md) for the slowest specs and their follow-up issues.
 

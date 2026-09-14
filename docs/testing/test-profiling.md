@@ -73,13 +73,15 @@ Source: 5 runs of the E2E workflow on 2026-09-12 (GitHub-hosted `ubuntu-latest`;
 
 The two jobs run in parallel, so the workflow takes as long as the CloudFoundry job (3:59–4:14). Both jobs download ~40 Go modules on every run (`go: downloading ...`), even though `setup-go` caching is enabled.
 
+**Since [#93](https://github.com/muto-io/muto/pull/93):** It fixed [#87](https://github.com/muto-io/muto/issues/87), so CF `BeforeSuite` now takes 0.08 s and the CF suite 71 s. In the 4 E2E runs after it (2026-09-13/14; runs 34758747707, 34758930151, 34813316757, 34817487379), the CF job took 2:02–2:11 and the K8s job 2:32–2:37, so the K8s job is now the critical path. The workflow took 2:41–2:44, except for one run in which the K8s test step took 174 s instead of ~100 s (K8s job 3:49, workflow 3:59).
+
 ### Slowest Nodes
 
 Mean over the 5 CI runs:
 
 | # | Node | Suite | Mean | Range | Root cause | Follow-up |
 |---|------|-------|------|-------|------------|-----------|
-| 1 | `[BeforeSuite]` | CF | 120.35 s | 120.17–120.47 s | `waitForCFReady` polls the unresolvable `api.cf.local` until its 2-minute deadline, then the suite falls back to the mock server | [#87](https://github.com/muto-io/muto/issues/87) |
+| 1 | `[BeforeSuite]` | CF | 120.35 s | 120.17–120.47 s | `waitForCFReady` polls the unresolvable `api.cf.local` until its 2-minute deadline, then the suite falls back to the mock server | [#87](https://github.com/muto-io/muto/issues/87), fixed by [#93](https://github.com/muto-io/muto/pull/93) (now 0.08 s) |
 | 2 | CF Failure Scenarios … should handle concurrent task creation failures | CF | 13.04 s | 13.04–13.05 s | Creates 5 tasks and waits for each in turn; every mock task takes 2.61 s | [#88](https://github.com/muto-io/muto/issues/88) |
 | 3 | A2A Gateway Lifecycle provisions gateway Deployment, Service, and Secret … | K8s | 8.70 s | 6.57–13.16 s | `AfterEach` blocks ~5.5 s on namespace deletion | [#89](https://github.com/muto-io/muto/issues/89) |
 | 4 | A2A Gateway Lifecycle injects MUTO_A2A_GATEWAY and MUTO_A2A_TOKEN … | K8s | 7.94 s | 7.07–11.40 s | Same as #3 | [#89](https://github.com/muto-io/muto/issues/89) |
@@ -116,7 +118,7 @@ The local spec durations match CI: A2A Gateway 6.6 s and 7.1 s, Namespace Termin
 
 ## Parallelization Opportunities
 
-- **Jobs:** The K8s and CF E2E jobs already run in parallel. The CF job is the critical path. Once [#87](https://github.com/muto-io/muto/issues/87) is fixed it drops to ~2:00, and the K8s job (~2:45) becomes the critical path.
+- **Jobs:** The K8s and CF E2E jobs already run in parallel. Since [#93](https://github.com/muto-io/muto/pull/93) fixed [#87](https://github.com/muto-io/muto/issues/87), the CF job takes ~2:05 and the K8s job (~2:35) is the critical path.
 - **Within specs:** Several specs create resources one at a time and wait for each ([#88](https://github.com/muto-io/muto/issues/88), [#91](https://github.com/muto-io/muto/issues/91)). Creating everything first and then waiting is the cheapest form of parallelization.
 - **CF suite with `ginkgo -p`:** Every Ginkgo process would start its own in-process mock server, so the mock-based specs can run in parallel. With a real CF instance, the per-process `CFTestHelper` counters would produce the same space names in every process. Fix [#88](https://github.com/muto-io/muto/issues/88) first; afterwards the remaining gain is small.
 - **K8s suite with `ginkgo -p`:** No spec is marked `Serial` or `Ordered`, but the suite isn't parallel-safe yet:

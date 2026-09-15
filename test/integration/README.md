@@ -664,10 +664,11 @@ Logf("Task state: %s", taskState.State)
 
 ## Performance Baselines
 
-Typical test execution times:
-- **K8s suite** — 15-20 minutes (includes k3s startup)
-- **CF suite** — 5-10 minutes (requires existing CF instance)
-- **Full e2e** — 25-30 minutes
+Approximate times in CI:
+- **K8s suite** — ~70 s for 45 specs on a pre-created kind cluster (~90 s locally, including k3s startup)
+- **CF suite** — ~70 s for 36 specs against the mock server
+
+Run `make test-profile` to measure your own setup. See [Test Profiling](../../docs/testing/test-profiling.md) for the slowest specs and their follow-up issues.
 
 ---
 

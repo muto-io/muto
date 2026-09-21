@@ -7,7 +7,7 @@ require (
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
 	github.com/go-logr/logr v1.4.4
 	github.com/go-logr/stdr v1.2.2
-	github.com/mark3labs/mcp-go v1.0.0
+	github.com/mark3labs/mcp-go v1.1.0
 	github.com/nats-io/nats.go v1.53.1
 	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.43.1

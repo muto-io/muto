@@ -56,7 +56,16 @@ func main() {
 	ctrl.SetLogger(stdr.New(log.Default()))
 	log := ctrl.Log.WithName("muto-operator")
 
-	mgr, err := newManager(ctrl.GetConfigOrDie(), ":8080", ":8081")
+	metricsAddr := os.Getenv("MUTO_METRICS_BIND_ADDRESS")
+	if metricsAddr == "" {
+		metricsAddr = ":8080"
+	}
+	probeAddr := os.Getenv("MUTO_HEALTH_PROBE_BIND_ADDRESS")
+	if probeAddr == "" {
+		probeAddr = ":8081"
+	}
+
+	mgr, err := newManager(ctrl.GetConfigOrDie(), metricsAddr, probeAddr)
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		os.Exit(1)

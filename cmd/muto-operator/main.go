@@ -3,21 +3,23 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 
-	"github.com/go-logr/stdr"
+	"github.com/go-logr/logr"
 	cfplatform "github.com/muto-io/muto/platform/cf"
 	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	"github.com/muto-io/muto/core/scheduler"
+	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -26,6 +28,39 @@ var scheme = runtime.NewScheme()
 func init() {
 	_ = corev1.AddToScheme(scheme)
 	_ = v1alpha1.AddToScheme(scheme)
+}
+
+// buildLogger builds a zap-backed logr.Logger at the given level, writing
+// out in the given format. format must be "json" or "console"; level must
+// be one of "debug", "info", "warn", "error". The two are independent
+// knobs (not zap.UseDevMode, which conflates encoder choice with level and
+// stacktrace defaults).
+func buildLogger(format, level string, out io.Writer) (logr.Logger, error) {
+	var levelOpt zapcore.Level
+	switch level {
+	case "debug":
+		levelOpt = zapcore.DebugLevel
+	case "info":
+		levelOpt = zapcore.InfoLevel
+	case "warn":
+		levelOpt = zapcore.WarnLevel
+	case "error":
+		levelOpt = zapcore.ErrorLevel
+	default:
+		return logr.Logger{}, fmt.Errorf("invalid MUTO_LOG_LEVEL %q: must be one of debug, info, warn, error", level)
+	}
+
+	var encoderOpt ctrlzap.Opts
+	switch format {
+	case "json":
+		encoderOpt = ctrlzap.JSONEncoder()
+	case "console":
+		encoderOpt = ctrlzap.ConsoleEncoder()
+	default:
+		return logr.Logger{}, fmt.Errorf("invalid MUTO_LOG_FORMAT %q: must be one of json, console", format)
+	}
+
+	return ctrlzap.New(ctrlzap.Level(levelOpt), encoderOpt, ctrlzap.WriteTo(out)), nil
 }
 
 // newManager creates the controller manager serving Prometheus metrics on
@@ -53,10 +88,32 @@ func newManager(cfg *rest.Config, metricsAddr, probeAddr string) (ctrl.Manager, 
 }
 
 func main() {
-	ctrl.SetLogger(stdr.New(log.Default()))
+	logFormat := os.Getenv("MUTO_LOG_FORMAT")
+	if logFormat == "" {
+		logFormat = "json"
+	}
+	logLevel := os.Getenv("MUTO_LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	logger, err := buildLogger(logFormat, logLevel, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid logging configuration: %v\n", err)
+		os.Exit(1)
+	}
+	ctrl.SetLogger(logger)
 	log := ctrl.Log.WithName("muto-operator")
 
-	mgr, err := newManager(ctrl.GetConfigOrDie(), ":8080", ":8081")
+	metricsAddr := os.Getenv("MUTO_METRICS_BIND_ADDRESS")
+	if metricsAddr == "" {
+		metricsAddr = ":8080"
+	}
+	probeAddr := os.Getenv("MUTO_HEALTH_PROBE_BIND_ADDRESS")
+	if probeAddr == "" {
+		probeAddr = ":8081"
+	}
+
+	mgr, err := newManager(ctrl.GetConfigOrDie(), metricsAddr, probeAddr)
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		os.Exit(1)

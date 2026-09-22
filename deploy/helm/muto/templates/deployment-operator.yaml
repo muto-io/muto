@@ -37,6 +37,14 @@ spec:
               value: {{ $val | quote }}
             {{- end }}
             {{- end }}
+            - name: MUTO_METRICS_BIND_ADDRESS
+              {{- if .Values.metrics.enabled }}
+              value: {{ printf ":%d" (.Values.metrics.port | int) | quote }}
+              {{- else }}
+              value: "0"
+              {{- end }}
+            - name: MUTO_HEALTH_PROBE_BIND_ADDRESS
+              value: {{ printf ":%d" (.Values.healthProbe.port | int) | quote }}
           ports:
             - name: metrics
               containerPort: {{ .Values.metrics.port }}

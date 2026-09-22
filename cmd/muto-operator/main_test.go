@@ -2,7 +2,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net"
 	"net/http"
 	"testing"
@@ -42,6 +44,34 @@ func TestManagerServesHealthProbes(t *testing.T) {
 	}
 }
 
+// TestManagerServesMetrics guards the metrics bind address that
+// MUTO_METRICS_BIND_ADDRESS (and, through it, the Helm chart's
+// values.metrics.port) is supposed to control: newManager must bind the
+// metrics server on the address it's given, not a hardcoded one.
+func TestManagerServesMetrics(t *testing.T) {
+	metricsAddr := freeAddr(t)
+
+	// No controllers are registered, so the manager never contacts this API server.
+	mgr, err := newManager(&rest.Config{Host: "http://127.0.0.1:1"}, metricsAddr, "0")
+	if err != nil {
+		t.Fatalf("newManager: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- mgr.Start(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Errorf("manager exited with error: %v", err)
+		}
+	})
+
+	if got := getStatus(t, "http://"+metricsAddr+"/metrics"); got != http.StatusOK {
+		t.Errorf("GET /metrics: status %d, want %d", got, http.StatusOK)
+	}
+}
+
 // getStatus polls url until the server accepts connections and returns the
 // HTTP status code of the first response.
 func getStatus(t *testing.T, url string) int {
@@ -73,4 +103,69 @@ func freeAddr(t *testing.T) string {
 		t.Fatalf("close listener: %v", err)
 	}
 	return addr
+}
+
+func TestBuildLogger(t *testing.T) {
+	t.Run("valid combinations", func(t *testing.T) {
+		for _, level := range []string{"debug", "info", "warn", "error"} {
+			for _, format := range []string{"json", "console"} {
+				t.Run(level+"/"+format, func(t *testing.T) {
+					var buf bytes.Buffer
+					if _, err := buildLogger(format, level, &buf); err != nil {
+						t.Fatalf("buildLogger(%q, %q): %v", format, level, err)
+					}
+				})
+			}
+		}
+	})
+
+	t.Run("invalid level", func(t *testing.T) {
+		var buf bytes.Buffer
+		if _, err := buildLogger("json", "trace", &buf); err == nil {
+			t.Fatal("expected error for invalid MUTO_LOG_LEVEL, got nil")
+		}
+	})
+
+	t.Run("invalid format", func(t *testing.T) {
+		var buf bytes.Buffer
+		if _, err := buildLogger("yaml", "info", &buf); err == nil {
+			t.Fatal("expected error for invalid MUTO_LOG_FORMAT, got nil")
+		}
+	})
+
+	t.Run("json format emits parseable JSON", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger, err := buildLogger("json", "info", &buf)
+		if err != nil {
+			t.Fatalf("buildLogger: %v", err)
+		}
+		logger.Info("test message", "key", "value")
+
+		line := buf.Bytes()
+		if len(line) == 0 {
+			t.Fatal("expected log output, got none")
+		}
+		var decoded map[string]interface{}
+		if err := json.Unmarshal(line, &decoded); err != nil {
+			t.Fatalf("log line is not valid JSON: %v\nline: %s", err, line)
+		}
+		if decoded["msg"] != "test message" {
+			t.Errorf("msg = %v, want %q", decoded["msg"], "test message")
+		}
+		if decoded["key"] != "value" {
+			t.Errorf("key = %v, want %q", decoded["key"], "value")
+		}
+	})
+
+	t.Run("error level filters info messages", func(t *testing.T) {
+		var buf bytes.Buffer
+		logger, err := buildLogger("json", "error", &buf)
+		if err != nil {
+			t.Fatalf("buildLogger: %v", err)
+		}
+		logger.Info("should be filtered")
+		if buf.Len() != 0 {
+			t.Errorf("expected no output at error level for an Info call, got: %s", buf.Bytes())
+		}
+	})
 }

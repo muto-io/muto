@@ -29,7 +29,7 @@ var _ = Describe("Failure Scenarios", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("failure-pod-evict-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -139,7 +139,7 @@ var _ = Describe("Failure Scenarios", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("failure-cleanup-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -263,7 +263,7 @@ var _ = Describe("Failure Scenarios", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("failure-terminating-%d", testCounter)
 			tenantName = fmt.Sprintf("term-tenant-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
@@ -344,7 +344,7 @@ var _ = Describe("Failure Scenarios", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("failure-concurrent-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -395,7 +395,7 @@ var _ = Describe("Failure Scenarios", func() {
 						Name: job.Name, Namespace: nsName,
 					}, updated)).To(Succeed())
 					g.Expect(updated.Status.Phase).To(Equal("Running"))
-				}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).
+				}).WithTimeout(30*time.Second).WithPolling(500*time.Millisecond).
 					Should(Succeed(), fmt.Sprintf("Job %d failed to reach Running phase", i))
 			}
 

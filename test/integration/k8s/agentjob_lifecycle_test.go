@@ -31,7 +31,7 @@ var _ = Describe("AgentJob", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("lifecycle-test-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -94,5 +94,3 @@ var _ = Describe("AgentJob", func() {
 		})
 	})
 })
-
-

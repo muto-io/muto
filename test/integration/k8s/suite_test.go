@@ -4,6 +4,7 @@ package k8s_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,7 +44,29 @@ func TestK8sIntegration(t *testing.T) {
 
 func boolPtr(b bool) *bool { return &b }
 
-var _ = BeforeSuite(func() {
+// buildScheme constructs the runtime scheme shared by the manager (process 1)
+// and every process' plain client, so both stay in sync.
+func buildScheme() (*runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add corev1 to scheme: %w", err)
+	}
+	if err := appsv1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add appsv1 to scheme: %w", err)
+	}
+	if err := v1alpha1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add v1alpha1 to scheme: %w", err)
+	}
+	return scheme, nil
+}
+
+// SynchronizedBeforeSuite: under `ginkgo -p`, BeforeSuite would otherwise run
+// once per OS process, each starting its own k3s cluster/manager and, against
+// an existing cluster, several reconcilers racing on the same objects. The
+// first function below runs only on process #1: it owns the cluster and the
+// single controller-runtime manager, and hands the resulting kubeconfig to
+// every process (including itself) via the second function.
+var _ = SynchronizedBeforeSuite(func() []byte {
 	ctx := context.Background()
 
 	// Initialize logger to suppress controller-runtime warnings
@@ -113,7 +136,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	// Build rest.Config from kubeconfig
-	cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	restCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		Skip("Kubernetes cluster not available: failed to build kubeconfig: " + err.Error())
 	}
@@ -127,38 +150,27 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		UseExistingCluster:    boolPtr(true),
 		CRDDirectoryPaths:     []string{crdPath},
-		Config:                cfg,
+		Config:                restCfg,
 		ErrorIfCRDPathMissing: false,
 	}
 
-	cfg, err = testEnv.Start()
+	restCfg, err = testEnv.Start()
 	if err != nil {
 		Skip("Kubernetes cluster not available: failed to start envtest environment: " + err.Error())
 	}
-	if cfg == nil {
+	if restCfg == nil {
 		Skip("Kubernetes cluster not available: envtest config is nil")
 	}
 
-	// 4. Build runtime scheme with corev1 + appsv1 + v1alpha1
-	scheme := runtime.NewScheme()
-	if err := corev1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add corev1 to scheme: " + err.Error())
-	}
-	if err := appsv1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add appsv1 to scheme: " + err.Error())
-	}
-	if err := v1alpha1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add v1alpha1 to scheme: " + err.Error())
-	}
-
-	// 5. Create k8sClient
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	scheme, err := buildScheme()
 	if err != nil {
-		Skip("Kubernetes cluster not available: failed to create k8s client: " + err.Error())
+		Skip("Kubernetes cluster not available: " + err.Error())
 	}
 
-	// 6. Start controller-runtime manager with all three reconcilers registered
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+	// Start controller-runtime manager with all three reconcilers registered.
+	// This is the only manager for the whole suite - every other process talks
+	// to the cluster through a plain client built in the function below.
+	mgr, err := ctrl.NewManager(restCfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
@@ -189,15 +201,44 @@ var _ = BeforeSuite(func() {
 		Skip("Kubernetes cluster not available: failed to setup AgentFleetReconciler: " + err.Error())
 	}
 
-	// 7. Start manager in goroutine, save cancel func
+	// Start manager in goroutine, save cancel func. This goroutine keeps
+	// running in process #1 for the lifetime of the suite.
 	var mgrCtx context.Context
 	mgrCtx, cancelMgr = context.WithCancel(context.Background())
 	go func() {
 		Expect(mgr.Start(mgrCtx)).To(Succeed())
 	}()
+
+	kubeconfigBytes, err := os.ReadFile(kubeconfigPath)
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to read kubeconfig to share with parallel processes: " + err.Error())
+	}
+	return kubeconfigBytes
+}, func(kubeconfigBytes []byte) {
+	// Runs on every process, including #1, with the kubeconfig process #1
+	// produced above. Only builds a client - the manager already exists.
+	restCfg, err := clientcmd.RESTConfigFromKubeConfig(kubeconfigBytes)
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to parse shared kubeconfig: " + err.Error())
+	}
+
+	scheme, err := buildScheme()
+	if err != nil {
+		Skip("Kubernetes cluster not available: " + err.Error())
+	}
+
+	cfg = restCfg
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to create k8s client: " + err.Error())
+	}
 })
 
-var _ = AfterSuite(func() {
+// SynchronizedAfterSuite mirrors the before-suite split: every process has
+// nothing of its own to tear down (the manager and cluster belong to process
+// #1), so cleanup happens entirely in the second function, which Ginkgo runs
+// on process #1 only, once every process has finished its specs.
+var _ = SynchronizedAfterSuite(func() {}, func() {
 	ctx := context.Background()
 
 	// Stop the manager

@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
 )
 
 // K8sTestHelper provides common utilities for K8s e2e tests.
@@ -20,8 +22,24 @@ func NewK8sTestHelper() *K8sTestHelper {
 
 // NextNamespace returns a unique namespace name for the current test.
 func (h *K8sTestHelper) NextNamespace(prefix string) string {
-	h.Counter++
+	h.Counter = nextCounter(&h.Counter)
 	return fmt.Sprintf("%s-%d", prefix, h.Counter)
+}
+
+// nextCounter increments a per-suite counter used to build resource names,
+// offsetting it by the Ginkgo parallel process number on first use. Under
+// `ginkgo -p` each process runs this test binary independently with its own
+// copy of every counter, so without the offset two processes reaching the
+// same count would generate the same resource name and collide on the
+// shared cluster. Call sites all run at spec-execution time (inside
+// BeforeEach/It), by which point GinkgoParallelProcess() reflects the real
+// per-process value.
+func nextCounter(counter *int) int {
+	if *counter == 0 {
+		*counter = GinkgoParallelProcess() * 1_000_000
+	}
+	*counter++
+	return *counter
 }
 
 // WaitForJobPhase polls until the job reaches the desired phase or times out.

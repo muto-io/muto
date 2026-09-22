@@ -245,16 +245,14 @@ export MUTO_CF_ORG=my-org
 
 ## Observability
 
-The operator doesn't read any observability-related environment variables yet. Its endpoints and log output are fixed:
-
 | Setting | Current behavior |
 |---|---|
-| Metrics endpoint | `:8080/metrics` (controller-runtime built-in metrics), not configurable |
-| Health probes | `:8081/healthz` and `:8081/readyz`, not configurable |
-| Logs | Plain-text key/value lines on stderr; level and format not configurable |
+| Metrics endpoint | `:8080/metrics` by default; configurable via `MUTO_METRICS_BIND_ADDRESS` (`"0"` disables it) |
+| Health probes | `:8081/healthz` and `:8081/readyz` by default; configurable via `MUTO_HEALTH_PROBE_BIND_ADDRESS` |
+| Logs | `MUTO_LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`) and `MUTO_LOG_FORMAT` (`json`, default, or `console`) |
 | Tracing | Not implemented |
 
-Configurable logging (`MUTO_LOG_LEVEL`, `MUTO_LOG_FORMAT`), configurable bind addresses, custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
+Custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ## Security
 

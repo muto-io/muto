@@ -194,7 +194,7 @@ Both binaries log through go-logr with the [`stdr`](https://github.com/go-logr/s
 2026/09/12 09:46:39 "level"=0 "msg"="adding tenant finalizer" "controller"="tenant" "controllerGroup"="muto.io" "controllerKind"="Tenant" "Tenant"={"name"="demo-tenant"} "namespace"="" "name"="demo-tenant" "reconcileID"="c0c3b48e-78e4-42f5-86ae-334acbd8aa8f" "tenant"="demo-tenant" "finalizer"="muto.io/tenant-cleanup"
 ```
 
-- The format is fixed. Logs are **not JSON**, and there are no `MUTO_LOG_LEVEL` or `MUTO_LOG_FORMAT` settings.
+- Format and level are configurable via `MUTO_LOG_FORMAT` (`json`, default, or `console`) and `MUTO_LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`). The example above shows the console format; JSON is the default. See [Environment Variables](../configuration/environment-variables.md).
 - Verbosity is fixed at `0`. Messages logged with `V(1)` or higher are discarded.
 - Errors are logged with an `"error"` key.
 - Timestamps have second precision and no time zone. The distroless image has no time zone data, so they are UTC.

@@ -34,7 +34,7 @@ var _ = Describe("K8s Multi-Agent Coordination", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("multiagent-test-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())

@@ -29,7 +29,7 @@ var _ = Describe("K8s Comprehensive Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-highvolume-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -141,7 +141,7 @@ var _ = Describe("K8s Comprehensive Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-scaling-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -243,7 +243,7 @@ var _ = Describe("K8s Comprehensive Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-churn-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -330,7 +330,7 @@ var _ = Describe("K8s Comprehensive Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-exhaust-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())

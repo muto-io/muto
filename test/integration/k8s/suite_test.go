@@ -4,6 +4,7 @@ package k8s_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,15 +44,28 @@ func TestK8sIntegration(t *testing.T) {
 
 func boolPtr(b bool) *bool { return &b }
 
-var _ = BeforeSuite(func() {
+// buildScheme constructs the runtime scheme
+func buildScheme() (*runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add corev1 to scheme: %w", err)
+	}
+	if err := appsv1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add appsv1 to scheme: %w", err)
+	}
+	if err := v1alpha1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add v1alpha1 to scheme: %w", err)
+	}
+	return scheme, nil
+}
+
+var _ = SynchronizedBeforeSuite(func() []byte {
 	ctx := context.Background()
 
 	// Initialize logger to suppress controller-runtime warnings
 	ctrl.SetLogger(logr.Discard())
 
-	// The TenantReconciler requires a gateway image for A2A tenants. No test
-	// needs a working gateway, so default to a tiny, pullable stand-in that
-	// exits promptly on SIGTERM; set MUTO_A2A_GATEWAY_IMAGE to use a real one.
+	// The TenantReconciler requires a gateway image for A2A tenants
 	if os.Getenv("MUTO_A2A_GATEWAY_IMAGE") == "" {
 		if err := os.Setenv("MUTO_A2A_GATEWAY_IMAGE", "registry.k8s.io/pause:3.10"); err != nil {
 			Skip("Kubernetes cluster not available: failed to set required environment variables: " + err.Error())
@@ -79,8 +93,6 @@ var _ = BeforeSuite(func() {
 		// Start k3s cluster via testcontainers k3s module
 		GinkgoLogr.Info("Starting k3s cluster via testcontainers")
 		// Disable the bundled metrics-server: until its APIService is available
-		// (~1 min after start), discovery is incomplete and namespace deletion
-		// blocks (NamespaceDeletionDiscoveryFailure). No test uses it.
 		k3sContainer, err = tck3s.Run(ctx, "rancher/k3s:v1.27.1-k3s1",
 			testcontainers.WithCmdArgs("--disable=metrics-server"))
 		if err != nil {
@@ -113,7 +125,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	// Build rest.Config from kubeconfig
-	cfg, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	restCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		Skip("Kubernetes cluster not available: failed to build kubeconfig: " + err.Error())
 	}
@@ -127,38 +139,25 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		UseExistingCluster:    boolPtr(true),
 		CRDDirectoryPaths:     []string{crdPath},
-		Config:                cfg,
+		Config:                restCfg,
 		ErrorIfCRDPathMissing: false,
 	}
 
-	cfg, err = testEnv.Start()
+	restCfg, err = testEnv.Start()
 	if err != nil {
 		Skip("Kubernetes cluster not available: failed to start envtest environment: " + err.Error())
 	}
-	if cfg == nil {
+	if restCfg == nil {
 		Skip("Kubernetes cluster not available: envtest config is nil")
 	}
 
-	// 4. Build runtime scheme with corev1 + appsv1 + v1alpha1
-	scheme := runtime.NewScheme()
-	if err := corev1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add corev1 to scheme: " + err.Error())
-	}
-	if err := appsv1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add appsv1 to scheme: " + err.Error())
-	}
-	if err := v1alpha1.AddToScheme(scheme); err != nil {
-		Skip("Kubernetes cluster not available: failed to add v1alpha1 to scheme: " + err.Error())
-	}
-
-	// 5. Create k8sClient
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	scheme, err := buildScheme()
 	if err != nil {
-		Skip("Kubernetes cluster not available: failed to create k8s client: " + err.Error())
+		Skip("Kubernetes cluster not available: " + err.Error())
 	}
 
-	// 6. Start controller-runtime manager with all three reconcilers registered
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+	// Start controller-runtime manager with all three reconcilers registered.
+	mgr, err := ctrl.NewManager(restCfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
 			BindAddress: "0",
@@ -189,15 +188,38 @@ var _ = BeforeSuite(func() {
 		Skip("Kubernetes cluster not available: failed to setup AgentFleetReconciler: " + err.Error())
 	}
 
-	// 7. Start manager in goroutine, save cancel func
+	// Start manager in goroutine, save cancel func
 	var mgrCtx context.Context
 	mgrCtx, cancelMgr = context.WithCancel(context.Background())
 	go func() {
 		Expect(mgr.Start(mgrCtx)).To(Succeed())
 	}()
+
+	kubeconfigBytes, err := os.ReadFile(kubeconfigPath)
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to read kubeconfig to share with parallel processes: " + err.Error())
+	}
+	return kubeconfigBytes
+}, func(kubeconfigBytes []byte) {
+	restCfg, err := clientcmd.RESTConfigFromKubeConfig(kubeconfigBytes)
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to parse shared kubeconfig: " + err.Error())
+	}
+
+	scheme, err := buildScheme()
+	if err != nil {
+		Skip("Kubernetes cluster not available: " + err.Error())
+	}
+
+	cfg = restCfg
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		Skip("Kubernetes cluster not available: failed to create k8s client: " + err.Error())
+	}
 })
 
-var _ = AfterSuite(func() {
+// SynchronizedAfterSuite mirrors the before-suite split
+var _ = SynchronizedAfterSuite(func() {}, func() {
 	ctx := context.Background()
 
 	// Stop the manager

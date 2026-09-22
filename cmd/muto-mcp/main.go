@@ -61,7 +61,7 @@ func main() {
 	if logLevel == "" {
 		logLevel = "info"
 	}
-	logger, err := buildLogger(logFormat, logLevel, os.Stdout)
+	logger, err := buildLogger(logFormat, logLevel, os.Stderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid logging configuration: %v\n", err)
 		os.Exit(1)

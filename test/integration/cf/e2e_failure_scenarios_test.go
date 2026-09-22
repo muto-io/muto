@@ -4,6 +4,7 @@ package cf_test
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -56,8 +57,9 @@ var _ = Describe("CF Failure Scenarios", func() {
 			task, err := cfCluster.Client.RunTask(ctx, app.GUID, taskReq)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Cancel the task to simulate timeout handling
-			time.Sleep(1 * time.Second)
+			// Cancel the running task to simulate timeout handling
+			err = WaitForTaskState(ctx, cfCluster.Client, task.GUID, "RUNNING", 10*time.Second)
+			Expect(err).NotTo(HaveOccurred())
 			err = cfCluster.Client.CancelTask(ctx, task.GUID)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -153,28 +155,42 @@ var _ = Describe("CF Failure Scenarios", func() {
 			app, err := cfCluster.Client.PushApp(ctx, appReq)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Attempt to create many tasks concurrently
+			// Create many tasks concurrently
 			taskCount := 5
-			errCount := 0
+			taskGUIDs := make([]string, taskCount)
+			createErrs := make([]error, taskCount)
+			var wg sync.WaitGroup
 
 			for i := 0; i < taskCount; i++ {
-				taskReq := cf.TaskRequest{
-					Name:    fmt.Sprintf("%s-concurrent-fail-%d", tenantName, i),
-					Command: "exit 1",
-				}
+				wg.Add(1)
+				go func(index int) {
+					defer wg.Done()
 
-				task, err := cfCluster.Client.RunTask(ctx, app.GUID, taskReq)
-				if err != nil {
-					errCount++
-				} else {
-					// Verify each task fails
-					err := WaitForTaskState(ctx, cfCluster.Client, task.GUID, "FAILED", 30*time.Second)
-					Expect(err).NotTo(HaveOccurred())
-				}
+					taskReq := cf.TaskRequest{
+						Name:    fmt.Sprintf("%s-concurrent-fail-%d", tenantName, index),
+						Command: "exit 1",
+					}
+
+					task, err := cfCluster.Client.RunTask(ctx, app.GUID, taskReq)
+					if err != nil {
+						createErrs[index] = err
+						return
+					}
+					taskGUIDs[index] = task.GUID
+				}(i)
 			}
+			wg.Wait()
 
 			// Expect all tasks to succeed in creation (failures are in execution)
-			Expect(errCount).To(Equal(0))
+			for _, err := range createErrs {
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			// Verify each task fails
+			for _, taskGUID := range taskGUIDs {
+				err := WaitForTaskState(ctx, cfCluster.Client, taskGUID, "FAILED", 30*time.Second)
+				Expect(err).NotTo(HaveOccurred())
+			}
 		})
 	})
 })

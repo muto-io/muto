@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -292,6 +293,20 @@ func (mcs *MockCFServer) listTasks(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Mock task lifecycle: a task moves from PENDING to RUNNING after
+// taskStartDelay and to its final state after another taskRunTime. The delays
+// are short so that specs waiting for a task don't pay for a real run time.
+const (
+	taskStartDelay  = 50 * time.Millisecond
+	taskRunTime     = 100 * time.Millisecond
+	longTaskRunTime = 30 * time.Second
+)
+
+// sleepOnlyCommand matches commands such as "sleep 30". Specs use them for
+// long-running work that they cancel or inspect while it runs, so those tasks
+// run for longTaskRunTime instead of taskRunTime.
+var sleepOnlyCommand = regexp.MustCompile(`^sleep [0-9]+$`)
+
 // createTask creates a new task on an app.
 func (mcs *MockCFServer) createTask(w http.ResponseWriter, r *http.Request) {
 	mcs.mu.Lock()
@@ -344,22 +359,15 @@ func (mcs *MockCFServer) createTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Determine completion time based on command
-	completionDelay := 2 * time.Second
-	switch req.Command {
-	case "sleep 60", "sleep 300":
-		// Long-running tasks stay in RUNNING state longer
-		completionDelay = 30 * time.Second
-	case "echo 'quick'", "echo quick":
-		// Quick commands complete faster
-		completionDelay = 500 * time.Millisecond
+	completionDelay := taskRunTime
+	if sleepOnlyCommand.MatchString(req.Command) {
+		completionDelay = longTaskRunTime
 	}
 
-	// Simulate task running after a short delay (stops if context is cancelled)
-	// Delay longer to allow tests to interact with tasks before they complete
+	// Simulate the task lifecycle (stops if the server is closed)
 	go func(taskGUID string, shouldFail bool, completionDelay time.Duration) {
 		select {
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(taskStartDelay):
 			mcs.mu.Lock()
 			if t, ok := mcs.tasks[taskGUID]; ok && t.State == "PENDING" {
 				t.State = "RUNNING"

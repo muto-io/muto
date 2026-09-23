@@ -36,11 +36,11 @@ func (s *MutoMCPServer) ServeStdio() error {
 }
 
 func (s *MutoMCPServer) registerTools() {
-	s.srv.AddTool(scheduleAgentJobTool(), s.handleScheduleAgentJob)
-	s.srv.AddTool(getJobStatusTool(), s.handleGetJobStatus)
-	s.srv.AddTool(cancelJobTool(), s.handleCancelJob)
-	s.srv.AddTool(listActiveAgentsTool(), s.handleListActiveAgents)
-	s.srv.AddTool(describeTenantTool(), s.handleDescribeTenant)
+	s.srv.AddTool(scheduleAgentJobTool(), WrapToolHandler("mcp.schedule_agent_job", s.handleScheduleAgentJob))
+	s.srv.AddTool(getJobStatusTool(), WrapToolHandler("mcp.get_job_status", s.handleGetJobStatus))
+	s.srv.AddTool(cancelJobTool(), WrapToolHandler("mcp.cancel_job", s.handleCancelJob))
+	s.srv.AddTool(listActiveAgentsTool(), WrapToolHandler("mcp.list_active_agents", s.handleListActiveAgents))
+	s.srv.AddTool(describeTenantTool(), WrapToolHandler("mcp.describe_tenant", s.handleDescribeTenant))
 }
 
 // ---- tool definitions -------------------------------------------------------

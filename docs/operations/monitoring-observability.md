@@ -3,7 +3,7 @@
 How to monitor the Muto operator as it works today: health probes, Prometheus metrics, and logs.
 
 !!! note "Current state"
-    Muto currently ships only the observability that controller-runtime provides out of the box. Custom `muto_*` metrics, JSON logs with configurable levels, and OpenTelemetry tracing are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
+    Muto ships controller-runtime's built-in observability plus OpenTelemetry tracing (off by default — set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable). Custom `muto_*` metrics and JSON logs with configurable levels are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
 
 ## Overview
 

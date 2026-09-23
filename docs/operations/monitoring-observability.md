@@ -114,27 +114,22 @@ prometheus.io/port: "8080"
 prometheus.io/path: "/metrics"
 ```
 
-Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` only removes the annotations; the operator still serves `:8080/metrics`.
+Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` stops the operator from serving `:8080/metrics` at all (`MUTO_METRICS_BIND_ADDRESS=0`), not just removing the annotations.
 
-The chart doesn't create a Service, so a `ServiceMonitor` has nothing to select. With the Prometheus Operator, use a `PodMonitor` on the operator pod's `metrics` port:
+The chart also creates a `Service` exposing the metrics port whenever `metrics.enabled` is `true`, and an optional `ServiceMonitor` (`monitoring.coreos.com/v1`, requires the Prometheus Operator's CRDs) when `metrics.serviceMonitor.enabled` is also set — off by default, since not every cluster runs the Prometheus Operator:
 
 ```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: muto
-  podMetricsEndpoints:
-    - port: metrics
-      path: /metrics
-      interval: 30s
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    # Some Prometheus Operator setups only watch ServiceMonitors carrying a
+    # specific label, e.g. release: kube-prometheus-stack:
+    additionalLabels: {}
 ```
 
-Depending on your Prometheus Operator configuration, the `PodMonitor` may need a label that your `Prometheus` resource selects, for example `release: kube-prometheus-stack`.
+**The metrics endpoint is unauthenticated by design** (plain HTTP, no `SecureServing`), matching controller-runtime's own default. If your cluster's security posture requires restricting who can scrape it, do so at the network layer — a `NetworkPolicy` scoping access to your Prometheus namespace — rather than assuming the endpoint itself checks credentials.
 
 Quick check:
 

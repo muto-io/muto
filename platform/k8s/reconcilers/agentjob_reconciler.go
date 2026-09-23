@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/muto-io/muto/core/a2a"
+	"github.com/muto-io/muto/platform/k8s/tracing"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -203,7 +204,7 @@ func (r *AgentJobReconciler) buildPod(
 			},
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{container},
+			Containers:    []corev1.Container{container},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
@@ -213,5 +214,5 @@ func (r *AgentJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.AgentJob{}).
 		Owns(&corev1.Pod{}).
-		Complete(r)
+		Complete(tracing.WrapReconciler("AgentJobReconciler.Reconcile", r))
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/muto-io/muto/core/a2a"
+	"github.com/muto-io/muto/platform/k8s/tracing"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -269,7 +270,7 @@ func (r *TenantReconciler) ensureNamespace(ctx context.Context, tenant *v1alpha1
 func (r *TenantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Tenant{}).
-		Complete(r)
+		Complete(tracing.WrapReconciler("TenantReconciler.Reconcile", r))
 }
 
 func generateToken() (string, error) {

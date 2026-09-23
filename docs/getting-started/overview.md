@@ -61,7 +61,8 @@ Each tenant has complete isolation:
 - Kubernetes liveness and readiness probes (`/healthz`, `/readyz`)
 - Prometheus metrics for reconcile rate, errors, latency and work queues (controller-runtime built-in)
 - Key/value operator logs on stderr
-- Planned: Muto-specific job metrics, JSON logs and OpenTelemetry tracing ([#79](https://github.com/muto-io/muto/issues/79))
+- Planned: Muto-specific job metrics and JSON logs ([#79](https://github.com/muto-io/muto/issues/79))
+- OpenTelemetry tracing (off by default — see [Monitoring and Observability](../operations/monitoring-observability.md#distributed-tracing))
 
 ### Extensible Architecture
 

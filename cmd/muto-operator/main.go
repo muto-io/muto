@@ -2,9 +2,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-logr/stdr"
 	cfplatform "github.com/muto-io/muto/platform/cf"
@@ -12,6 +14,7 @@ import (
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	"github.com/muto-io/muto/core/scheduler"
+	"github.com/muto-io/muto/core/tracing"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -56,6 +59,19 @@ func main() {
 	ctrl.SetLogger(stdr.New(log.Default()))
 	log := ctrl.Log.WithName("muto-operator")
 
+	shutdownTracing, err := tracing.Init(context.Background(), "muto-operator")
+	if err != nil {
+		log.Error(err, "unable to initialize tracing")
+		os.Exit(1)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			log.Error(err, "tracing shutdown failed")
+		}
+	}()
+
 	mgr, err := newManager(ctrl.GetConfigOrDie(), ":8080", ":8081")
 	if err != nil {
 		log.Error(err, "unable to start manager")
@@ -79,7 +95,7 @@ func main() {
 			log.Error(err, "unable to create k8s client for adapter")
 			os.Exit(1)
 		}
-		platformAdapter = k8sadapter.NewK8sAdapter(c, namespace)
+		platformAdapter = tracing.WrapPlatformAdapter(k8sadapter.NewK8sAdapter(c, namespace))
 	case "cf":
 		cfClient, err := cfplatform.NewRealCFClient(
 			os.Getenv("CF_API_URL"),
@@ -90,10 +106,10 @@ func main() {
 			log.Error(err, "unable to create CF client")
 			os.Exit(1)
 		}
-		platformAdapter = cfplatform.NewCFAdapter(cfClient, cfplatform.CFAdapterConfig{
+		platformAdapter = tracing.WrapPlatformAdapter(cfplatform.NewCFAdapter(cfClient, cfplatform.CFAdapterConfig{
 			IsolationTier: os.Getenv("CF_ISOLATION_TIER"),
 			SharedOrgName: os.Getenv("CF_SHARED_ORG"),
-		})
+		}))
 	default:
 		log.Error(nil, "unknown MUTO_PLATFORM value", "platform", platform)
 		os.Exit(1)

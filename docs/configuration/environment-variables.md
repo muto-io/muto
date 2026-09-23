@@ -646,9 +646,9 @@ The operator doesn't read any observability-related environment variables yet. I
 | Metrics endpoint | `:8080/metrics` (controller-runtime built-in metrics), not configurable |
 | Health probes | `:8081/healthz` and `:8081/readyz`, not configurable |
 | Logs | Plain-text key/value lines on stderr; level and format not configurable |
-| Tracing | Not implemented |
+| Tracing | Available (off by default); set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable |
 
-Configurable logging (`MUTO_LOG_LEVEL`, `MUTO_LOG_FORMAT`), configurable bind addresses, custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
+Configurable logging (`MUTO_LOG_LEVEL`, `MUTO_LOG_FORMAT`), configurable bind addresses, and custom `muto_*` metrics are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ---
 

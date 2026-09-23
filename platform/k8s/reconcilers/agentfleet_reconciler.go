@@ -3,6 +3,7 @@ package reconcilers
 import (
 	"context"
 
+	"github.com/muto-io/muto/platform/k8s/tracing"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,5 +45,5 @@ func (r *AgentFleetReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *AgentFleetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.AgentFleet{}).
-		Complete(r)
+		Complete(tracing.WrapReconciler("AgentFleetReconciler.Reconcile", r))
 }

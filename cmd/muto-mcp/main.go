@@ -2,13 +2,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-logr/stdr"
-	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/core/scheduler"
+	"github.com/muto-io/muto/core/tracing"
 	"github.com/muto-io/muto/mcp/server"
+	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +22,19 @@ import (
 func main() {
 	ctrl.SetLogger(stdr.New(log.Default()))
 	log := ctrl.Log.WithName("muto-mcp")
+
+	shutdownTracing, err := tracing.Init(context.Background(), "muto-mcp")
+	if err != nil {
+		log.Error(err, "unable to initialize tracing")
+		os.Exit(1)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracing(shutdownCtx); err != nil {
+			log.Error(err, "tracing shutdown failed")
+		}
+	}()
 
 	scheme := runtime.NewScheme()
 	_ = corev1.AddToScheme(scheme)
@@ -36,8 +52,8 @@ func main() {
 		namespace = "default"
 	}
 
-	adapter := k8sadapter.NewK8sAdapter(c, namespace)
-	sched := scheduler.NewDefaultScheduler(adapter)
+	adapter := tracing.WrapPlatformAdapter(k8sadapter.NewK8sAdapter(c, namespace))
+	sched := tracing.WrapScheduler(scheduler.NewDefaultScheduler(adapter))
 	srv := server.New(sched)
 
 	log.Info("starting muto-mcp server (stdio)")

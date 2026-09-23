@@ -263,7 +263,7 @@ LAST SEEN   TYPE      REASON          MESSAGE
 ```
 
 ### Metrics
-The operator exports controller-runtime's built-in Prometheus metrics on `:8080/metrics`, such as `controller_runtime_reconcile_total`, `controller_runtime_reconcile_time_seconds` and `workqueue_depth`, labelled by `controller` (`tenant`, `agentjob`, `agentfleet`). Job- and tenant-level `muto_*` metrics are planned ([#79](https://github.com/muto-io/muto/issues/79)).
+The operator exports controller-runtime's built-in Prometheus metrics on `:8080/metrics`, such as `controller_runtime_reconcile_total`, `controller_runtime_reconcile_time_seconds` and `workqueue_depth`, labelled by `controller` (`tenant`, `agentjob`, `agentfleet`). Job- and tenant-level `muto_*` metrics are in review in [#103](https://github.com/muto-io/muto/pull/103) (tracked in [#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Advantages of Kubernetes Platform
 

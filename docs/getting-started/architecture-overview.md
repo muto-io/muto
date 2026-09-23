@@ -205,7 +205,7 @@ Muto Operator
         └─ Health Probes (:8081/healthz, :8081/readyz)
 ```
 
-Muto-specific job metrics and OpenTelemetry tracing are planned ([#79](https://github.com/muto-io/muto/issues/79)).
+Muto-specific job metrics ([#103](https://github.com/muto-io/muto/pull/103)) and OpenTelemetry tracing ([#104](https://github.com/muto-io/muto/pull/104)) are in review (tracked in [#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Extensibility
 

@@ -47,11 +47,13 @@ var (
 		Help: "Number of agent pods currently running, by tenant.",
 	}, []string{"tenant"})
 
-	// JobQueueDepth is the current count of AgentJobs not yet in a
-	// terminal state, by tenant.
+	// JobQueueDepth is the current count of AgentJobs in the Running
+	// phase, by tenant. Despite the name, this does not include Pending
+	// jobs (there is no separate queueing step in this reconciler - jobs
+	// go straight from Pending to Running within one reconcile call).
 	JobQueueDepth = factory.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "muto_job_queue_depth",
-		Help: "Number of AgentJobs not yet in a terminal state, by tenant.",
+		Help: "Number of AgentJobs currently in the Running phase, by tenant.",
 	}, []string{"tenant"})
 )
 

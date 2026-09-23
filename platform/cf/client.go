@@ -3,10 +3,12 @@ package cf
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	cfclient "github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // PushRequest carries the parameters needed to create/push a CF application.
@@ -71,7 +73,8 @@ type realCFClient struct {
 // NewRealCFClient constructs a CFClient that talks to a real CF API endpoint
 // using username/password authentication.
 func NewRealCFClient(apiURL, username, password string) (CFClient, error) {
-	cfg, err := config.New(apiURL, config.UserPassword(username, password))
+	cfg, err := config.New(apiURL, config.UserPassword(username, password),
+		config.HttpClient(&http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}))
 	if err != nil {
 		return nil, fmt.Errorf("cf config: %w", err)
 	}

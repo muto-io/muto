@@ -193,7 +193,7 @@ The operator currently provides:
 2. **Metrics**: controller-runtime's built-in Prometheus metrics (reconcile rate, errors, latency, work queues) at `:8080/metrics`
 3. **Logs**: plain-text key/value lines on stderr
 
-Custom `muto_*` metrics, JSON logs and OpenTelemetry tracing aren't implemented yet ([#79](https://github.com/muto-io/muto/issues/79)).
+Custom `muto_*` metrics, JSON logs and OpenTelemetry tracing aren't merged yet, but are in review: [#102](https://github.com/muto-io/muto/pull/102) (logging), [#103](https://github.com/muto-io/muto/pull/103) (metrics), and [#104](https://github.com/muto-io/muto/pull/104) (tracing) — tracked in [#79](https://github.com/muto-io/muto/issues/79).
 
 ```bash
 # View metrics

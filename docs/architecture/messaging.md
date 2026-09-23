@@ -363,7 +363,7 @@ Kafka: ~500 bytes (persisted)
 
 ## Monitoring Message Bus Health
 
-Muto doesn't export message bus metrics yet (publish/receive counts, latency, bus health); they're planned in [#79](https://github.com/muto-io/muto/issues/79). Until then, use the monitoring built into your bus: the NATS server monitoring endpoint (`:8222/varz`, `/connz`) or Kafka consumer-group lag.
+Muto doesn't export message bus metrics yet (publish/receive counts, latency, bus health). Until then, use the monitoring built into your bus: the NATS server monitoring endpoint (`:8222/varz`, `/connz`) or Kafka consumer-group lag.
 
 ---
 

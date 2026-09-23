@@ -48,6 +48,18 @@ metrics:
     enabled: false
     interval: 30s
     additionalLabels: {}
+  # PrometheusRule with alerting rules for the muto_* families. Requires
+  # the Prometheus Operator CRDs, same as serviceMonitor above.
+  prometheusRule:
+    enabled: false
+    additionalLabels: {}
+  # ConfigMap holding a ready-made Grafana dashboard for the muto_*
+  # families. Requires a Grafana sidecar that discovers dashboards by label
+  # (the default in kube-prometheus-stack and the Grafana Helm chart).
+  grafanaDashboard:
+    enabled: false
+    additionalLabels:
+      grafana_dashboard: "1"
 
 healthProbe:
   port: 8081

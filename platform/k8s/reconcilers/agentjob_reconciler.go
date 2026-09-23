@@ -4,9 +4,11 @@ package reconcilers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/muto-io/muto/core/a2a"
+	"github.com/muto-io/muto/platform/k8s/metrics"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -23,22 +25,24 @@ type AgentJobReconciler struct {
 }
 
 func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	job := &v1alpha1.AgentJob{}
-	if err := r.Get(ctx, req.NamespacedName, job); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	return metrics.ObserveReconcile("agentjob", func() (ctrl.Result, error) {
+		job := &v1alpha1.AgentJob{}
+		if err := r.Get(ctx, req.NamespacedName, job); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
 
-	switch job.Status.Phase {
-	case "", "Pending":
-		return r.reconcilePending(ctx, job)
-	case "Running":
-		return r.reconcileRunning(ctx, job)
-	case "Succeeded", "Failed":
-		return r.reconcileTerminal(ctx, job)
-	case "Terminating":
-		return r.reconcileTerminating(ctx, job)
-	}
-	return ctrl.Result{}, nil
+		switch job.Status.Phase {
+		case "", "Pending":
+			return r.reconcilePending(ctx, job)
+		case "Running":
+			return r.reconcileRunning(ctx, job)
+		case "Succeeded", "Failed":
+			return r.reconcileTerminal(ctx, job)
+		case "Terminating":
+			return r.reconcileTerminating(ctx, job)
+		}
+		return ctrl.Result{}, nil
+	})
 }
 
 func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
@@ -62,6 +66,8 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 			}
 		}
 	}
+	metrics.JobStarted(tenant.Name, int32(totalAgents))
+
 	now := metav1.Now()
 	job.Status.Phase = "Running"
 	job.Status.ActiveAgents = int32(totalAgents)
@@ -95,14 +101,21 @@ func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
+	phase := "Succeeded"
+	if anyFailed {
+		phase = "Failed"
+	}
+
+	var startedAt time.Time
+	if job.Status.StartedAt != nil {
+		startedAt = job.Status.StartedAt.Time
+	}
+	metrics.JobFinished(job.Spec.TenantRef, strings.ToLower(phase), startedAt, job.Status.ActiveAgents)
+
 	now := metav1.Now()
 	job.Status.CompletedAt = &now
 	job.Status.ActiveAgents = 0
-	if anyFailed {
-		job.Status.Phase = "Failed"
-	} else {
-		job.Status.Phase = "Succeeded"
-	}
+	job.Status.Phase = phase
 	return ctrl.Result{RequeueAfter: time.Duration(job.Spec.TTLAfterCompletion) * time.Second},
 		r.Status().Update(ctx, job)
 }
@@ -203,7 +216,7 @@ func (r *AgentJobReconciler) buildPod(
 			},
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{container},
+			Containers:    []corev1.Container{container},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}

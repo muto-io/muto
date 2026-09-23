@@ -4,8 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/muto-io/muto/platform/k8s/metrics"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -249,5 +251,37 @@ func TestTenantReconcilerA2ANotDedicatedSkipsGateway(t *testing.T) {
 		types.NamespacedName{Name: "a2a-gateway", Namespace: "a2a-shared-ns"}, dep)
 	if err == nil {
 		t.Error("expected no Deployment for non-dedicated A2A tenant, but one was created")
+	}
+}
+
+func TestTenantReconcilerRecordsMetrics(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+
+	tenant := &v1alpha1.Tenant{
+		ObjectMeta: metav1.ObjectMeta{Name: "metrics-tenant"},
+		Spec: v1alpha1.TenantSpec{
+			Namespace:     "metrics-tenant-agents",
+			IsolationTier: "shared",
+			MessageBus:    v1alpha1.TenantBusSpec{Type: "nats"},
+		},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tenant).
+		WithStatusSubresource(&v1alpha1.Tenant{}).Build()
+	r := &reconcilers.TenantReconciler{Client: fakeClient, Scheme: scheme}
+
+	before := testutil.ToFloat64(metrics.ReconciliationsTotal.WithLabelValues("tenant", "success"))
+
+	_, err := r.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: "metrics-tenant"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	after := testutil.ToFloat64(metrics.ReconciliationsTotal.WithLabelValues("tenant", "success"))
+	if after != before+1 {
+		t.Errorf("ReconciliationsTotal{tenant,success} = %v, want %v", after, before+1)
 	}
 }

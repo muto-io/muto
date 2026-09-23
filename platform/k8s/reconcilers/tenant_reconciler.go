@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/muto-io/muto/core/a2a"
+	"github.com/muto-io/muto/platform/k8s/metrics"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,43 +38,45 @@ type TenantReconciler struct {
 }
 
 func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("tenant", req.Name)
+	return metrics.ObserveReconcile("tenant", func() (ctrl.Result, error) {
+		logger := log.FromContext(ctx).WithValues("tenant", req.Name)
 
-	tenant := &v1alpha1.Tenant{}
-	if err := r.Get(ctx, req.NamespacedName, tenant); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if !tenant.DeletionTimestamp.IsZero() {
-		return r.finalizeTenant(ctx, tenant, logger)
-	}
-
-	if !controllerutil.ContainsFinalizer(tenant, tenantFinalizer) {
-		logger.Info("adding tenant finalizer", "finalizer", tenantFinalizer)
-		controllerutil.AddFinalizer(tenant, tenantFinalizer)
-		if err := r.Update(ctx, tenant); err != nil {
-			return ctrl.Result{}, fmt.Errorf("add finalizer: %w", err)
+		tenant := &v1alpha1.Tenant{}
+		if err := r.Get(ctx, req.NamespacedName, tenant); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-	}
 
-	if err := r.ensureNamespace(ctx, tenant); err != nil {
-		return ctrl.Result{}, fmt.Errorf("ensure namespace: %w", err)
-	}
+		if !tenant.DeletionTimestamp.IsZero() {
+			return r.finalizeTenant(ctx, tenant, logger)
+		}
 
-	switch tenant.Spec.MessageBus.Type {
-	case a2a.BusTypeA2A:
-		if tenant.Spec.MessageBus.Dedicated {
-			if err := r.reconcileA2AGateway(ctx, tenant); err != nil {
-				return ctrl.Result{}, fmt.Errorf("reconcile a2a gateway: %w", err)
+		if !controllerutil.ContainsFinalizer(tenant, tenantFinalizer) {
+			logger.Info("adding tenant finalizer", "finalizer", tenantFinalizer)
+			controllerutil.AddFinalizer(tenant, tenantFinalizer)
+			if err := r.Update(ctx, tenant); err != nil {
+				return ctrl.Result{}, fmt.Errorf("add finalizer: %w", err)
 			}
 		}
-	}
 
-	tenant.Status.Ready = true
-	if err := r.Status().Update(ctx, tenant); err != nil {
-		return ctrl.Result{}, err
-	}
-	return ctrl.Result{}, nil
+		if err := r.ensureNamespace(ctx, tenant); err != nil {
+			return ctrl.Result{}, fmt.Errorf("ensure namespace: %w", err)
+		}
+
+		switch tenant.Spec.MessageBus.Type {
+		case a2a.BusTypeA2A:
+			if tenant.Spec.MessageBus.Dedicated {
+				if err := r.reconcileA2AGateway(ctx, tenant); err != nil {
+					return ctrl.Result{}, fmt.Errorf("reconcile a2a gateway: %w", err)
+				}
+			}
+		}
+
+		tenant.Status.Ready = true
+		if err := r.Status().Update(ctx, tenant); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	})
 }
 
 // finalizeTenant runs when a Tenant has a DeletionTimestamp set. It

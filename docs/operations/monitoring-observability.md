@@ -114,7 +114,7 @@ prometheus.io/port: "8080"
 prometheus.io/path: "/metrics"
 ```
 
-Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` stops the operator from serving `:8080/metrics` at all (`MUTO_METRICS_BIND_ADDRESS=0`), not just removing the annotations.
+Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` only removes the annotations; the operator still serves `:8080/metrics`.
 
 The chart also creates a `Service` exposing the metrics port whenever `metrics.enabled` is `true`, and an optional `ServiceMonitor` (`monitoring.coreos.com/v1`, requires the Prometheus Operator's CRDs) when `metrics.serviceMonitor.enabled` is also set — off by default, since not every cluster runs the Prometheus Operator:
 

@@ -4,21 +4,23 @@ package tracing_test
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/muto-io/muto/core/tracing"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 // withRecorder installs a tracetest-backed TracerProvider as the global
 // provider for the duration of the test, and restores the previous one
-// afterward. core/tracing's package-level tracer var delegates to whatever
-// provider is globally installed at each Start() call (not frozen at
-// creation time), so this is sufficient to capture spans from Wrap/WrapErr
-// without any test-only seam in the production code.
+// afterward. This only works because Wrap looks up otel.Tracer(...) fresh
+// on every call rather than caching it in a package-level var - see the
+// comment on Wrap in tracing.go for why a cached var would break this.
 func withRecorder(t *testing.T) *tracetest.SpanRecorder {
 	t.Helper()
 	sr := tracetest.NewSpanRecorder()
@@ -130,5 +132,36 @@ func TestWrapErrSuccessAndFailure(t *testing.T) {
 	}
 	if spans[1].Status().Code != codes.Error {
 		t.Errorf("spans[1] (%s) status = %v, want Error", spans[1].Name(), spans[1].Status().Code)
+	}
+}
+
+func TestInitInstallsPropagator(t *testing.T) {
+	collector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer collector.Close()
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", collector.URL)
+
+	prevProvider := otel.GetTracerProvider()
+	prevPropagator := otel.GetTextMapPropagator()
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prevProvider)
+		otel.SetTextMapPropagator(prevPropagator)
+	})
+
+	shutdown, err := tracing.Init(context.Background(), "test-service")
+	if err != nil {
+		t.Fatalf("Init: %v", err)
+	}
+	t.Cleanup(func() { _ = shutdown(context.Background()) })
+
+	tracer := otel.Tracer("test")
+	ctx, span := tracer.Start(context.Background(), "test-span")
+	defer span.End()
+
+	carrier := propagation.MapCarrier{}
+	otel.GetTextMapPropagator().Inject(ctx, carrier)
+	if carrier.Get("traceparent") == "" {
+		t.Error("Init did not install a propagator that injects a traceparent header")
 	}
 }

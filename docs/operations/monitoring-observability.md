@@ -13,9 +13,9 @@ How to monitor the Muto operator as it works today: health probes, Prometheus me
 | Prometheus metrics | ⚠️ controller-runtime built-in metrics only | `:8080/metrics` |
 | Logs | ⚠️ Plain-text key/value lines, fixed level and format | stderr (container logs) |
 | Custom `muto_*` metrics | ❌ Planned ([#79]) | — |
-| Distributed tracing (OpenTelemetry) | ❌ Planned ([#79]) | — |
+| Distributed tracing (OpenTelemetry) | ✅ Available (off by default) | OTLP/HTTP export; set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable |
 
-This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health, metrics or tracing endpoints.
+This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health or metrics endpoints, but it does export OpenTelemetry traces when configured — tracing is push-based (OTLP export), so it needs no inbound endpoint.
 
 Both ports are hard-coded in `cmd/muto-operator/main.go`. No flag or environment variable changes them.
 
@@ -251,7 +251,9 @@ Any collector that ships container logs works, such as Fluent Bit, Grafana Alloy
 
 ## Distributed Tracing
 
-Tracing isn't implemented. The operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` or `MUTO_OTEL_*` environment variables have no effect. The `go.opentelemetry.io` modules in `go.mod` are indirect dependencies of the test tooling. OpenTelemetry tracing with OTLP export is planned in [#79].
+OpenTelemetry tracing is available, off by default. Set `OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) to enable it — traces export over OTLP/HTTP. Standard `OTEL_*` variables are honored (`OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, ...); there are no `MUTO_OTEL_*` aliases.
+
+Spans cover reconcile loops (`TenantReconciler`, `AgentJobReconciler`, `AgentFleetReconciler`), the scheduler, both platform adapters (K8s and CF), and MCP tool invocations, and the A2A/CF HTTP clients propagate W3C `traceparent` headers. Each of these currently produces its own span tree rather than a single unified per-`AgentJob` trace — cross-process correlation (a K8s reconcile and the MCP tool call that triggered it) and the operator's own platform-adapter path aren't wired together yet.
 
 ## Dashboards
 

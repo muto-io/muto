@@ -10,6 +10,10 @@ import (
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/muto-io/muto/platform/cf"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // newFakeCFAPIServer returns a test server that serves just enough of the CF
@@ -81,5 +85,31 @@ func TestConfigHttpClientOptionCarriesOtelhttpTransport(t *testing.T) {
 	}
 	if _, ok := cfg.HTTPClient().Transport.(*otelhttp.Transport); !ok {
 		t.Errorf("cfg.HTTPClient().Transport = %T, want *otelhttp.Transport", cfg.HTTPClient().Transport)
+	}
+}
+
+func TestNewRealCFClientRecordsOtelSpan(t *testing.T) {
+	srv := newFakeCFAPIServer(t)
+
+	sr := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(sr))
+	prevProvider := otel.GetTracerProvider()
+	otel.SetTracerProvider(tp)
+	defer otel.SetTracerProvider(prevProvider)
+
+	_, err := cf.NewRealCFClient(srv.URL, "user", "pass")
+	if err != nil {
+		t.Fatalf("NewRealCFClient: %v", err)
+	}
+
+	var foundClientSpan bool
+	for _, s := range sr.Ended() {
+		if s.SpanKind() == trace.SpanKindClient {
+			foundClientSpan = true
+			break
+		}
+	}
+	if !foundClientSpan {
+		t.Error("expected at least one client-kind span recorded via the otelhttp-wrapped transport during construction, got none - this would fail if client.go's Transport wrap were reverted")
 	}
 }

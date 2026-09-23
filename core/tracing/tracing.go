@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -27,7 +28,7 @@ const instrumentationName = "github.com/muto-io/muto"
 // (e.g. via defer, with a bounded timeout context) to flush buffered spans
 // before exit.
 func Init(ctx context.Context, defaultServiceName string) (func(context.Context) error, error) {
-	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
+	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" && os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT") == "" {
 		return func(context.Context) error { return nil }, nil
 	}
 
@@ -41,6 +42,7 @@ func Init(ctx context.Context, defaultServiceName string) (func(context.Context)
 		resource.WithFromEnv(),
 	)
 	if err != nil {
+		_ = exporter.Shutdown(ctx)
 		return nil, fmt.Errorf("build resource: %w", err)
 	}
 
@@ -49,6 +51,9 @@ func Init(ctx context.Context, defaultServiceName string) (func(context.Context)
 		sdktrace.WithResource(res),
 	)
 	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+		propagation.TraceContext{}, propagation.Baggage{},
+	))
 	return tp.Shutdown, nil
 }
 
@@ -58,6 +63,11 @@ func Init(ctx context.Context, defaultServiceName string) (func(context.Context)
 // Generic over the success type so it fits every instrumented call site in
 // this codebase without core/tracing depending on any of their types.
 func Wrap[T any](ctx context.Context, name string, fn func(context.Context) (T, error)) (T, error) {
+	// Looked up fresh on every call, not cached in a package-level var:
+	// otel's global registry only re-points tracers handed out before the
+	// FIRST SetTracerProvider call in a process, so a cached var would stop
+	// seeing any provider installed later (including each test's own
+	// tracetest recorder below).
 	tracer := otel.Tracer(instrumentationName)
 	ctx, span := tracer.Start(ctx, name)
 	defer span.End()

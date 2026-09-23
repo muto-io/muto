@@ -73,6 +73,12 @@ type realCFClient struct {
 // NewRealCFClient constructs a CFClient that talks to a real CF API endpoint
 // using username/password authentication.
 func NewRealCFClient(apiURL, username, password string) (CFClient, error) {
+	// Note: go-cfclient's config.configureHTTPClient only recognizes
+	// *http.Transport/*oauth2.Transport for applying TLS settings
+	// (e.g. config.SkipTLSValidation()); with this *otelhttp.Transport in
+	// place, any future TLS config option added here would silently not
+	// apply. No code in this repo currently sets one, so this is a latent
+	// trap, not a present bug.
 	cfg, err := config.New(apiURL, config.UserPassword(username, password),
 		config.HttpClient(&http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}))
 	if err != nil {

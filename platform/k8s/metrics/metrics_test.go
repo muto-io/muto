@@ -8,8 +8,8 @@ import (
 
 	"github.com/muto-io/muto/platform/k8s/metrics"
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	dto "github.com/prometheus/client_model/go"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

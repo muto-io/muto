@@ -44,6 +44,12 @@ func TestAgentFleetReconcilerAggregatesJobCounts(t *testing.T) {
 	if updated.Status.RunningJobs != 1 {
 		t.Errorf("RunningJobs = %d, want 1", updated.Status.RunningJobs)
 	}
+	if updated.Status.TotalJobs != 1 {
+		t.Errorf("TotalJobs = %d, want 1", updated.Status.TotalJobs)
+	}
+	if updated.Status.CompletedJobs != 0 {
+		t.Errorf("CompletedJobs = %d, want 0", updated.Status.CompletedJobs)
+	}
 }
 
 func TestAgentFleetReconcilerRecordsMetrics(t *testing.T) {

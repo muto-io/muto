@@ -66,13 +66,15 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 			}
 		}
 	}
-	metrics.JobStarted(tenant.Name, int32(totalAgents))
-
 	now := metav1.Now()
 	job.Status.Phase = "Running"
 	job.Status.ActiveAgents = int32(totalAgents)
 	job.Status.StartedAt = &now
-	return ctrl.Result{}, r.Status().Update(ctx, job)
+	if err := r.Status().Update(ctx, job); err != nil {
+		return ctrl.Result{}, err
+	}
+	metrics.JobStarted(tenant.Name, int32(totalAgents))
+	return ctrl.Result{}, nil
 }
 
 func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
@@ -110,14 +112,18 @@ func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1
 	if job.Status.StartedAt != nil {
 		startedAt = job.Status.StartedAt.Time
 	}
-	metrics.JobFinished(job.Spec.TenantRef, strings.ToLower(phase), startedAt, job.Status.ActiveAgents)
+	activeAgents := job.Status.ActiveAgents
 
 	now := metav1.Now()
 	job.Status.CompletedAt = &now
 	job.Status.ActiveAgents = 0
 	job.Status.Phase = phase
-	return ctrl.Result{RequeueAfter: time.Duration(job.Spec.TTLAfterCompletion) * time.Second},
-		r.Status().Update(ctx, job)
+	if err := r.Status().Update(ctx, job); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	metrics.JobFinished(job.Spec.TenantRef, strings.ToLower(phase), startedAt, activeAgents)
+	return ctrl.Result{RequeueAfter: time.Duration(job.Spec.TTLAfterCompletion) * time.Second}, nil
 }
 
 func (r *AgentJobReconciler) reconcileTerminal(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {

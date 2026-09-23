@@ -4,8 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/muto-io/muto/platform/k8s/metrics"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -156,5 +158,67 @@ func TestAgentJobReconcilerNoA2AEnvVarsForNATSTenant(t *testing.T) {
 		if e.Name == "MUTO_A2A_GATEWAY" || e.Name == "MUTO_A2A_TOKEN" {
 			t.Errorf("unexpected env var %q in non-A2A tenant pod", e.Name)
 		}
+	}
+}
+
+func TestAgentJobReconcilerRecordsMetricsOnCompletion(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+
+	tenant := &v1alpha1.Tenant{
+		ObjectMeta: metav1.ObjectMeta{Name: "metrics-job-tenant"},
+		Spec: v1alpha1.TenantSpec{
+			Namespace:  "metrics-job-agents",
+			MessageBus: v1alpha1.TenantBusSpec{Type: "nats"},
+		},
+	}
+	job := &v1alpha1.AgentJob{
+		ObjectMeta: metav1.ObjectMeta{Name: "metrics-job", Namespace: "metrics-job-agents"},
+		Spec: v1alpha1.AgentJobSpec{
+			TenantRef: "metrics-job-tenant",
+			Agents:    []v1alpha1.AgentRoleSpec{{Role: "worker", Image: "img:1", MaxReplicas: 1}},
+		},
+	}
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tenant, job).
+		WithStatusSubresource(&v1alpha1.AgentJob{}).Build()
+	r := &reconcilers.AgentJobReconciler{Client: fakeClient, Scheme: scheme}
+	ctx := context.Background()
+	req := ctrl.Request{NamespacedName: types.NamespacedName{Name: "metrics-job", Namespace: "metrics-job-agents"}}
+
+	// Pending -> Running: creates the pod and should record JobStarted.
+	if _, err := r.Reconcile(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+	if got := testutil.ToFloat64(metrics.AgentsRunning.WithLabelValues("metrics-job-tenant")); got != 1 {
+		t.Errorf("AgentsRunning{metrics-job-tenant} = %v, want 1 after pod creation", got)
+	}
+
+	// Mark the pod Succeeded so the next reconcile sees the job as done.
+	podList := &corev1.PodList{}
+	if err := fakeClient.List(ctx, podList, client.InNamespace("metrics-job-agents")); err != nil {
+		t.Fatal(err)
+	}
+	if len(podList.Items) != 1 {
+		t.Fatalf("expected 1 pod, got %d", len(podList.Items))
+	}
+	pod := podList.Items[0]
+	pod.Status.Phase = corev1.PodSucceeded
+	if err := fakeClient.Status().Update(ctx, &pod); err != nil {
+		t.Fatal(err)
+	}
+
+	jobsTotalBefore := testutil.ToFloat64(metrics.JobsTotal.WithLabelValues("metrics-job-tenant", "succeeded"))
+
+	// Running -> Succeeded: should record JobFinished.
+	if _, err := r.Reconcile(ctx, req); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := testutil.ToFloat64(metrics.JobsTotal.WithLabelValues("metrics-job-tenant", "succeeded")); got != jobsTotalBefore+1 {
+		t.Errorf("JobsTotal{metrics-job-tenant,succeeded} = %v, want %v", got, jobsTotalBefore+1)
+	}
+	if got := testutil.ToFloat64(metrics.AgentsRunning.WithLabelValues("metrics-job-tenant")); got != 0 {
+		t.Errorf("AgentsRunning{metrics-job-tenant} = %v, want 0 after completion", got)
 	}
 }

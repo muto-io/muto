@@ -20,11 +20,11 @@ test-unit:
 
 test-integration-k8s:
 	mkdir -p test-results/k8s
-	go test ./test/integration/k8s/... -tags integration -v -timeout 20m -args -ginkgo.v -ginkgo.json-report=$(CURDIR)/test-results/k8s/report.json | tee test-results/k8s/results.log; exit $${PIPESTATUS[0]}
+	go run github.com/onsi/ginkgo/v2/ginkgo -p -tags=integration -v -timeout=20m -json-report=report.json -output-dir=$(CURDIR)/test-results/k8s ./test/integration/k8s | tee test-results/k8s/results.log; exit $${PIPESTATUS[0]}
 
 test-integration-cf:
 	mkdir -p test-results/cf
-	go test ./test/integration/cf/... -tags integration -v -timeout 10m -args -ginkgo.v -ginkgo.json-report=$(CURDIR)/test-results/cf/report.json | tee test-results/cf/results.log; exit $${PIPESTATUS[0]}
+	go run github.com/onsi/ginkgo/v2/ginkgo -p -tags=integration -v -timeout=10m -json-report=report.json -output-dir=$(CURDIR)/test-results/cf ./test/integration/cf | tee test-results/cf/results.log; exit $${PIPESTATUS[0]}
 
 test-integration:
 	go test ./test/integration/... -tags integration -v -timeout 20m

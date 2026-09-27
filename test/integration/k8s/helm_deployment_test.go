@@ -20,12 +20,12 @@ var _ = Describe("Helm Deployment", func() {
 
 	Describe("operator deployment via Helm manifests", func() {
 		var (
-			helmNS     string
+			helmNS      string
 			testCounter int
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			helmNS = fmt.Sprintf("muto-helm-test-%d", testCounter)
 
 			// Create namespace for the operator
@@ -66,9 +66,11 @@ var _ = Describe("Helm Deployment", func() {
 		})
 
 		It("should allow creating Tenant resources", func() {
+			// Tenant is cluster-scoped, so the name must be unique across
+			tenantName := fmt.Sprintf("helm-tenant-test-%d", GinkgoParallelProcess())
 			tenant := &v1alpha1.Tenant{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "helm-tenant-test",
+					Name:      tenantName,
 					Namespace: helmNS,
 				},
 				Spec: v1alpha1.TenantSpec{
@@ -82,7 +84,7 @@ var _ = Describe("Helm Deployment", func() {
 			// Verify we can retrieve it
 			retrieved := &v1alpha1.Tenant{}
 			Expect(k8sClient.Get(ctx, client.ObjectKey{
-				Name:      "helm-tenant-test",
+				Name:      tenantName,
 				Namespace: helmNS,
 			}, retrieved)).To(Succeed())
 
@@ -90,10 +92,10 @@ var _ = Describe("Helm Deployment", func() {
 		})
 
 		It("should allow creating AgentJob resources", func() {
-			// First create a tenant
+			// First create cluster-scoped tenant
 			tenant := &v1alpha1.Tenant{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "helm-job-tenant",
+					Name:      fmt.Sprintf("helm-job-tenant-%d", GinkgoParallelProcess()),
 					Namespace: helmNS,
 				},
 				Spec: v1alpha1.TenantSpec{
@@ -140,10 +142,10 @@ var _ = Describe("Helm Deployment", func() {
 		})
 
 		It("should reconcile resources in test namespace", func() {
-			// Create a complete set of resources and verify reconciliation
+			// Create a complete set of resources and verify reconciliation.
 			tenant := &v1alpha1.Tenant{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "helm-reconcile-tenant",
+					Name:      fmt.Sprintf("helm-reconcile-tenant-%d", GinkgoParallelProcess()),
 					Namespace: helmNS,
 				},
 				Spec: v1alpha1.TenantSpec{

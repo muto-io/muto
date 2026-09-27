@@ -35,7 +35,7 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 	)
 
 	BeforeEach(func() {
-		testCounter++
+		testCounter = nextCounter(&testCounter)
 		tenantName = fmt.Sprintf("a2a-tenant-%d", testCounter)
 		tenantNS = fmt.Sprintf("a2a-ns-%d", testCounter)
 	})

@@ -28,7 +28,7 @@ var _ = Describe("AgentJob TTL cleanup", func() {
 	)
 
 	BeforeEach(func() {
-		testCounter++
+		testCounter = nextCounter(&testCounter)
 		nsName := fmt.Sprintf("ttl-test-%d", testCounter)
 		tenantName := fmt.Sprintf("ttl-tenant-%d", testCounter)
 

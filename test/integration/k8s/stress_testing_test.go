@@ -29,7 +29,7 @@ var _ = Describe("Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-jobs-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -81,7 +81,7 @@ var _ = Describe("Stress Testing", func() {
 						Namespace: nsName,
 					}, updated)).To(Succeed())
 					g.Expect(updated.Status.Phase).To(Equal("Running"))
-				}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).
+				}).WithTimeout(30*time.Second).WithPolling(500*time.Millisecond).
 					Should(Succeed(), fmt.Sprintf("Job %d failed to reach Running phase", idx))
 			}
 
@@ -147,7 +147,7 @@ var _ = Describe("Stress Testing", func() {
 						Namespace: nsName,
 					}, updated)).To(Succeed())
 					g.Expect(updated.Status.Phase).To(Equal("Running"))
-				}).WithTimeout(30 * time.Second).WithPolling(500 * time.Millisecond).
+				}).WithTimeout(30*time.Second).WithPolling(500*time.Millisecond).
 					Should(Succeed(), fmt.Sprintf("Job %d failed to reach Running phase", i))
 			}
 		})
@@ -215,7 +215,7 @@ var _ = Describe("Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-multitenant-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -302,7 +302,7 @@ var _ = Describe("Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-quota-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
@@ -315,7 +315,7 @@ var _ = Describe("Stress Testing", func() {
 				},
 				Spec: corev1.ResourceQuotaSpec{
 					Hard: corev1.ResourceList{
-						corev1.ResourcePods:    resource.MustParse("10"),
+						corev1.ResourcePods:   resource.MustParse("10"),
 						corev1.ResourceMemory: resource.MustParse("256Mi"),
 						corev1.ResourceCPU:    resource.MustParse("2"),
 					},
@@ -390,7 +390,7 @@ var _ = Describe("Stress Testing", func() {
 		)
 
 		BeforeEach(func() {
-			testCounter++
+			testCounter = nextCounter(&testCounter)
 			nsName = fmt.Sprintf("stress-perf-%d", testCounter)
 			ns = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
 			Expect(k8sClient.Create(ctx, ns)).To(Succeed())

@@ -24,6 +24,8 @@ installCRDs: true
 env:
   MUTO_PLATFORM: k8s
   MUTO_NAMESPACE: default
+  MUTO_LOG_LEVEL: info
+  MUTO_LOG_FORMAT: json
   # CF platform vars — only used when MUTO_PLATFORM=cf
   CF_API_URL: ""
   CF_USERNAME: ""

@@ -3,10 +3,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
-	"github.com/go-logr/stdr"
+	"github.com/muto-io/muto/core/env"
+	"github.com/muto-io/muto/core/logging"
 	cfplatform "github.com/muto-io/muto/platform/cf"
 	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
@@ -36,6 +36,8 @@ func newManager(cfg *rest.Config, metricsAddr, probeAddr string) (ctrl.Manager, 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
 		Metrics: metricsserver.Options{
+			// "0" disables the metrics server entirely, per
+			// controller-runtime's BindAddress contract.
 			BindAddress: metricsAddr,
 		},
 		HealthProbeBindAddress: probeAddr,
@@ -53,27 +55,31 @@ func newManager(cfg *rest.Config, metricsAddr, probeAddr string) (ctrl.Manager, 
 }
 
 func main() {
-	ctrl.SetLogger(stdr.New(log.Default()))
+	logFormat := env.OrDefault("MUTO_LOG_FORMAT", "json")
+	logLevel := env.OrDefault("MUTO_LOG_LEVEL", "info")
+	logger, err := logging.BuildLogger(logFormat, logLevel, os.Stdout)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid logging configuration: %v\n", err)
+		os.Exit(1)
+	}
+	ctrl.SetLogger(logger)
 	log := ctrl.Log.WithName("muto-operator")
 
-	mgr, err := newManager(ctrl.GetConfigOrDie(), ":8080", ":8081")
+	metricsAddr := env.OrDefault("MUTO_METRICS_BIND_ADDRESS", ":8080")
+	probeAddr := env.OrDefault("MUTO_HEALTH_PROBE_BIND_ADDRESS", ":8081")
+
+	mgr, err := newManager(ctrl.GetConfigOrDie(), metricsAddr, probeAddr)
 	if err != nil {
 		log.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	platform := os.Getenv("MUTO_PLATFORM")
-	if platform == "" {
-		platform = "k8s"
-	}
+	platform := env.OrDefault("MUTO_PLATFORM", "k8s")
 
 	var platformAdapter scheduler.PlatformAdapter
 	switch platform {
 	case "k8s":
-		namespace := os.Getenv("MUTO_NAMESPACE")
-		if namespace == "" {
-			namespace = "default"
-		}
+		namespace := env.OrDefault("MUTO_NAMESPACE", "default")
 		c, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
 		if err != nil {
 			log.Error(err, "unable to create k8s client for adapter")

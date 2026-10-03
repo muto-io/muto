@@ -187,17 +187,23 @@ sum by (code) (rate(rest_client_requests_total{code!~"2.."}[5m]))
 
 ## Logging
 
-Both binaries log through go-logr with the [`stdr`](https://github.com/go-logr/stdr) backend, which writes to **stderr** using Go's standard `log` package. Each line has a timestamp, the logger name, and key/value pairs:
+The `muto-operator` writes to **stdout** and `muto-mcp` writes to **stderr**. Each line has a timestamp, the logger name, and key/value pairs:
 
-```
-2026/09/12 09:43:29 muto-operator: "level"=0 "msg"="starting muto-operator" "platform"="k8s"
-2026/09/12 09:46:39 "level"=0 "msg"="adding tenant finalizer" "controller"="tenant" "controllerGroup"="muto.io" "controllerKind"="Tenant" "Tenant"={"name"="demo-tenant"} "namespace"="" "name"="demo-tenant" "reconcileID"="c0c3b48e-78e4-42f5-86ae-334acbd8aa8f" "tenant"="demo-tenant" "finalizer"="muto.io/tenant-cleanup"
+JSON (default):
+```json
+{"level":"info","ts":"2026-09-12T09:43:29.123Z","logger":"muto-operator","msg":"starting muto-operator","platform":"k8s"}
+{"level":"info","ts":"2026-09-12T09:46:39.456Z","logger":"muto-operator.tenant","msg":"adding tenant finalizer","controllerGroup":"muto.io","controllerKind":"Tenant","Tenant":{"name":"demo-tenant"},"namespace":"","name":"demo-tenant","reconcileID":"c0c3b48e-78e4-42f5-86ae-334acbd8aa8f","tenant":"demo-tenant","finalizer":"muto.io/tenant-cleanup"}
 ```
 
-- The format is fixed. Logs are **not JSON**, and there are no `MUTO_LOG_LEVEL` or `MUTO_LOG_FORMAT` settings.
-- Verbosity is fixed at `0`. Messages logged with `V(1)` or higher are discarded.
+Console (`MUTO_LOG_FORMAT=console`):
+```
+2026-09-12T09:43:29.123Z	INFO	muto-operator	starting muto-operator	{"platform": "k8s"}
+```
+
+- Format and level are configurable via `MUTO_LOG_FORMAT` (`json`, default, or `console`) and `MUTO_LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`); both are matched case-insensitively. See [Environment Variables](../configuration/environment-variables.md).
+- Setting `MUTO_LOG_LEVEL=debug` raises verbosity so `V(1)`-and-above messages are emitted too; `warn` or `error` narrows output instead.
 - Errors are logged with an `"error"` key.
-- Timestamps have second precision and no time zone. The distroless image has no time zone data, so they are UTC.
+- Timestamps are ISO 8601 with millisecond precision and in UTC.
 
 ### Viewing Logs
 

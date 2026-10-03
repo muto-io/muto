@@ -2,10 +2,11 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
-	"github.com/go-logr/stdr"
+	"github.com/muto-io/muto/core/env"
+	"github.com/muto-io/muto/core/logging"
 	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/core/scheduler"
 	"github.com/muto-io/muto/mcp/server"
@@ -17,7 +18,14 @@ import (
 )
 
 func main() {
-	ctrl.SetLogger(stdr.New(log.Default()))
+	logFormat := env.OrDefault("MUTO_LOG_FORMAT", "json")
+	logLevel := env.OrDefault("MUTO_LOG_LEVEL", "info")
+	logger, err := logging.BuildLogger(logFormat, logLevel, os.Stderr)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid logging configuration: %v\n", err)
+		os.Exit(1)
+	}
+	ctrl.SetLogger(logger)
 	log := ctrl.Log.WithName("muto-mcp")
 
 	scheme := runtime.NewScheme()
@@ -31,10 +39,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	namespace := os.Getenv("MUTO_NAMESPACE")
-	if namespace == "" {
-		namespace = "default"
-	}
+	namespace := env.OrDefault("MUTO_NAMESPACE", "default")
 
 	adapter := k8sadapter.NewK8sAdapter(c, namespace)
 	sched := scheduler.NewDefaultScheduler(adapter)

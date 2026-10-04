@@ -141,7 +141,7 @@ This allows Claude or other MCP clients to:
 You now have Muto running! Next steps:
 
 - **[Install on Kubernetes](../deployment/k8s.md)** - Deploy to a real K8s cluster
-- **[Configuration](../configuration/env-vars.md)** - Customize behavior
+- **[Configuration](../configuration/environment-variables.md)** - Customize behavior
 - **Architecture Overview** - Understand how it works (coming in Phase 2)
 - **Usage Patterns** - Build complex workflows (coming in Phase 5)
 

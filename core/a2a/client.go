@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // A2AClient sends tasks to agents via an A2A gateway.
@@ -32,7 +34,7 @@ func New(cfg *Config) (*A2AClient, error) {
 	return &A2AClient{
 		gatewayURL: cfg.GatewayURL,
 		authToken:  cfg.AuthToken,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)},
 	}, nil
 }
 

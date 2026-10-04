@@ -49,10 +49,11 @@ Determines which platform (Kubernetes or CloudFoundry) should execute each agent
 
 ### 2. Reconcilers
 Control loops that drive cluster state toward the desired state:
-- **TenantReconciler**: Manages tenant isolation and resources
-- **AgentJobReconciler**: Handles job lifecycle (scheduling, monitoring, retry)
+- **TenantReconciler**: Creates/manages the per-tenant namespace and optional A2A gateway
+- **AgentJobReconciler**: Handles job lifecycle (spawning agent pods/tasks, monitoring, requeueing)
 - **AgentFleetReconciler**: Coordinates groups of jobs
-- **EventWatcherReconciler**: Responds to platform events
+
+There is no `EventWatcherReconciler`. `platform/k8s/eventwatcher.go` exists as a message-bus topic subscriber, but it's never instantiated by `muto-operator` or `muto-mcp` today.
 
 See [:octicons-book-24: **Reconcilers**](./reconcilers.md) for detailed reconciliation patterns.
 
@@ -97,49 +98,40 @@ The core logic (scheduler, reconcilers, job lifecycle) is completely independent
 │         Muto Cluster                │
 │                                     │
 │  ┌──────────────────────────────┐  │
-│  │  Tenant A (isolation: dedicated)  │
+│  │  Tenant A (isolationTier: dedicated) │
 │  │  ├─ Namespace: muto-tenant-a │  │
-│  │  ├─ Message Bus: nats-a      │  │
-│  │  ├─ RBAC: sa-tenant-a        │  │
 │  │  └─ Jobs: pipeline-a, ...    │  │
 │  └──────────────────────────────┘  │
 │                                     │
 │  ┌──────────────────────────────┐  │
-│  │  Tenant B (isolation: shared) │  │
+│  │  Tenant B (isolationTier: shared) │
 │  │  ├─ Namespace: muto-tenant-b │  │
-│  │  ├─ Message Bus: shared nats │  │
-│  │  ├─ RBAC: sa-tenant-b        │  │
 │  │  └─ Jobs: analytics-b, ...   │  │
 │  └──────────────────────────────┘  │
 │                                     │
 └─────────────────────────────────────┘
 ```
 
-Each tenant can choose between:
-- **Dedicated**: Isolated message bus and resources
-- **Shared**: Uses shared message bus with topic-based isolation
+What `isolationTier` actually does today: on CF, it drives real org/space isolation (dedicated = per-tenant org, shared = per-tenant space in one shared org - see [Multi-Tenant Setup](../configuration/multi-tenant-setup.md)). On K8s, the reconciler just creates the namespace from `spec.namespace` regardless of tier - there's no separate per-tenant message bus or RBAC provisioning on either platform yet.
 
 ## Data Flow: Job Execution
 
 1. **User creates AgentJob** (via kubectl or API)
-2. **TenantReconciler validates** the job against tenant resources
-3. **Scheduler selects platform** based on job requirements
-4. **AgentJobReconciler triggers platform adapter** to create execution resources
-5. **Platform (K8s/CF) runs agents** and reports status
-6. **EventWatcher observes** platform events
-7. **AgentJobReconciler updates** job status
-8. **Agents communicate** via message bus (tenant-scoped topics)
-9. **Job completes**, terminal state recorded, resources cleaned up
+2. **AgentJobReconciler triggers platform adapter** to spawn agent pods/tasks
+3. **Platform (K8s/CF) runs agents**
+4. **AgentJobReconciler polls status** on a fixed requeue interval (not event-driven - see [Reconciler Configuration](../configuration/reconciler-config.md) for the real intervals)
+5. **Job reaches a terminal phase**, status recorded
+
+Whether and how agents themselves talk to each other over a message bus is up to the agent's own code - Muto injects `MUTO_TENANT`/`MUTO_ROLE`/`MUTO_JOB_ID`/`MUTO_MESSAGEBUS_TOPIC` into each container, but doesn't run or wire up NATS/Kafka itself today (see [Message Bus Setup](../configuration/message-bus-setup.md)).
 
 ## Security Model
 
-Muto implements multi-layered security:
-- RBAC for Kubernetes access control
-- Network policies for platform isolation
-- TLS for all inter-component communication
-- Secure credential management via Kubernetes Secrets or CredHub
+What's real today:
+- Kubernetes RBAC for the operator's own cluster access, via static Helm-templated manifests
+- CF org/space isolation, or K8s namespace-per-tenant, depending on platform
+- Credentials (CF, A2A tokens) are plain env vars/Secrets - no TLS, mTLS, or secret-manager integration is built in
 
-See [:octicons-book-24: **Security Model**](./security-model.md) for comprehensive security details.
+See [:octicons-book-24: **Security Model**](./security-model.md) for the full picture, including what's deliberately not implemented yet.
 
 ## Related Documentation
 

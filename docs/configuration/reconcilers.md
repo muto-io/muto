@@ -343,5 +343,5 @@ histogram_quantile(0.95, sum by (controller, le) (rate(controller_runtime_reconc
 ## Related Documentation
 
 - [:octicons-book-24: **Architecture: Reconcilers**](../architecture/reconcilers.md) - Reconciliation design patterns
-- [:octicons-book-24: **Environment Variables**](./env-vars.md) - All configuration options
+- [:octicons-book-24: **Environment Variables**](./environment-variables.md) - All configuration options
 - [:octicons-book-24: **Best Practices**](../usage/best-practices.md) - Production configuration guide

@@ -2,8 +2,10 @@
 package metrics
 
 import (
+	"context"
 	"time"
 
+	coremetrics "github.com/muto-io/muto/core/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -48,33 +50,40 @@ var (
 
 // ObserveReconcile runs fn, recording its duration and result on
 // ReconciliationDuration and ReconciliationsTotal under the given
-// reconciler label
+// reconciler label.
 func ObserveReconcile(reconciler string, fn func() (ctrl.Result, error)) (ctrl.Result, error) {
 	start := time.Now()
 	result, err := fn()
-	ReconciliationDuration.WithLabelValues(reconciler).Observe(time.Since(start).Seconds())
+	duration := time.Since(start).Seconds()
+	ReconciliationDuration.WithLabelValues(reconciler).Observe(duration)
 	status := "success"
 	if err != nil {
 		status = "error"
 	}
 	ReconciliationsTotal.WithLabelValues(reconciler, status).Inc()
+	coremetrics.RecordReconcile(context.Background(), reconciler, status, duration)
 	return result, err
 }
 
 // JobStarted records that agentCount agent pods were just created for an
-// AgentJob belonging to tenant.
+// AgentJob belonging to a tenant.
 func JobStarted(tenant string, agentCount int32) {
 	AgentsRunning.WithLabelValues(tenant).Add(float64(agentCount))
 	JobQueueDepth.WithLabelValues(tenant).Inc()
+	coremetrics.RecordJobStarted(context.Background(), tenant, agentCount)
 }
 
-// JobFinished records that an AgentJob belonging to tenant reached a
+// JobFinished records that an AgentJob belonging to a tenant reached a
 // terminal state.
 func JobFinished(tenant, status string, startedAt time.Time, activeAgents int32) {
 	JobsTotal.WithLabelValues(tenant, status).Inc()
-	if !startedAt.IsZero() {
-		JobDuration.WithLabelValues(tenant, status).Observe(time.Since(startedAt).Seconds())
+	var duration float64
+	hasDuration := !startedAt.IsZero()
+	if hasDuration {
+		duration = time.Since(startedAt).Seconds()
+		JobDuration.WithLabelValues(tenant, status).Observe(duration)
 	}
 	AgentsRunning.WithLabelValues(tenant).Sub(float64(activeAgents))
 	JobQueueDepth.WithLabelValues(tenant).Dec()
+	coremetrics.RecordJobFinished(context.Background(), tenant, status, duration, hasDuration, activeAgents)
 }

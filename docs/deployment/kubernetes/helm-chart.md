@@ -1,530 +1,133 @@
 # Muto Helm Chart Reference
 
-Complete reference for customizing the Muto Helm chart.
+What the `deploy/helm/muto` chart actually contains and installs today.
 
 ## Chart Overview
 
 - **Chart name:** `muto`
-- **Chart version:** 0.1.0
-- **App version:** 0.1.0
-- **Repository:** `oci://ghcr.io/muto-io/charts`
-
-## Default Values
-
-The Helm chart includes sensible defaults for most deployments. Customize by creating a `values.yaml` file:
+- **Chart version:** `0.1.0` (`Chart.yaml` `version`)
+- **App version:** `latest` (`Chart.yaml` `appVersion` - the default image tag; see [Image](#image))
+- **Published to:** `oci://ghcr.io/muto-io/charts` - pushed by `.github/workflows/release.yml`'s `publish-helm` job, but only on a `v*.*.*` tag push, not on every merge to `main`.
 
 ```bash
 helm show values oci://ghcr.io/muto-io/charts/muto > values.yaml
-# Edit values.yaml
-helm install muto-operator oci://ghcr.io/muto-io/charts/muto -f values.yaml
+# edit values.yaml
+helm install muto-operator oci://ghcr.io/muto-io/charts/muto -f values.yaml -n muto-system --create-namespace
 ```
 
-## Global Configuration
+## Chart Structure
 
-### Image Configuration
+The chart has exactly these templates (`deploy/helm/muto/templates/`):
+
+| Template | Creates | Gated by |
+|---|---|---|
+| `deployment-operator.yaml` | One `Deployment` running `muto-operator` | always |
+| `serviceaccount.yaml` | `ServiceAccount` for the operator | `serviceAccount.create` |
+| `clusterrole.yaml` + `clusterrolebinding.yaml` | Cluster-wide RBAC for the operator (see [Security Configuration](../../configuration/tls-security.md#kubernetes-rbac) for the exact permission table) | `rbac.create` |
+| `service.yaml` | A `Service` exposing the metrics port | `metrics.enabled` |
+| `servicemonitor.yaml` | A Prometheus Operator `ServiceMonitor` | `metrics.enabled` **and** `metrics.serviceMonitor.enabled` |
+| `crds/tenants.yaml`, `crds/agentjobs.yaml`, `crds/agentfleets.yaml` | The three `muto.io` CRDs (`Tenant`, `AgentJob`, `AgentFleet`) | `installCRDs` |
+| `NOTES.txt` | Post-install message (image, namespace, platform, a sample `Tenant` manifest) | n/a |
+
+There is no `muto-mcp` deployment, no webhook `Service`/`ValidatingWebhookConfiguration`/`MutatingWebhookConfiguration`, no `ConfigMap`, no `PodDisruptionBudget`, and no `NetworkPolicy` template in this chart. `muto-mcp` runs over stdio (see its own docs) and isn't deployed by this chart at all.
+
+## Values Reference
+
+The real top-level keys in `values.yaml`:
 
 ```yaml
+replicaCount: 1
+
 image:
-  registry: docker.io
-  repository: muto-io/muto-operator
-  tag: "0.1.0"
+  repository: ghcr.io/muto-io/muto-operator
+  tag: ""              # defaults to .Chart.AppVersion ("latest") when empty
   pullPolicy: IfNotPresent
 
-imagePullSecrets:
-  - name: muto-registry  # For private registries
-```
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
 
-**Example:** Use specific version:
-```yaml
-image:
-  tag: "0.1.0-rc1"
-```
-
-### Replica Configuration
-
-```yaml
-replicaCount: 1  # Control plane pods (usually 1)
-
-operator:
-  replicas: 1
-  
-webhook:
-  replicas: 1
-```
-
-**Example:** High availability setup:
-```yaml
-replicaCount: 3
-operator:
-  replicas: 3
-webhook:
-  replicas: 3
-```
-
-## Operator Configuration
-
-### Resource Limits
-
-```yaml
-operator:
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 512Mi
-    requests:
-      cpu: 500m
-      memory: 256Mi
-```
-
-**Recommendations:**
-- **Development:** 500m CPU, 256Mi memory
-- **Production:** 1000m CPU, 512Mi memory
-- **High-traffic:** 2000m CPU, 1Gi memory
-
-### Reconciliation Settings
-
-```yaml
-operator:
-  reconciliation:
-    maxConcurrentReconciles: 10
-    syncPeriod: 15m
-    retryBackoff:
-      initialDuration: 100ms
-      maxDuration: 1000ms
-```
-
-### Scheduling
-
-```yaml
-operator:
-  scheduler:
-    workers: 4
-    batchSize: 100
-    timeout: 5m
-```
-
-## Webhook Configuration
-
-### Webhook Service
-
-```yaml
-webhook:
-  service:
-    type: ClusterIP
-    port: 443
-    targetPort: 8443
-```
-
-### Webhook Resources
-
-```yaml
-webhook:
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 250m
-      memory: 128Mi
-```
-
-### TLS Configuration
-
-```yaml
-webhook:
-  tls:
-    enabled: true
-    certManagerEnabled: true
-    issuerName: muto-selfsigned
-```
-
-## Message Bus Configuration
-
-### NATS Backend
-
-```yaml
-messagebus:
-  type: nats
-  nats:
-    url: "nats://nats.default.svc.cluster.local:4222"
-    maxReconnect: 10
-    reconnectWait: 1s
-    auth:
-      enabled: false
-      # username: admin
-      # passwordSecret:
-      #   name: nats-credentials
-      #   key: password
-```
-
-**Example:** External NATS cluster:
-```yaml
-messagebus:
-  type: nats
-  nats:
-    url: "nats://nats.example.com:4222"
-    auth:
-      enabled: true
-      passwordSecret:
-        name: external-nats-creds
-        key: password
-```
-
-### Kafka Backend
-
-```yaml
-messagebus:
-  type: kafka
-  kafka:
-    brokers:
-      - "kafka-0.kafka.default.svc.cluster.local:9092"
-      - "kafka-1.kafka.default.svc.cluster.local:9092"
-      - "kafka-2.kafka.default.svc.cluster.local:9092"
-    auth:
-      enabled: false
-      saslMechanism: PLAIN
-      # username: admin
-      # passwordSecret:
-      #   name: kafka-credentials
-      #   key: password
-```
-
-## Observability Configuration
-
-### Metrics and Health Probes
-
-```yaml
-metrics:
-  enabled: true   # adds prometheus.io/* scrape annotations to the operator pod
-  port: 8080      # container port declaration; must match the operator's fixed metrics port
-
-healthProbe:
-  port: 8081      # container port used by the liveness and readiness probes
-```
-
-The operator binds metrics to `:8080` and the health probes to `:8081`. These addresses aren't configurable yet, so keep the defaults: changing `metrics.port` or `healthProbe.port` only changes the container port declarations and breaks scraping or the probes. `metrics.enabled: false` removes the scrape annotations but doesn't turn off the metrics endpoint. The chart doesn't create a Service or ServiceMonitor; see [Monitoring and Observability](../../operations/monitoring-observability.md#scraping) for a `PodMonitor` example.
-
-### Logging
-
-The chart has no logging values. The operator writes plain-text key/value lines to stderr; level and format aren't configurable yet ([#79](https://github.com/muto-io/muto/issues/79)).
-
-## Storage Configuration
-
-### Persistent Volumes
-
-```yaml
-persistence:
-  enabled: true
-  storageClass: "default"
-  size: 10Gi
-  mountPath: /var/lib/muto
-```
-
-### Backups
-
-```yaml
-backup:
-  enabled: false
-  schedule: "0 2 * * *"  # Daily at 2 AM
-  retention: 30  # days
-  storageClass: "backup"
-```
-
-## Network Configuration
-
-### Network Policies
-
-```yaml
-networkPolicy:
-  enabled: true
-  ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            role: client
-  egress:
-    - to:
-      - namespaceSelector: {}
-```
-
-### Ingress
-
-```yaml
-ingress:
-  enabled: true
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-  hosts:
-    - host: muto.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: muto-tls
-      hosts:
-        - muto.example.com
-```
-
-## RBAC Configuration
-
-```yaml
-rbac:
-  create: true
-  
 serviceAccount:
   create: true
-  name: muto-operator
-  annotations:
-    iam.gke.io/gcp-service-account: muto@project.iam.gserviceaccount.com
-```
+  name: ""
+  annotations: {}
 
-## Security Configuration
+rbac:
+  create: true
 
-### Pod Security
+installCRDs: true       # set false if CRDs are managed externally (e.g. GitOps)
 
-```yaml
-podSecurityPolicy:
-  enabled: false  # Set to true if PSP is enforced
-  
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 65534
-  fsReadOnlyRootFilesystem: true
-  capabilities:
-    drop:
-      - ALL
-```
+env:                     # becomes the operator container's env vars - see Environment Variables below
+  MUTO_PLATFORM: k8s
+  MUTO_NAMESPACE: default
+  MUTO_LOG_LEVEL: info
+  MUTO_LOG_FORMAT: json
+  CF_API_URL: ""
+  CF_USERNAME: ""
+  CF_PASSWORD: ""
+  CF_ISOLATION_TIER: dedicated
+  CF_SHARED_ORG: ""
 
-### Pod Disruption Budget
-
-```yaml
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
-```
-
-## Affinity Configuration
-
-### Node Affinity
-
-```yaml
-affinity:
-  nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-            - key: node-type
-              operator: In
-              values:
-                - operator
-```
-
-### Pod Affinity
-
-```yaml
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app
-              operator: In
-              values:
-                - muto-operator
-        topologyKey: kubernetes.io/hostname
-```
-
-## Example: Production Configuration
-
-A complete production-ready `values.yaml`:
-
-```yaml
-replicaCount: 3
-
-image:
-  registry: docker.io
-  repository: muto-io/muto-operator
-  tag: "0.1.0"
-  pullPolicy: IfNotPresent
-
-operator:
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 1Gi
-    requests:
-      cpu: 1000m
-      memory: 512Mi
-  
-  reconciliation:
-    maxConcurrentReconciles: 20
-    syncPeriod: 10m
-
-webhook:
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 250m
-      memory: 128Mi
-  tls:
-    enabled: true
-    certManagerEnabled: true
-
-messagebus:
-  type: kafka
-  kafka:
-    brokers:
-      - "kafka-0.kafka.data:9092"
-      - "kafka-1.kafka.data:9092"
-      - "kafka-2.kafka.data:9092"
-    auth:
-      enabled: true
-      passwordSecret:
-        name: kafka-credentials
-        key: password
+resources:
+  limits: { cpu: 500m, memory: 128Mi }
+  requests: { cpu: 100m, memory: 64Mi }
 
 metrics:
   enabled: true
-  prometheus:
-    serviceMonitor:
-      enabled: true
+  port: 8080
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    additionalLabels: {}
 
-persistence:
-  enabled: true
-  storageClass: "fast-ssd"
-  size: 50Gi
+healthProbe:
+  port: 8081
 
-networkPolicy:
-  enabled: true
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: muto.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 2
-
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app
-              operator: In
-              values:
-                - muto-operator
-        topologyKey: kubernetes.io/hostname
+nodeSelector: {}
+tolerations: []
+affinity: {}
 ```
 
-## Helm Upgrade Strategy
+That's the entire schema - there is no `operator.*`, `webhook.*`, `messagebus.*`, `persistence.*`, `backup.*`, `networkPolicy.*`, `ingress.*`, `podSecurityPolicy.*`, `securityContext.*`, `podDisruptionBudget.*`, or `labels`/`podAnnotations` key. Setting any of those via `--set` or an extra values file is a no-op (Helm ignores unknown keys by default).
 
-### In-Place Upgrade
+### Image
 
-Upgrade without downtime:
-
-```bash
-helm upgrade muto-operator oci://ghcr.io/muto-io/charts/muto \
-  -f values.yaml \
-  --wait \
-  --timeout 5m
-```
-
-Monitor rollout:
-
-```bash
-kubectl rollout status deployment/muto-operator -n muto-system
-```
-
-### Blue-Green Upgrade
-
-For zero-downtime upgrades with multiple replicas:
-
-```bash
-# Create new release on different label
-helm install muto-blue oci://ghcr.io/muto-io/charts/muto \
-  -f values-prod.yaml \
-  --set blueGreen.active=blue
-
-# Switch traffic
-kubectl patch svc muto-operator -p '{"spec":{"selector":{"version":"blue"}}}'
-
-# Clean up old release
-helm uninstall muto-green
-```
-
-### Rollback
-
-If an upgrade fails:
-
-```bash
-helm rollback muto
-```
-
-Check rollback status:
-
-```bash
-kubectl rollout status deployment/muto-operator -n muto-system
-```
-
-## Advanced Customization
-
-### Custom Image Registry
-
-For air-gapped environments:
+`image.tag` is empty by default, which makes the template fall back to `.Chart.AppVersion` (`"latest"`). Pin a real version for production:
 
 ```yaml
 image:
-  registry: registry.internal.company.com
-  repository: ops/muto-operator
-  tag: "0.1.0"
-  
-imagePullSecrets:
-  - name: private-registry-credentials
+  tag: "sha-abc1234"   # or a semver tag published by release.yml, e.g. "0.1.0"
 ```
 
-### Custom Resource Quotas
+### `env`
 
-```yaml
-resources:
-  requests:
-    memory: "1Gi"
-    cpu: "1000m"
-  limits:
-    memory: "2Gi"
-    cpu: "2000m"
-```
+Every key under `env` becomes a literal env var on the operator container (empty values are skipped). This is the same variable set documented in [Environment Variables](../../configuration/environment-variables.md) - the chart doesn't introduce any chart-specific naming for them. `MUTO_METRICS_BIND_ADDRESS` and `MUTO_HEALTH_PROBE_BIND_ADDRESS` are set separately by the template from `metrics.port`/`healthProbe.port`/`metrics.enabled`, not from the `env` map.
 
-### Custom Labels and Annotations
+### Metrics and health probes
 
-```yaml
-labels:
-  managed-by: terraform
-  environment: production
-  team: platform
+`metrics.enabled: false` sets `MUTO_METRICS_BIND_ADDRESS=0`, which disables the metrics server entirely (not just the Service/annotations). `metrics.port`/`healthProbe.port` only change the container port *declarations* - the operator's own bind addresses are effectively fixed by what the chart passes in via `env`, so don't change these without also changing the env values they drive. See [Monitoring and Observability](../../operations/monitoring-observability.md) for what's actually exported.
 
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "8080"
-```
+## CRDs
 
-## Chart Values Schema
+`installCRDs: true` (default) installs the three CRDs listed above as part of the release. If another tool (e.g. a GitOps controller) manages CRDs for you, set it to `false` and apply `deploy/helm/muto/templates/crds/*.yaml` through that tool instead - Helm doesn't upgrade or delete CRDs on `helm upgrade`/`helm uninstall` by default, chart-managed or not.
 
-For full details on all available values, see:
+## Upgrading and Uninstalling
+
+Standard Helm operations - nothing Muto-specific here:
 
 ```bash
-helm show values oci://ghcr.io/muto-io/charts/muto
+helm upgrade muto-operator oci://ghcr.io/muto-io/charts/muto -f values.yaml -n muto-system
+kubectl rollout status deployment/muto-operator -n muto-system
+
+helm rollback muto-operator -n muto-system   # revert to the previous release
+helm uninstall muto-operator -n muto-system  # leaves CRDs and any Tenants/AgentJobs/AgentFleets in place
 ```
 
-Or check the chart's `values.yaml` in the [Muto GitHub repository](https://github.com/muto-io/helm-charts).
+Because the chart has no `PodDisruptionBudget` and `replicaCount` defaults to `1`, there's no built-in zero-downtime rollout story beyond whatever `kubectl rollout` gives you for a single-replica `Deployment`.
 
----
+## Known Limitations
+
+- No TLS, mTLS, or webhook support - see [Security Configuration](../../configuration/tls-security.md).
+- No persistence/backup values - the operator is stateless (all state lives in the K8s API server via the CRDs).
+- No `NetworkPolicy` or `Ingress` templates - add your own if you need them.
+- No `PodDisruptionBudget`, pod affinity/anti-affinity presets, or `securityContext` values beyond the bare `nodeSelector`/`tolerations`/`affinity` passthroughs already listed above.

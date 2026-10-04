@@ -399,7 +399,7 @@ kubectl get agentjobs --sort-by=metadata.creationTimestamp | tail -20
 
 ### Metrics and Observability
 
-Job-level Prometheus metrics (job counts, durations, retries) aren't merged yet; they're in review in [#103](https://github.com/muto-io/muto/pull/103) (tracked in [#79](https://github.com/muto-io/muto/issues/79)). Follow a job through its status and the operator logs instead:
+Job-level Prometheus metrics (`muto_jobs_total`, `muto_job_duration_seconds`, `muto_agents_running`, `muto_job_queue_depth`) shipped in [#103](https://github.com/muto-io/muto/pull/103). You can also follow a job through its status and the operator logs:
 
 ```bash
 kubectl get agentjob my-job -o jsonpath='{.status.phase}'

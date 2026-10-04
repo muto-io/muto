@@ -3,7 +3,7 @@
 How to monitor the Muto operator as it works today: health probes, Prometheus metrics, and logs.
 
 !!! note "Current state"
-    Muto ships controller-runtime's built-in observability plus custom `muto_*` Prometheus metrics for reconciliations and AgentJobs. JSON logs with configurable levels and OpenTelemetry tracing are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
+    Muto ships controller-runtime's built-in observability plus custom `muto_*` Prometheus metrics for reconciliations and AgentJobs, configurable JSON/console logging, and OpenTelemetry tracing (off by default — set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable). This page describes the operator's actual behavior.
 
 ## Overview
 
@@ -13,9 +13,9 @@ How to monitor the Muto operator as it works today: health probes, Prometheus me
 | Prometheus metrics | ⚠️ controller-runtime built-in metrics only | `:8080/metrics` |
 | Logs | ⚠️ Plain-text key/value lines, fixed level and format | stderr (container logs) |
 | Custom `muto_*` metrics | ✅ Available | `:8080/metrics` |
-| Distributed tracing (OpenTelemetry) | ❌ Planned ([#79]) | - |
+| Distributed tracing (OpenTelemetry) | ✅ Available (off by default) | OTLP/HTTP export; set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable |
 
-This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health, metrics or tracing endpoints.
+This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health or metrics endpoints, but it does export OpenTelemetry traces when configured — tracing is push-based (OTLP export), so it needs no inbound endpoint.
 
 Both ports default to the values shown above, but the bind addresses are configurable via the `MUTO_METRICS_BIND_ADDRESS` and `MUTO_HEALTH_PROBE_BIND_ADDRESS` environment variables (see [Environment Variables](../configuration/environment-variables.md)); setting `MUTO_METRICS_BIND_ADDRESS=0` disables the metrics server entirely. The Helm chart only exposes the port *number* via `metrics.port`/`healthProbe.port` - see [Scraping](#scraping) for how `metrics.enabled` drives the bind address.
 
@@ -159,6 +159,12 @@ controller_runtime_reconcile_total{controller="agentjob",result="success"} 1
 controller_runtime_reconcile_total{controller="tenant",result="success"} 2
 ```
 
+### OTLP Export
+
+Prometheus scraping is pull-based and requires something in-cluster to reach the operator's `/metrics` port - not an option on every platform (e.g. CF, where there's no `ServiceMonitor` equivalent). As an alternative, the operator can push the same `muto_reconciliations_total`, `muto_reconciliation_duration_seconds`, `muto_jobs_total`, `muto_job_duration_seconds`, `muto_agents_running`, and `muto_job_queue_depth` observations over OTLP, under OTel's dotted naming convention (`muto.jobs.total`, etc.). It's off by default and independent of Prometheus scraping - enabling one doesn't disable the other.
+
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` (shared with [tracing](#distributed-tracing)) or `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` to enable it; the same `OTEL_SERVICE_NAME`/`OTEL_RESOURCE_ATTRIBUTES` resource attributes apply. See `core/metrics.Init` in `cmd/muto-operator/main.go`.
+
 ### PromQL Queries
 
 **Reconcile rate per controller:**
@@ -265,7 +271,13 @@ Any collector that ships container logs works, such as Fluent Bit, Grafana Alloy
 
 ## Distributed Tracing
 
-Tracing isn't implemented. The operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` or `MUTO_OTEL_*` environment variables have no effect. The `go.opentelemetry.io` modules in `go.mod` are indirect dependencies of the test tooling. OpenTelemetry tracing with OTLP export is planned in [#79].
+OpenTelemetry tracing is available, off by default. Set `OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) to enable it — traces export over OTLP/HTTP. Standard `OTEL_*` variables are honored (`OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES`, `OTEL_TRACES_SAMPLER`, ...); there are no `MUTO_OTEL_*` aliases.
+
+Spans cover reconcile loops (`TenantReconciler`, `AgentJobReconciler`, `AgentFleetReconciler`), the scheduler, both platform adapters (K8s and CF), and MCP tool invocations, and the A2A/CF HTTP clients propagate W3C `traceparent` headers.
+
+An MCP-scheduled job produces a single trace end to end: the tool call, `Scheduler.Schedule`, and `PlatformAdapter.SpawnAgent` all share one trace ID, verified in `test/integration/k8s/tracing_test.go`. The one span that's deliberately excluded is `PlatformAdapter.WatchAgent` - its goroutine is started against a detached `context.Background()` (see the comment on `DefaultScheduler.Schedule`) so it outlives the request that spawned it, and therefore starts its own trace rather than joining the scheduling one.
+
+A K8s `AgentJob` CR created directly (not via the MCP scheduler - see [Known Limitations](#known-limitations)) is a separate story: the reconcile loop is triggered by a watch event with no causal link to whatever created or updated the resource, so `AgentJobReconciler`'s span tree is never part of the same trace as that caller. This is standard for watch-driven controllers, not a gap specific to Muto.
 
 ## Dashboards
 
@@ -321,7 +333,7 @@ groups:
 - `metrics.enabled: false` turns off the metrics server entirely (via `MUTO_METRICS_BIND_ADDRESS=0`), not just its Service/ServiceMonitor/annotations.
 - The metrics endpoint is plain HTTP without authentication. Restrict access with a NetworkPolicy.
 - `/readyz` doesn't reflect API server connectivity or cache sync.
-- There are no JSON logs, log levels, or tracing yet ([#79]).
+- A K8s `AgentJob` CR created directly, outside the MCP scheduler, gets its own disconnected span tree from `AgentJobReconciler` - reconcile is watch-triggered, with no causal link back to whatever created the resource. The MCP-scheduled path (tool call → scheduler → platform adapter) *is* a single trace; see [Distributed Tracing](#distributed-tracing).
 - `muto_agents_running` and `muto_job_queue_depth` can read stale or negative values across an operator restart or if a running AgentJob is deleted directly.
 - `muto-mcp` has no observability endpoints.
 

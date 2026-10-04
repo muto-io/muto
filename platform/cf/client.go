@@ -3,10 +3,12 @@ package cf
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	cfclient "github.com/cloudfoundry/go-cfclient/v3/client"
 	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/cloudfoundry/go-cfclient/v3/resource"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // PushRequest carries the parameters needed to create/push a CF application.
@@ -70,8 +72,26 @@ type realCFClient struct {
 
 // NewRealCFClient constructs a CFClient that talks to a real CF API endpoint
 // using username/password authentication.
+//
+// The *http.Client passed to config.HttpClient must already carry the
+// otelhttp-wrapped transport: go-cfclient makes its only unauthenticated
+// request (API root discovery) and, for the password grant, its token
+// exchange, both synchronously inside config.New - wrapping afterward would
+// leave those two requests untraced, which platform/cf/client_test.go's
+// TestNewRealCFClientRecordsOtelSpan pins down.
+//
+// The cost: go-cfclient's own TLS setup (config.configureHTTPClient, and
+// any future config.SkipTLSValidation() option) type-asserts the client's
+// Transport to *http.Transport/*oauth2.Transport, which an
+// already-wrapped *otelhttp.Transport will never match, so that option
+// would silently have no effect. No code in this repo sets one today. If
+// CF TLS validation ever needs to be configurable here, apply it directly
+// to baseTransport below, before the otelhttp wrap - not via
+// config.SkipTLSValidation(), which this client bypasses entirely.
 func NewRealCFClient(apiURL, username, password string) (CFClient, error) {
-	cfg, err := config.New(apiURL, config.UserPassword(username, password))
+	baseTransport := http.DefaultTransport
+	cfg, err := config.New(apiURL, config.UserPassword(username, password),
+		config.HttpClient(&http.Client{Transport: otelhttp.NewTransport(baseTransport)}))
 	if err != nil {
 		return nil, fmt.Errorf("cf config: %w", err)
 	}

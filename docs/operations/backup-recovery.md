@@ -6,10 +6,10 @@ Procedures for backing up Muto state and recovering from failures. Covers RTO/RP
 
 Muto maintains state in several locations:
 
-- **Kubernetes etcd** — Job definitions, status, configurations
-- **Message bus** — Inter-agent messages (persistent with Kafka)
-- **Agent artifacts** — Output files, logs (external storage)
-- **Configuration** — ConfigMaps, Secrets
+- **Kubernetes etcd** - Job definitions, status, configurations
+- **Message bus** - Inter-agent messages (persistent with Kafka)
+- **Agent artifacts** - Output files, logs (external storage)
+- **Configuration** - ConfigMaps, Secrets
 
 This guide covers backing up and recovering each component.
 
@@ -527,17 +527,17 @@ Muto doesn't export backup metrics. Monitor backups with your backup tool's metr
 
 ## Best Practices
 
-1. **Automate backups** — Don't rely on manual backups
-2. **Test recovery** — Monthly restore drills catch issues early
-3. **Store backups separately** — Off-site or different region
-4. **Encrypt backups** — Use encryption at rest and in transit
-5. **Document procedures** — Keep runbooks updated
-6. **Monitor backup health** — Alert on backup failures
-7. **Version control configs** — GitOps for disaster recovery
+1. **Automate backups** - Don't rely on manual backups
+2. **Test recovery** - Monthly restore drills catch issues early
+3. **Store backups separately** - Off-site or different region
+4. **Encrypt backups** - Use encryption at rest and in transit
+5. **Document procedures** - Keep runbooks updated
+6. **Monitor backup health** - Alert on backup failures
+7. **Version control configs** - GitOps for disaster recovery
 
 ---
 
 **See Also:**
-- [Monitoring and Observability](./monitoring-observability.md) — Monitoring backup success
-- [Troubleshooting](./troubleshooting.md) — Recovery procedures
-- [Deployment: Production Checklist](../deployment/production-checklist.md) — Pre-launch backup setup
+- [Monitoring and Observability](./monitoring-observability.md) - Monitoring backup success
+- [Troubleshooting](./troubleshooting.md) - Recovery procedures
+- [Deployment: Production Checklist](../deployment/production-checklist.md) - Pre-launch backup setup

@@ -37,20 +37,20 @@ Muto provides a message bus abstraction that enables agents to communicate relia
 All message bus implementations provide the following operations:
 
 **Core Operations:**
-- **Publish** — Send a message to a topic
-- **Subscribe** — Register to receive messages from a topic (with callback handler)
-- **Unsubscribe** — Unregister from a topic
-- **HealthCheck** — Verify the message bus is operational
-- **Close** — Cleanly shut down the connection
+- **Publish** - Send a message to a topic
+- **Subscribe** - Register to receive messages from a topic (with callback handler)
+- **Unsubscribe** - Unregister from a topic
+- **HealthCheck** - Verify the message bus is operational
+- **Close** - Cleanly shut down the connection
 
 **Message Structure:**
 Each message contains:
-- **Topic** — The topic name (hierarchical, tenant-scoped)
-- **ID** — Unique message identifier (for deduplication)
-- **Timestamp** — When the message was published
-- **Tenant** — Tenant ID for isolation
-- **Headers** — Metadata key/value pairs
-- **Payload** — Message body (typically JSON-encoded)
+- **Topic** - The topic name (hierarchical, tenant-scoped)
+- **ID** - Unique message identifier (for deduplication)
+- **Timestamp** - When the message was published
+- **Tenant** - Tenant ID for isolation
+- **Headers** - Metadata key/value pairs
+- **Payload** - Message body (typically JSON-encoded)
 
 ## Topic Naming Convention
 
@@ -369,6 +369,6 @@ Muto doesn't export message bus metrics yet (publish/receive counts, latency, bu
 
 ## Next Steps
 
-- **[Security Model](./security-model.md)** — How multi-tenancy is enforced on message topics
-- **[Platform Design](./platform-design.md)** — How agents are deployed
-- **[Concepts (Message Bus)](../getting-started/concepts.md#message-bus)** — Return to concepts
+- **[Security Model](./security-model.md)** - How multi-tenancy is enforced on message topics
+- **[Platform Design](./platform-design.md)** - How agents are deployed
+- **[Concepts (Message Bus)](../getting-started/concepts.md#message-bus)** - Return to concepts

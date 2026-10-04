@@ -561,10 +561,10 @@ make help            # Show all targets
 
 ## Related Documentation
 
-- [:octicons-book-24: **Testing Overview**](./overview.md) — Testing strategy
-- [:octicons-book-24: **Unit Tests**](./unit-tests.md) — Unit testing guide
-- [:octicons-book-24: **Integration Tests**](./integration-tests.md) — Integration testing guide
-- [:octicons-book-24: **Development Setup**](../development/setup.md) — Full development setup
-- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) — Contribution workflow
+- [:octicons-book-24: **Testing Overview**](./overview.md) - Testing strategy
+- [:octicons-book-24: **Unit Tests**](./unit-tests.md) - Unit testing guide
+- [:octicons-book-24: **Integration Tests**](./integration-tests.md) - Integration testing guide
+- [:octicons-book-24: **Development Setup**](../development/setup.md) - Full development setup
+- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) - Contribution workflow
 
 ---

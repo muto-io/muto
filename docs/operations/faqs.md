@@ -585,7 +585,7 @@ Muto follows semantic versioning:
 ---
 
 **See Also:**
-- [Troubleshooting Guide](./troubleshooting.md) — Detailed solutions
-- [Monitoring](./monitoring-observability.md) — Observability setup
-- [Performance Tuning](./performance-tuning.md) — Optimization
-- [Backup and Recovery](./backup-recovery.md) — Disaster recovery
+- [Troubleshooting Guide](./troubleshooting.md) - Detailed solutions
+- [Monitoring](./monitoring-observability.md) - Observability setup
+- [Performance Tuning](./performance-tuning.md) - Optimization
+- [Backup and Recovery](./backup-recovery.md) - Disaster recovery

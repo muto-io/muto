@@ -2,7 +2,7 @@
 
 Welcome to the **Muto** documentation! Muto is a multi-platform agent orchestration system for coordinating autonomous agents across Kubernetes and CloudFoundry environments.
 
-> **M.U.T.O.** — Massive Unidentified Terrestrial Orchestrator: A system that consumes workloads and adapts to multi-tenant, multi-platform demands.
+> **M.U.T.O.** - Massive Unidentified Terrestrial Orchestrator: A system that consumes workloads and adapts to multi-tenant, multi-platform demands.
 
 ## What is Muto?
 
@@ -21,11 +21,11 @@ Muto provides a unified framework for:
 
 **First time here?** Start with these entry points:
 
-1. **[What is Muto?](getting-started/overview.md)** — Understand the problems Muto solves
-2. **[Quick Start](getting-started/quick-start.md)** — Deploy your first agent job in minutes
-3. **[Installation Guide](getting-started/installation.md)** — Set up Muto in your environment
-4. **[Key Concepts](getting-started/concepts.md)** — Learn core terminology
-5. **[Contributing](../CONTRIBUTING.md)** — Join our community and help improve Muto
+1. **[What is Muto?](getting-started/overview.md)** - Understand the problems Muto solves
+2. **[Quick Start](getting-started/quick-start.md)** - Deploy your first agent job in minutes
+3. **[Installation Guide](getting-started/installation.md)** - Set up Muto in your environment
+4. **[Key Concepts](getting-started/concepts.md)** - Learn core terminology
+5. **[Contributing](../CONTRIBUTING.md)** - Join our community and help improve Muto
 
 ---
 
@@ -112,7 +112,7 @@ Learn how to use Muto once it's deployed. Includes examples, patterns, and best 
 | [Scheduling Agent Jobs](usage/scheduling-agent-jobs.md) | Define and schedule agent workloads | Users |
 | [Multi-Agent Patterns](usage/multi-agent-patterns.md) | Build complex multi-agent workflows | Users |
 | **Examples** | | |
-| [Simple Job](usage/examples/simple-job.md) | "Hello World" example—a basic agent job | Users |
+| [Simple Job](usage/examples/simple-job.md) | "Hello World" example-a basic agent job | Users |
 | [Custom Reconciler](usage/examples/custom-reconciler.md) | Build a custom reconciler for domain logic | Engineers |
 | [Multi-Agent Workflow](usage/examples/multi-agent-workflow.md) | Orchestrate multiple agents with message passing | Users |
 
@@ -196,7 +196,7 @@ Testing infrastructure and analysis. Part of the development workflow.
 
 ## Navigation by Audience
 
-### I'm a User — New to Muto
+### I'm a User - New to Muto
 Start here and work through in order:
 1. [What is Muto?](getting-started/overview.md)
 2. [Concepts](getting-started/concepts.md)
@@ -209,7 +209,7 @@ Start here and work through in order:
 
 ---
 
-### I'm an Operator — Deploying Muto
+### I'm an Operator - Deploying Muto
 Follow this path:
 1. [Platform Design](architecture/platform-design.md) (understand the system)
 2. **Choose your platform:**
@@ -225,7 +225,7 @@ Follow this path:
 
 ---
 
-### I'm an Engineer — Building with Muto
+### I'm an Engineer - Building with Muto
 Follow this path:
 1. [Platform Design](architecture/platform-design.md)
 2. [Messaging](architecture/messaging.md)
@@ -238,7 +238,7 @@ Follow this path:
 
 ---
 
-### I'm a Contributor — Developing Muto
+### I'm a Contributor - Developing Muto
 Follow this path:
 1. [Development Setup](development/setup.md)
 2. [Testing Strategy](development/testing-strategy.md)
@@ -254,7 +254,7 @@ Follow this path:
 
 ---
 
-### I'm an Architect — Evaluating Muto
+### I'm an Architect - Evaluating Muto
 Read these to understand Muto's design and capabilities:
 1. [What is Muto?](getting-started/overview.md) (the problem)
 2. [Platform Design](architecture/platform-design.md) (the solution)
@@ -266,7 +266,7 @@ Read these to understand Muto's design and capabilities:
 
 ---
 
-### I'm a New Team Member — Joining the Muto Team
+### I'm a New Team Member - Joining the Muto Team
 Start here to get up to speed with the team and project:
 1. [Team Onboarding Guide](team/onboarding.md) (development setup, workflows, standards)
 2. [Development Setup](development/setup.md) (prepare your environment)
@@ -282,20 +282,20 @@ Start here to get up to speed with the team and project:
 ### Links to Key Resources
 
 **Community & Support:**
-- [Contributing Guidelines](../CONTRIBUTING.md) — How to contribute
-- [GitHub Issues](https://github.com/muto-io/muto/issues) — Report bugs or request features
-- [GitHub Discussions](https://github.com/muto-io/muto/discussions) — Ask questions and share ideas
+- [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute
+- [GitHub Issues](https://github.com/muto-io/muto/issues) - Report bugs or request features
+- [GitHub Discussions](https://github.com/muto-io/muto/discussions) - Ask questions and share ideas
 
 **Important Docs:**
-- [Production Checklist](deployment/production-checklist.md) — Before going live
-- [Troubleshooting Guide](operations/troubleshooting.md) — When things go wrong
-- [FAQs](operations/faqs.md) — Quick answers
-- [Best Practices](usage/best-practices.md) — Design patterns and tips
+- [Production Checklist](deployment/production-checklist.md) - Before going live
+- [Troubleshooting Guide](operations/troubleshooting.md) - When things go wrong
+- [FAQs](operations/faqs.md) - Quick answers
+- [Best Practices](usage/best-practices.md) - Design patterns and tips
 
 **Configuration:**
-- [All Environment Variables](configuration/environment-variables.md) — Complete config reference
-- [Message Bus Setup](configuration/message-bus-setup.md) — Choose and configure a message bus
-- [Security & TLS](configuration/tls-security.md) — Enable encryption
+- [All Environment Variables](configuration/environment-variables.md) - Complete config reference
+- [Message Bus Setup](configuration/message-bus-setup.md) - Choose and configure a message bus
+- [Security & TLS](configuration/tls-security.md) - Enable encryption
 
 ---
 

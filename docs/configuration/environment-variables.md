@@ -836,17 +836,17 @@ export MUTO_TLS_ENABLED=true
 
 5. **Test configuration changes** in a staging environment first.
 
-6. **Use TLS in production** — never disable `MUTO_TLS_ENABLED` in production.
+6. **Use TLS in production** - never disable `MUTO_TLS_ENABLED` in production.
 
 ---
 
 ## See Also
 
-- [Reconciler Configuration](./reconciler-config.md) — Detailed reconciler settings
-- [Message Bus Setup](./message-bus-setup.md) — Message bus tuning
-- [Multi-Tenant Setup](./multi-tenant-setup.md) — Tenant configuration
-- [TLS and Security](./tls-security.md) — Security configuration
-- [Deployment Guide](../deployment/kubernetes/install.md) — Installation steps
-- [Architecture Overview](../architecture/overview.md) — How configuration is used
+- [Reconciler Configuration](./reconciler-config.md) - Detailed reconciler settings
+- [Message Bus Setup](./message-bus-setup.md) - Message bus tuning
+- [Multi-Tenant Setup](./multi-tenant-setup.md) - Tenant configuration
+- [TLS and Security](./tls-security.md) - Security configuration
+- [Deployment Guide](../deployment/kubernetes/install.md) - Installation steps
+- [Architecture Overview](../architecture/overview.md) - How configuration is used
 
 ---

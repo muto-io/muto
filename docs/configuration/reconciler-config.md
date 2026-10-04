@@ -530,9 +530,9 @@ export MUTO_MAX_CONCURRENT_JOBS=500
 
 ## See Also
 
-- [Environment Variables](./environment-variables.md) — All configuration options
-- [Message Bus Setup](./message-bus-setup.md) — Message bus tuning
-- [Architecture: Reconcilers](../architecture/reconcilers.md) — How reconcilers work
-- [Deployment: Production Checklist](../deployment/production-checklist.md) — Pre-launch verification
+- [Environment Variables](./environment-variables.md) - All configuration options
+- [Message Bus Setup](./message-bus-setup.md) - Message bus tuning
+- [Architecture: Reconcilers](../architecture/reconcilers.md) - How reconcilers work
+- [Deployment: Production Checklist](../deployment/production-checklist.md) - Pre-launch verification
 
 ---

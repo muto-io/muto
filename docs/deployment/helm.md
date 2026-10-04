@@ -2,7 +2,7 @@
 
 For Helm chart configuration and deployment, see:
 
-- **[Helm Chart Reference](./kubernetes/helm-chart.md)** — Complete Helm values documentation
+- **[Helm Chart Reference](./kubernetes/helm-chart.md)** - Complete Helm values documentation
 
 ---
 

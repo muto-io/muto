@@ -673,21 +673,21 @@ kafka-topics.sh --delete --topic old-topic --bootstrap-server kafka:9092
 ## Best Practices
 
 1. **Use NATS for development**, Kafka for production
-2. **Enable TLS in production** — never skip encryption
-3. **Configure authentication** — use SASL or credentials
-4. **Monitor consumer lag** — especially for Kafka
-5. **Set appropriate retention** — balance between storage and replay ability
-6. **Test failover scenarios** — ensure system handles broker failures
-7. **Regular backups** — for Kafka, back up Zookeeper data
-8. **Tune based on metrics** — don't over-tune without data
+2. **Enable TLS in production** - never skip encryption
+3. **Configure authentication** - use SASL or credentials
+4. **Monitor consumer lag** - especially for Kafka
+5. **Set appropriate retention** - balance between storage and replay ability
+6. **Test failover scenarios** - ensure system handles broker failures
+7. **Regular backups** - for Kafka, back up Zookeeper data
+8. **Tune based on metrics** - don't over-tune without data
 
 ---
 
 ## See Also
 
-- [Environment Variables](./environment-variables.md) — All message bus settings
-- [Architecture: Messaging](../architecture/messaging.md) — How messaging works
-- [Deployment: Production Checklist](../deployment/production-checklist.md) — Pre-launch verification
-- [Multi-Tenant Setup](./multi-tenant-setup.md) — Tenant-scoped topics
+- [Environment Variables](./environment-variables.md) - All message bus settings
+- [Architecture: Messaging](../architecture/messaging.md) - How messaging works
+- [Deployment: Production Checklist](../deployment/production-checklist.md) - Pre-launch verification
+- [Multi-Tenant Setup](./multi-tenant-setup.md) - Tenant-scoped topics
 
 ---

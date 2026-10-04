@@ -67,7 +67,7 @@ kubectl version --client
 
 #### kind
 
-Kubernetes in Docker—creates local K8s clusters for testing.
+Kubernetes in Docker-creates local K8s clusters for testing.
 
 ```bash
 go install sigs.k8s.io/kind@latest
@@ -142,8 +142,8 @@ make build
 ```
 
 Creates:
-- `bin/muto-operator` — Kubernetes operator
-- `bin/muto-mcp` — MCP server
+- `bin/muto-operator` - Kubernetes operator
+- `bin/muto-mcp` - MCP server
 
 Verify binaries:
 ```bash
@@ -410,10 +410,10 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 ## Related Documentation
 
-- [:octicons-book-24: **Code Style Guide**](./style.md) — Code standards and conventions
-- [:octicons-book-24: **Contributing Guide**](./contributing.md) — Code contribution process
-- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Testing best practices
-- [:octicons-book-24: **Debugging Guide**](./debugging.md) — Troubleshooting techniques
-- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) — Automated testing and deployment
+- [:octicons-book-24: **Code Style Guide**](./style.md) - Code standards and conventions
+- [:octicons-book-24: **Contributing Guide**](./contributing.md) - Code contribution process
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) - Testing best practices
+- [:octicons-book-24: **Debugging Guide**](./debugging.md) - Troubleshooting techniques
+- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) - Automated testing and deployment
 
 ---

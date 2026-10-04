@@ -295,7 +295,7 @@ func TestScheduleConcurrentDifferentJobIDs(t *testing.T) {
 }
 
 // TestScheduleConcurrentSameJobID verifies that when many goroutines race to
-// schedule the same jobID, exactly one succeeds and the rest are rejected —
+// schedule the same jobID, exactly one succeeds and the rest are rejected -
 // this is the regression test for the double-schedule race.
 func TestScheduleConcurrentSameJobID(t *testing.T) {
 	adapter := &blockingAdapter{}

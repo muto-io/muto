@@ -748,9 +748,9 @@ kafka-consumer-groups.sh --bootstrap-server kafka:9092 --group <group> --describ
 
 ## See Also
 
-- [Environment Variables](./environment-variables.md) — Tenant configuration options
-- [TLS and Security](./tls-security.md) — Tenant authentication and encryption
-- [Deployment Production Checklist](../deployment/production-checklist.md) — Multi-tenancy verification
-- [Architecture: Security Model](../architecture/security-model.md) — How isolation works
+- [Environment Variables](./environment-variables.md) - Tenant configuration options
+- [TLS and Security](./tls-security.md) - Tenant authentication and encryption
+- [Deployment Production Checklist](../deployment/production-checklist.md) - Multi-tenancy verification
+- [Architecture: Security Model](../architecture/security-model.md) - How isolation works
 
 ---

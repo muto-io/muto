@@ -62,8 +62,8 @@ CPU and memory from a local run of `scripts/test-profile.sh --suite all --cpupro
 
 ## Related Documentation
 
-- [:octicons-book-24: **Running Tests Locally**](./running-locally.md) — Performance tips and local setup
-- [:octicons-book-24: **E2E Tests**](./e2e-tests.md) — E2E test infrastructure
-- [:octicons-book-24: **Integration Tests**](./integration-tests.md) — Integration testing guide
+- [:octicons-book-24: **Running Tests Locally**](./running-locally.md) - Performance tips and local setup
+- [:octicons-book-24: **E2E Tests**](./e2e-tests.md) - E2E test infrastructure
+- [:octicons-book-24: **Integration Tests**](./integration-tests.md) - Integration testing guide
 
 ---

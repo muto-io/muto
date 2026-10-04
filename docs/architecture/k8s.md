@@ -277,6 +277,6 @@ The operator exports controller-runtime's built-in Prometheus metrics on `:8080/
 
 ## Related Documentation
 
-- [:octicons-book-24: **Platform Design**](./platform-design.md) — Adapter abstraction
-- [:octicons-book-24: **Architecture Overview**](./overview.md) — System architecture
-- [:octicons-book-24: **Deployment**](../deployment/kubernetes/install.md) — K8s installation guide
+- [:octicons-book-24: **Platform Design**](./platform-design.md) - Adapter abstraction
+- [:octicons-book-24: **Architecture Overview**](./overview.md) - System architecture
+- [:octicons-book-24: **Deployment**](../deployment/kubernetes/install.md) - K8s installation guide

@@ -467,9 +467,9 @@ go tool cover -html=coverage.out
 
 ## Related Documentation
 
-- [:octicons-book-24: **Code Style Guide**](./style.md#testing-naming) — Test naming conventions
-- [:octicons-book-24: **Contributing Guide**](./contributing.md) — Contribution workflow
-- [:octicons-book-24: **Development Setup**](./setup.md) — Configure development environment
-- [:octicons-book-24: **Debugging Guide**](./debugging.md) — Troubleshooting techniques
+- [:octicons-book-24: **Code Style Guide**](./style.md#testing-naming) - Test naming conventions
+- [:octicons-book-24: **Contributing Guide**](./contributing.md) - Contribution workflow
+- [:octicons-book-24: **Development Setup**](./setup.md) - Configure development environment
+- [:octicons-book-24: **Debugging Guide**](./debugging.md) - Troubleshooting techniques
 
 ---

@@ -632,6 +632,6 @@ If issues persist:
 ---
 
 **See Also:**
-- [Monitoring and Observability](./monitoring-observability.md) — Setting up metrics and logs
-- [Performance Tuning](./performance-tuning.md) — Optimizing for your workload
-- [Configuration Reference](../configuration/environment-variables.md) — All configuration options
+- [Monitoring and Observability](./monitoring-observability.md) - Setting up metrics and logs
+- [Performance Tuning](./performance-tuning.md) - Optimizing for your workload
+- [Configuration Reference](../configuration/environment-variables.md) - All configuration options

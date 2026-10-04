@@ -634,8 +634,8 @@ kubectl logs agentjob/<job-name> --all-containers=true --tail=500
 
 ## Next Steps
 
-- **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** — Job specification reference
-- **[Multi-Agent Patterns](./multi-agent-patterns.md)** — Orchestration patterns
-- **[Configuration](../configuration/)** — Fine-tune settings
+- **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** - Job specification reference
+- **[Multi-Agent Patterns](./multi-agent-patterns.md)** - Orchestration patterns
+- **[Configuration](../configuration/)** - Fine-tune settings
 
 ---

@@ -176,18 +176,18 @@ Muto uses GitHub Actions to automate testing, building, and deployment processes
 
 The CI workflow runs on every push and pull request:
 
-1. **Lint** — Code style validation using `golangci-lint`
-2. **Unit Tests** — Fast unit test suite with coverage reporting
-3. **Build** — Compilation verification for binaries and integration tests
-4. **Kubernetes Integration Tests** — Full K8s platform adapter validation
-5. **Cloud Foundry Integration Tests** — CF platform adapter validation (continue-on-error if CF unavailable)
-6. **Helm Lint** — Chart syntax validation
+1. **Lint** - Code style validation using `golangci-lint`
+2. **Unit Tests** - Fast unit test suite with coverage reporting
+3. **Build** - Compilation verification for binaries and integration tests
+4. **Kubernetes Integration Tests** - Full K8s platform adapter validation
+5. **Cloud Foundry Integration Tests** - CF platform adapter validation (continue-on-error if CF unavailable)
+6. **Helm Lint** - Chart syntax validation
 
 #### Triggers
 
-- **Pull Requests** — When PR targets main branch
-- **All Branches** — On every push
-- **Weekly** — Scheduled runs for regression testing
+- **Pull Requests** - When PR targets main branch
+- **All Branches** - On every push
+- **Weekly** - Scheduled runs for regression testing
 
 ### Test Artifact Retention
 
@@ -211,9 +211,9 @@ To enable Cloud Foundry testing in GitHub Actions:
 
 1. Navigate to repository Settings → Secrets and variables → Actions
 2. Add these secrets:
-   - `CF_API_URL` — Cloud Foundry API endpoint
-   - `CF_USERNAME` — CF admin username
-   - `CF_PASSWORD` — CF admin password
+   - `CF_API_URL` - Cloud Foundry API endpoint
+   - `CF_USERNAME` - CF admin username
+   - `CF_PASSWORD` - CF admin password
 
 ### Local CI Simulation
 
@@ -255,17 +255,17 @@ The authoritative code ownership configuration is at [.github/CODEOWNERS](.githu
 
 ### General Guidelines
 
-1. **Test Before Submitting** — Run the full test suite before opening a PR:
+1. **Test Before Submitting** - Run the full test suite before opening a PR:
    ```bash
    make test-e2e
    ```
 
-2. **Write Focused Tests** — Each test should verify one behavior
+2. **Write Focused Tests** - Each test should verify one behavior
    - Avoid testing multiple concerns in one test
    - Use descriptive test names that explain what is being verified
    - Keep test setup minimal and focused
 
-3. **Use Table-Driven Tests** — For multiple similar scenarios in unit tests:
+3. **Use Table-Driven Tests** - For multiple similar scenarios in unit tests:
    ```go
    testCases := []struct {
        input    string
@@ -358,11 +358,11 @@ The authoritative code ownership configuration is at [.github/CODEOWNERS](.githu
 
 ### CI/CD Best Practices
 
-1. **Local Testing** — Always run `make test-e2e` before pushing
-2. **Clear Commit Messages** — Use conventional commit format for clarity
-3. **Minimal Changes** — Keep PRs focused; split large changes into multiple PRs
-4. **Test Artifact Review** — Check uploaded test artifacts if tests fail in CI
-5. **Address Failures Promptly** — Fix CI failures quickly to maintain code quality
+1. **Local Testing** - Always run `make test-e2e` before pushing
+2. **Clear Commit Messages** - Use conventional commit format for clarity
+3. **Minimal Changes** - Keep PRs focused; split large changes into multiple PRs
+4. **Test Artifact Review** - Check uploaded test artifacts if tests fail in CI
+5. **Address Failures Promptly** - Fix CI failures quickly to maintain code quality
 
 ### Test Naming Conventions
 

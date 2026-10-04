@@ -54,13 +54,13 @@ func (h *Handlers) ListActiveAgents(ctx context.Context, tenantID string) ([]*ag
 
 // TenantInfo is returned by DescribeTenant.
 type TenantInfo struct {
-	TenantID string `json:"tenantId"`
-	ActiveJobs int  `json:"activeJobs"`
-	Note     string `json:"note"`
+	TenantID   string `json:"tenantId"`
+	ActiveJobs int    `json:"activeJobs"`
+	Note       string `json:"note"`
 }
 
 // DescribeTenant returns observable info about a tenant from the scheduler's perspective.
-// Full tenant configuration (isolation tier, bus type) lives in the Tenant CR — check
+// Full tenant configuration (isolation tier, bus type) lives in the Tenant CR - check
 // `kubectl get tenant <id>` for complete details.
 func (h *Handlers) DescribeTenant(ctx context.Context, tenantID string) (*TenantInfo, error) {
 	jobs, err := h.sched.ListActive(ctx, tenantID)

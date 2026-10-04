@@ -700,9 +700,9 @@ go test ./test/integration/k8s/... -p 1
 
 ## Related Documentation
 
-- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Overall testing approach
-- [:octicons-book-24: **Code Style Guide**](../development/style.md) — Code quality standards
-- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) — Contribution workflow
-- [:octicons-book-24: **Development Setup**](../development/setup.md) — Environment setup
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) - Overall testing approach
+- [:octicons-book-24: **Code Style Guide**](../development/style.md) - Code quality standards
+- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) - Contribution workflow
+- [:octicons-book-24: **Development Setup**](../development/setup.md) - Environment setup
 
 ---

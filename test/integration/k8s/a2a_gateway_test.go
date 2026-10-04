@@ -77,7 +77,7 @@ var _ = Describe("A2A Gateway Lifecycle", func() {
 		By(fmt.Sprintf("[%s] Phase 1/2 complete: Tenant deleted in %s", time.Now().Format(time.RFC3339Nano), tenantDeleteDuration))
 
 		// --- Phase 2/2: namespace deletion --------------------------------
-		// Now delete the namespace — cascade-delete will clean up remaining resources
+		// Now delete the namespace - cascade-delete will clean up remaining resources
 		By(fmt.Sprintf("[%s] Phase 2/2: deleting namespace %q (timeout %s)", time.Now().Format(time.RFC3339Nano), tenantNS, nsCleanupTimeout))
 		ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: tenantNS}}
 		delOpts := []client.DeleteOption{

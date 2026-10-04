@@ -42,7 +42,7 @@ func NewDefaultScheduler(adapter PlatformAdapter) *DefaultScheduler {
 }
 
 func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
-	// Spawn agents outside the lock — I/O must not block other scheduler operations.
+	// Spawn agents outside the lock - I/O must not block other scheduler operations.
 	var agentIDs []string
 	for _, role := range job.Spec.Agents {
 		spec := &agent.Spec{
@@ -56,7 +56,7 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		agentIDs = append(agentIDs, id)
 	}
 
-	// context.Background() — watch goroutines must outlive the request context.
+	// context.Background() - watch goroutines must outlive the request context.
 	watchCtx, cancelWatch := context.WithCancel(context.Background())
 	var watchChans []<-chan agent.Event
 	for _, id := range agentIDs {

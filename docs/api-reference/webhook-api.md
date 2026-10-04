@@ -865,9 +865,9 @@ jq --slurpfile patch patch.json '.patch = $patch | .' input.json
 
 ## Related Documentation
 
-- **[CRD Types](./crd-types.md)** — AgentJob and Tenant field reference
-- **[Architecture: Security Model](../architecture/security-model.md)** — Webhook security considerations
-- **[Development: Contributing](../development/contributing.md)** — Writing custom webhooks
+- **[CRD Types](./crd-types.md)** - AgentJob and Tenant field reference
+- **[Architecture: Security Model](../architecture/security-model.md)** - Webhook security considerations
+- **[Development: Contributing](../development/contributing.md)** - Writing custom webhooks
 
 ---
 

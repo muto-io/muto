@@ -2,7 +2,7 @@
 
 **Muto** is a Kubernetes-native agent scheduler and orchestrator for multi-agent AI workloads.
 
-> The name comes from the Godzilla universe: M.U.T.O. (Massive Unidentified Terrestrial Organism) — a creature that consumes energy and adapts. Fitting for a scheduler that consumes workloads and adapts to multi-tenant demand.
+> The name comes from the Godzilla universe: M.U.T.O. (Massive Unidentified Terrestrial Organism) - a creature that consumes energy and adapts. Fitting for a scheduler that consumes workloads and adapts to multi-tenant demand.
 
 ---
 

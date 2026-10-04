@@ -260,10 +260,10 @@ docker stats  # Monitor usage
 
 ## Related Documentation
 
-- [:octicons-book-24: **Integration Tests**](./integration-tests.md) — Integration testing guide
-- [:octicons-book-24: **Testing Overview**](./overview.md) — Testing strategy
-- [:octicons-book-24: **Running Tests Locally**](./running-locally.md) — Local test execution
-- [:octicons-book-24: **Unit Tests**](./unit-tests.md) — Unit testing best practices
+- [:octicons-book-24: **Integration Tests**](./integration-tests.md) - Integration testing guide
+- [:octicons-book-24: **Testing Overview**](./overview.md) - Testing strategy
+- [:octicons-book-24: **Running Tests Locally**](./running-locally.md) - Local test execution
+- [:octicons-book-24: **Unit Tests**](./unit-tests.md) - Unit testing best practices
 
 **Implementation:**
 - GitHub Workflow: `.github/workflows/e2e-tests.yml`

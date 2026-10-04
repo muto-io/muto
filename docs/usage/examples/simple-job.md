@@ -339,16 +339,16 @@ kubectl get agentjob hello-world -o json | \
 
 Now that you understand basic job execution:
 
-1. **[Multi-Agent Workflow Example](./multi-agent-workflow.md)** — Build multi-agent jobs
-2. **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** — Learn job configuration options
-3. **[Multi-Agent Patterns](../multi-agent-patterns.md)** — Learn orchestration patterns
-4. **[Best Practices](../best-practices.md)** — Optimize for production
+1. **[Multi-Agent Workflow Example](./multi-agent-workflow.md)** - Build multi-agent jobs
+2. **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** - Learn job configuration options
+3. **[Multi-Agent Patterns](../multi-agent-patterns.md)** - Learn orchestration patterns
+4. **[Best Practices](../best-practices.md)** - Optimize for production
 
 ## Full Example Files
 
 For reference, complete example files are available in the Muto repository:
-- `examples/jobs/hello-world.yaml` — This example
-- `examples/jobs/multi-agent-pipeline.yaml` — Complex workflow
-- `examples/jobs/error-handling.yaml` — Error recovery patterns
+- `examples/jobs/hello-world.yaml` - This example
+- `examples/jobs/multi-agent-pipeline.yaml` - Complex workflow
+- `examples/jobs/error-handling.yaml` - Error recovery patterns
 
 ---

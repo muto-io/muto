@@ -6,10 +6,10 @@ Optimize Muto for your workload: tuning reconcilers, message bus, resource alloc
 
 Muto's performance depends on several factors:
 
-- **Reconciler configuration** — How aggressively the system checks for drift
-- **Message bus capacity** — Throughput and latency of inter-agent communication
-- **Resource allocation** — CPU, memory, and disk available to operator and agents
-- **Cluster capacity** — Number of nodes and their resources
+- **Reconciler configuration** - How aggressively the system checks for drift
+- **Message bus capacity** - Throughput and latency of inter-agent communication
+- **Resource allocation** - CPU, memory, and disk available to operator and agents
+- **Cluster capacity** - Number of nodes and their resources
 
 This guide covers tuning each layer.
 
@@ -542,16 +542,16 @@ kubectl edit deployment/muto-operator -n muto-system
 
 ## Best Practices
 
-1. **Measure before optimizing** — Use metrics to identify actual bottlenecks
-2. **Change one variable at a time** — Makes it easier to see the impact
-3. **Load test new configurations** — Verify changes improve performance
-4. **Monitor continuously** — Set up dashboards and alerts
-5. **Plan for growth** — Capacity plan for 2-3x your current load
-6. **Document your tuning** — Keep notes on what works for your workload
+1. **Measure before optimizing** - Use metrics to identify actual bottlenecks
+2. **Change one variable at a time** - Makes it easier to see the impact
+3. **Load test new configurations** - Verify changes improve performance
+4. **Monitor continuously** - Set up dashboards and alerts
+5. **Plan for growth** - Capacity plan for 2-3x your current load
+6. **Document your tuning** - Keep notes on what works for your workload
 
 ---
 
 **See Also:**
-- [Monitoring and Observability](./monitoring-observability.md) — Collecting performance data
-- [Configuration Reference](../configuration/environment-variables.md) — All tunable parameters
-- [Architecture Overview](../architecture/overview.md) — Understanding the system design
+- [Monitoring and Observability](./monitoring-observability.md) - Collecting performance data
+- [Configuration Reference](../configuration/environment-variables.md) - All tunable parameters
+- [Architecture Overview](../architecture/overview.md) - Understanding the system design

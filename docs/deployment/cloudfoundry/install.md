@@ -89,8 +89,8 @@ make build
 ```
 
 This creates:
-- `bin/muto-operator` — CloudFoundry-compatible operator
-- `bin/muto-mcp` — MCP server for Claude integration
+- `bin/muto-operator` - CloudFoundry-compatible operator
+- `bin/muto-mcp` - MCP server for Claude integration
 
 ### Create Manifest
 
@@ -502,8 +502,8 @@ cf delete-org muto-platform
 
 ## Next Steps
 
-- **[CloudFoundry Configuration](./configuration.md)** — Advanced CF-specific settings
-- **[Production Checklist](../production-checklist.md)** — Pre-launch verification
-- **[Configuration Guide](../../configuration/)** — Environment variables and tuning
+- **[CloudFoundry Configuration](./configuration.md)** - Advanced CF-specific settings
+- **[Production Checklist](../production-checklist.md)** - Pre-launch verification
+- **[Configuration Guide](../../configuration/)** - Environment variables and tuning
 
 ---

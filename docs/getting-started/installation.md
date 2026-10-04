@@ -2,8 +2,8 @@
 
 Choose your path based on your role:
 
-- **[👥 Users & Operators](#for-users--operators)** — Deploy Muto using Docker and Helm (recommended)
-- **[👨‍💻 Developers](#for-developers--contributors)** — Build from source and contribute to Muto
+- **[👥 Users & Operators](#for-users--operators)** - Deploy Muto using Docker and Helm (recommended)
+- **[👨‍💻 Developers](#for-developers--contributors)** - Build from source and contribute to Muto
 
 ---
 

@@ -634,8 +634,8 @@ spec:
 
 ## Next Steps
 
-- **[Multi-Agent Patterns](./multi-agent-patterns.md)** — Build complex workflows
-- **[Best Practices](./best-practices.md)** — Optimize job performance
-- **[Examples](./examples/)** — See real-world usage patterns
+- **[Multi-Agent Patterns](./multi-agent-patterns.md)** - Build complex workflows
+- **[Best Practices](./best-practices.md)** - Optimize job performance
+- **[Examples](./examples/)** - See real-world usage patterns
 
 ---

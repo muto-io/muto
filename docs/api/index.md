@@ -23,7 +23,7 @@ The CRD API defines Kubernetes Custom Resources for Muto. Use these to declare a
 
 ### Core Resources
 
-**Tenant** — A logical boundary with isolated compute, messaging, and RBAC
+**Tenant** - A logical boundary with isolated compute, messaging, and RBAC
 - **Kind**: `muto.io/v1alpha1/Tenant`
 - **Scope**: Cluster
 - **Purpose**: Define a scheduling tenant with isolation configuration
@@ -40,7 +40,7 @@ The CRD API defines Kubernetes Custom Resources for Muto. Use these to declare a
       type: nats
   ```
 
-**AgentJob** — A unit of agent work to be scheduled
+**AgentJob** - A unit of agent work to be scheduled
 - **Kind**: `muto.io/v1alpha1/AgentJob`
 - **Scope**: Namespaced
 - **Purpose**: Trigger and manage one or more agents
@@ -60,7 +60,7 @@ The CRD API defines Kubernetes Custom Resources for Muto. Use these to declare a
         maxReplicas: 1
   ```
 
-**AgentFleet** — Group related AgentJobs for coordinated operations
+**AgentFleet** - Group related AgentJobs for coordinated operations
 - **Kind**: `muto.io/v1alpha1/AgentFleet`
 - **Scope**: Namespaced
 - **Purpose**: Manage collections of agent jobs as a single unit
@@ -97,7 +97,7 @@ The CRD API defines Kubernetes Custom Resources for Muto. Use these to declare a
 
 ### Full Reference
 
-[:octicons-book-24: **CRD Type Reference**](../api-reference/crd-types.md) — Complete field specifications, validation rules, and examples
+[:octicons-book-24: **CRD Type Reference**](../api-reference/crd-types.md) - Complete field specifications, validation rules, and examples
 
 **Useful kubectl Commands**
 ```bash
@@ -160,7 +160,7 @@ The Message API defines inter-agent communication protocols and message bus sema
 
 ### Full Reference
 
-[:octicons-book-24: **Message API Reference**](../api-reference/message-api.md) — Complete message format, routing rules, and examples
+[:octicons-book-24: **Message API Reference**](../api-reference/message-api.md) - Complete message format, routing rules, and examples
 
 ---
 
@@ -205,7 +205,7 @@ MUTO_WEBHOOK_EVENTS: job.created,job.completed,job.failed
 
 ### Full Reference
 
-[:octicons-book-24: **Webhook API Reference**](../api-reference/webhook-api.md) — Complete webhook specification, retry behavior, and integration examples
+[:octicons-book-24: **Webhook API Reference**](../api-reference/webhook-api.md) - Complete webhook specification, retry behavior, and integration examples
 
 ---
 
@@ -215,7 +215,7 @@ The MCP (Model Context Protocol) Tools API enables Claude and other LLM clients 
 
 ### Available Tools
 
-**ScheduleJob** — Create and schedule a new agent job
+**ScheduleJob** - Create and schedule a new agent job
 ```json
 {
   "tool": "ScheduleJob",
@@ -232,7 +232,7 @@ The MCP (Model Context Protocol) Tools API enables Claude and other LLM clients 
 }
 ```
 
-**GetJobStatus** — Retrieve current status of a job
+**GetJobStatus** - Retrieve current status of a job
 ```json
 {
   "tool": "GetJobStatus",
@@ -243,7 +243,7 @@ The MCP (Model Context Protocol) Tools API enables Claude and other LLM clients 
 }
 ```
 
-**ListJobs** — List active jobs for a tenant
+**ListJobs** - List active jobs for a tenant
 ```json
 {
   "tool": "ListJobs",
@@ -254,7 +254,7 @@ The MCP (Model Context Protocol) Tools API enables Claude and other LLM clients 
 }
 ```
 
-**CancelJob** — Cancel a running or pending job
+**CancelJob** - Cancel a running or pending job
 ```json
 {
   "tool": "CancelJob",
@@ -265,7 +265,7 @@ The MCP (Model Context Protocol) Tools API enables Claude and other LLM clients 
 }
 ```
 
-**DescribeTenant** — Get tenant configuration and status
+**DescribeTenant** - Get tenant configuration and status
 ```json
 {
   "tool": "DescribeTenant",
@@ -289,7 +289,7 @@ claude mcp add @muto-io/mcp-server --config "serverUrl=http://localhost:3000"
 
 ### Full Reference
 
-[:octicons-book-24: **MCP Tools Reference**](../api-reference/mcp-tools.md) — Complete tool specifications, authentication, and integration examples
+[:octicons-book-24: **MCP Tools Reference**](../api-reference/mcp-tools.md) - Complete tool specifications, authentication, and integration examples
 
 ---
 
@@ -342,7 +342,7 @@ For detailed specifications, use these reference documents:
 
 The Muto CRD API is fully described in OpenAPI 3.0 format for tooling integration:
 
-[:octicons-file-24: **openapi.yaml**](./openapi.yaml) — Machine-readable OpenAPI spec for Muto CRDs
+[:octicons-file-24: **openapi.yaml**](./openapi.yaml) - Machine-readable OpenAPI spec for Muto CRDs
 
 Use this spec with tools like:
 - Swagger UI for interactive documentation

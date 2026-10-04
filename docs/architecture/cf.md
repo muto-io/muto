@@ -97,9 +97,9 @@ Tenant isolation via CF spaces and RBAC:
 - Resource quotas limit space consumption
 
 ### CF RBAC
-- **Space Developer** — Can create and manage tasks within space
-- **Space Manager** — Can manage space (quotas, members)
-- **Org Manager** — Controls organization-level settings
+- **Space Developer** - Can create and manage tasks within space
+- **Space Manager** - Can manage space (quotas, members)
+- **Org Manager** - Controls organization-level settings
 
 ### Service Instances
 Each tenant space has service bindings:
@@ -209,13 +209,13 @@ CF-specific metrics (task duration, task failures, quota usage, service binding 
 
 ## Advantages of CloudFoundry Platform
 
-✅ **Lightweight** — No need to manage infrastructure  
-✅ **Multi-cloud** — Run on any CF-compatible platform  
-✅ **Built-in security** — Isolation via spaces and RBAC  
-✅ **Service brokers** — Access to managed services (databases, queues, etc.)  
-✅ **Logging & metrics** — Built-in observability  
-✅ **Cost efficient** — Pay-per-use model  
-✅ **Compliance** — Auditing and compliance features  
+✅ **Lightweight** - No need to manage infrastructure  
+✅ **Multi-cloud** - Run on any CF-compatible platform  
+✅ **Built-in security** - Isolation via spaces and RBAC  
+✅ **Service brokers** - Access to managed services (databases, queues, etc.)  
+✅ **Logging & metrics** - Built-in observability  
+✅ **Cost efficient** - Pay-per-use model  
+✅ **Compliance** - Auditing and compliance features  
 
 ## Limitations vs Kubernetes
 
@@ -246,6 +246,6 @@ Muto watches CF events via CF API:
 
 ## Related Documentation
 
-- [:octicons-book-24: **Platform Design**](./platform-design.md) — Adapter abstraction
-- [:octicons-book-24: **Architecture Overview**](./overview.md) — System architecture
-- [:octicons-book-24: **Deployment**](../deployment/cloudfoundry/install.md) — CF installation guide
+- [:octicons-book-24: **Platform Design**](./platform-design.md) - Adapter abstraction
+- [:octicons-book-24: **Architecture Overview**](./overview.md) - System architecture
+- [:octicons-book-24: **Deployment**](../deployment/cloudfoundry/install.md) - CF installation guide

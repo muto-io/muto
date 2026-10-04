@@ -210,5 +210,5 @@ Agents Execute
 
 ## Next Steps
 
-- **[Quick Start](../getting-started/quick-start.md)** — See concepts in action
-- **Architecture Overview** — Deeper technical details (coming in Phase 2)
+- **[Quick Start](../getting-started/quick-start.md)** - See concepts in action
+- **Architecture Overview** - Deeper technical details (coming in Phase 2)

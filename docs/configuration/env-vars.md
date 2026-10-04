@@ -362,6 +362,6 @@ export MUTO_WEBHOOK_URLS=https://monitor:443/webhooks
 
 ## Related Documentation
 
-- [:octicons-book-24: **Message Bus Setup**](./message-bus-setup.md) — Detailed message bus configuration
-- [:octicons-book-24: **Reconciler Configuration**](./reconciler-config.md) — Tuning reconciler behavior
-- [:octicons-book-24: **Multi-Tenant Setup**](./multi-tenant-setup.md) — Multi-tenancy configuration
+- [:octicons-book-24: **Message Bus Setup**](./message-bus-setup.md) - Detailed message bus configuration
+- [:octicons-book-24: **Reconciler Configuration**](./reconciler-config.md) - Tuning reconciler behavior
+- [:octicons-book-24: **Multi-Tenant Setup**](./multi-tenant-setup.md) - Multi-tenancy configuration

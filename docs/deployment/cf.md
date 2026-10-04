@@ -2,8 +2,8 @@
 
 For complete CloudFoundry deployment documentation, see:
 
-- **[Installation Guide](./cloudfoundry/install.md)** — Install Muto on CloudFoundry
-- **[CloudFoundry Configuration](./cloudfoundry/configuration.md)** — CF-specific settings and variables
+- **[Installation Guide](./cloudfoundry/install.md)** - Install Muto on CloudFoundry
+- **[CloudFoundry Configuration](./cloudfoundry/configuration.md)** - CF-specific settings and variables
 
 ---
 

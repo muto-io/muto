@@ -4,7 +4,7 @@ Muto is designed from the ground up for secure multi-tenant operation. This docu
 
 ## Security Principles
 
-1. **Tenant Isolation**: Complete isolation between tenants — no data leakage
+1. **Tenant Isolation**: Complete isolation between tenants - no data leakage
 2. **Defense in Depth**: Multiple layers of security (RBAC, network policies, storage isolation)
 3. **Zero Trust**: Every request authenticated and authorized
 4. **Encryption in Transit**: TLS for all external communication
@@ -660,6 +660,6 @@ spec:
 
 ## Next Steps
 
-- **[Platform Design](./platform-design.md)** — How isolation is implemented per platform
-- **[Agent Lifecycle](./agent-lifecycle.md)** — State transitions with security boundaries
-- **[Messaging](./messaging.md)** — Topic-based isolation in message bus
+- **[Platform Design](./platform-design.md)** - How isolation is implemented per platform
+- **[Agent Lifecycle](./agent-lifecycle.md)** - State transitions with security boundaries
+- **[Messaging](./messaging.md)** - Topic-based isolation in message bus

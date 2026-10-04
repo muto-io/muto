@@ -566,10 +566,10 @@ Current version: **v1alpha1**
 
 ## Related Documentation
 
-- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** — Practical examples of job creation
-- **[Usage: Multi-Agent Patterns](../usage/multi-agent-patterns.md)** — Orchestration patterns using AgentJob
-- **[Architecture: Agent Lifecycle](../architecture/agent-lifecycle.md)** — State machine details
-- **[Configuration: Reconciler Setup](../configuration/reconciler-config.md)** — Reconciler tuning guide
+- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** - Practical examples of job creation
+- **[Usage: Multi-Agent Patterns](../usage/multi-agent-patterns.md)** - Orchestration patterns using AgentJob
+- **[Architecture: Agent Lifecycle](../architecture/agent-lifecycle.md)** - State machine details
+- **[Configuration: Reconciler Setup](../configuration/reconciler-config.md)** - Reconciler tuning guide
 
 ---
 

@@ -632,9 +632,9 @@ kubectl get agentjob data-pipeline-daily -o json | \
 
 ## Next Steps
 
-- **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** — Learn all job options
-- **[Multi-Agent Patterns](../multi-agent-patterns.md)** — Learn other orchestration patterns
-- **[Best Practices](../best-practices.md)** — Optimize for production scale
-- **[Custom Reconciler Example](./custom-reconciler.md)** — Write custom orchestration logic
+- **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** - Learn all job options
+- **[Multi-Agent Patterns](../multi-agent-patterns.md)** - Learn other orchestration patterns
+- **[Best Practices](../best-practices.md)** - Optimize for production scale
+- **[Custom Reconciler Example](./custom-reconciler.md)** - Write custom orchestration logic
 
 ---

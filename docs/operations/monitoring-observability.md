@@ -3,7 +3,7 @@
 How to monitor the Muto operator as it works today: health probes, Prometheus metrics, and logs.
 
 !!! note "Current state"
-    Muto currently ships only the observability that controller-runtime provides out of the box. Custom `muto_*` metrics, JSON logs with configurable levels, and OpenTelemetry tracing are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
+    Muto ships controller-runtime's built-in observability plus custom `muto_*` Prometheus metrics for reconciliations and AgentJobs. JSON logs with configurable levels and OpenTelemetry tracing are **not implemented yet**; they are tracked in [#79]. This page describes the operator's actual behavior.
 
 ## Overview
 
@@ -12,12 +12,12 @@ How to monitor the Muto operator as it works today: health probes, Prometheus me
 | Health probes | ✅ Available | `:8081/healthz`, `:8081/readyz` |
 | Prometheus metrics | ⚠️ controller-runtime built-in metrics only | `:8080/metrics` |
 | Logs | ⚠️ Plain-text key/value lines, fixed level and format | stderr (container logs) |
-| Custom `muto_*` metrics | ❌ Planned ([#79]) | — |
-| Distributed tracing (OpenTelemetry) | ❌ Planned ([#79]) | — |
+| Custom `muto_*` metrics | ✅ Available | `:8080/metrics` |
+| Distributed tracing (OpenTelemetry) | ❌ Planned ([#79]) | - |
 
 This applies to `muto-operator`. The MCP server (`muto-mcp`) communicates over stdio and has no health, metrics or tracing endpoints.
 
-Both ports are hard-coded in `cmd/muto-operator/main.go`. No flag or environment variable changes them.
+Both ports default to the values shown above, but the bind addresses are configurable via the `MUTO_METRICS_BIND_ADDRESS` and `MUTO_HEALTH_PROBE_BIND_ADDRESS` environment variables (see [Environment Variables](../configuration/environment-variables.md)); setting `MUTO_METRICS_BIND_ADDRESS=0` disables the metrics server entirely. The Helm chart only exposes the port *number* via `metrics.port`/`healthProbe.port` - see [Scraping](#scraping) for how `metrics.enabled` drives the bind address.
 
 The commands on this page assume the chart was installed with `helm install muto-operator ...`, which creates the Deployment `muto-operator` in `muto-system`. Adjust the name if you used a different release name.
 
@@ -63,7 +63,7 @@ curl http://localhost:8081/readyz    # ok
 
 ## Prometheus Metrics
 
-The operator serves Prometheus metrics at `:8080/metrics` over plain HTTP without authentication. These are the metrics that controller-runtime and client-go register by default. Muto doesn't register any metrics of its own yet.
+The operator serves Prometheus metrics at `:8080/metrics` over plain HTTP without authentication. This includes both the metrics that controller-runtime and client-go register by default, and Muto's own `muto_*` families.
 
 ### Available Metrics
 
@@ -100,9 +100,22 @@ The operator serves Prometheus metrics at `:8080/metrics` over plain HTTP withou
 
 The endpoint also exposes Go runtime (`go_*`) and process (`process_*`) metrics. The `certwatcher_*` and `controller_runtime_*webhook_panics_total` counters stay at `0` because the operator serves no webhooks.
 
+**Job & reconciliation metrics (`muto_*`).** Registered on the same registry as the metrics above, so they appear on the same `:8080/metrics` endpoint with no extra setup.
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `muto_reconciliations_total` | counter | `reconciler` (`tenant`, `agentjob`, `agentfleet`), `result` (`success`, `error`) | Total reconcile calls |
+| `muto_reconciliation_duration_seconds` | histogram | `reconciler` | Reconcile call duration |
+| `muto_jobs_total` | counter | `tenant`, `status` (`succeeded`, `failed`) | AgentJobs that reached a terminal state |
+| `muto_job_duration_seconds` | histogram | `tenant`, `status` | AgentJob duration from start to completion |
+| `muto_agents_running` | gauge | `tenant` | Agent pods currently running |
+| `muto_job_queue_depth` | gauge | `tenant` | AgentJobs currently in the `Running` phase (despite the name, this does not include `Pending` jobs - see Known Limitations) |
+
+`muto_reconciliations_total{reconciler="agentjob",result="success"}` is dominated by `AgentJobReconciler`'s 5-second polling requeue while a job runs (unlike `controller_runtime_reconcile_total`, which separates `requeue_after` from `success`) - expect a high baseline rate, not an anomaly.
+
 Labeled histograms and gauges appear only after their first observation. For example, `controller_runtime_reconcile_time_seconds` and `workqueue_depth` show up once the operator has reconciled an object.
 
-Job-level metrics aren't available yet. These include job counts by result, job duration, running agents, per-tenant labels, and message bus metrics; they're planned in [#79]. Until then, the `agentjob` reconcile metrics are the closest signal.
+Job-level `muto_*` metrics are documented above. Message bus metrics are not implemented yet; they're planned in [#79].
 
 ### Scraping
 
@@ -114,27 +127,22 @@ prometheus.io/port: "8080"
 prometheus.io/path: "/metrics"
 ```
 
-Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` only removes the annotations; the operator still serves `:8080/metrics`.
+Prometheus setups that honor these annotations pick up the operator automatically. A typical example is `kubernetes_sd_configs` with `role: pod` plus annotation relabeling. Setting `metrics.enabled: false` disables the metrics server itself, not just its discovery. The Helm chart sets `MUTO_METRICS_BIND_ADDRESS=0` on the container, which controller-runtime treats as server disabled, and it also skips the annotations and the metrics `Service`/`ServiceMonitor`.
 
-The chart doesn't create a Service, so a `ServiceMonitor` has nothing to select. With the Prometheus Operator, use a `PodMonitor` on the operator pod's `metrics` port:
+The chart also creates a `Service` exposing the metrics port whenever `metrics.enabled` is `true`, and an optional `ServiceMonitor` (`monitoring.coreos.com/v1`, requires the Prometheus Operator's CRDs) when `metrics.serviceMonitor.enabled` is also set - off by default, since not every cluster runs the Prometheus Operator:
 
 ```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: muto
-  podMetricsEndpoints:
-    - port: metrics
-      path: /metrics
-      interval: 30s
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    # Some Prometheus Operator setups only watch ServiceMonitors carrying a
+    # specific label, e.g. release: kube-prometheus-stack:
+    additionalLabels: {}
 ```
 
-Depending on your Prometheus Operator configuration, the `PodMonitor` may need a label that your `Prometheus` resource selects, for example `release: kube-prometheus-stack`.
+**The metrics endpoint is unauthenticated by design** (plain HTTP, no `SecureServing`), matching controller-runtime's own default. If your cluster's security posture requires restricting who can scrape it, do so at the network layer - a `NetworkPolicy` scoping access to your Prometheus namespace - rather than assuming the endpoint itself checks credentials.
 
 Quick check:
 
@@ -310,10 +318,11 @@ groups:
 ## Known Limitations
 
 - The metrics (`:8080`) and health probe (`:8081`) addresses are fixed. The Helm values `metrics.port` and `healthProbe.port` only change the container port declarations, so changing them breaks scraping or the probes.
-- `metrics.enabled: false` doesn't turn off the metrics server.
+- `metrics.enabled: false` turns off the metrics server entirely (via `MUTO_METRICS_BIND_ADDRESS=0`), not just its Service/ServiceMonitor/annotations.
 - The metrics endpoint is plain HTTP without authentication. Restrict access with a NetworkPolicy.
 - `/readyz` doesn't reflect API server connectivity or cache sync.
-- There are no Muto-specific metrics, no JSON logs or log levels, and no tracing yet ([#79]).
+- There are no JSON logs, log levels, or tracing yet ([#79]).
+- `muto_agents_running` and `muto_job_queue_depth` can read stale or negative values across an operator restart or if a running AgentJob is deleted directly.
 - `muto-mcp` has no observability endpoints.
 
 ---
@@ -330,5 +339,5 @@ groups:
 
 **See Also:**
 - [Configuration: Environment Variables](../configuration/environment-variables.md)
-- [Troubleshooting](./troubleshooting.md) — Common issues and diagnosis
-- [Performance Tuning](./performance-tuning.md) — Optimizing Muto for your workload
+- [Troubleshooting](./troubleshooting.md) - Common issues and diagnosis
+- [Performance Tuning](./performance-tuning.md) - Optimizing Muto for your workload

@@ -79,7 +79,7 @@ func (a *K8sAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan age
 					case <-ctx.Done():
 					}
 				} else if ctx.Err() == nil {
-					// Transient error — back off and retry.
+					// Transient error - back off and retry.
 					select {
 					case <-ctx.Done():
 						return

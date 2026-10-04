@@ -13,5 +13,5 @@ applications:
       MUTO_PLATFORM: cf
       CF_ISOLATION_TIER: dedicated
       CF_SHARED_ORG: ""
-      # Sensitive vars — set via 'cf set-env', never commit here:
+      # Sensitive vars - set via 'cf set-env', never commit here:
       # CF_API_URL, CF_USERNAME, CF_PASSWORD

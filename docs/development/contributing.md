@@ -32,13 +32,13 @@ git checkout -b feature/your-feature-name upstream/main
 ```
 
 Branch naming conventions:
-- `feat/...` — New features
-- `fix/...` — Bug fixes
-- `docs/...` — Documentation changes
-- `test/...` — Test improvements
-- `refactor/...` — Code refactoring
-- `perf/...` — Performance improvements
-- `chore/...` — Build, dependencies, tooling
+- `feat/...` - New features
+- `fix/...` - Bug fixes
+- `docs/...` - Documentation changes
+- `test/...` - Test improvements
+- `refactor/...` - Code refactoring
+- `perf/...` - Performance improvements
+- `chore/...` - Build, dependencies, tooling
 
 ### 3. Make Changes
 
@@ -70,14 +70,14 @@ Fixes #123
 ```
 
 **Commit types:**
-- `feat` — New feature
-- `fix` — Bug fix
-- `docs` — Documentation
-- `test` — Test additions/changes
-- `refactor` — Code refactoring
-- `perf` — Performance improvement
-- `chore` — Build, dependencies, tooling
-- `ci` — CI/CD changes
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation
+- `test` - Test additions/changes
+- `refactor` - Code refactoring
+- `perf` - Performance improvement
+- `chore` - Build, dependencies, tooling
+- `ci` - CI/CD changes
 
 **Examples:**
 
@@ -237,11 +237,11 @@ backoff := time.Duration(math.Min(
 See [:octicons-book-24: **Code Style Guide**](./style.md#project-layout) for complete package structure guidelines.
 
 **Package structure** mirrors domain:
-- `core/agent/` — Job/Agent types and validation
-- `core/scheduler/` — Scheduling logic
-- `platform/k8s/` — Kubernetes-specific code
-- `platform/cf/` — CloudFoundry-specific code
-- `mcp/tools/` — MCP tool implementations
+- `core/agent/` - Job/Agent types and validation
+- `core/scheduler/` - Scheduling logic
+- `platform/k8s/` - Kubernetes-specific code
+- `platform/cf/` - CloudFoundry-specific code
+- `mcp/tools/` - MCP tool implementations
 
 **Interfaces** for abstraction:
 ```go
@@ -336,10 +336,10 @@ golangci-lint run ./... --fix
 
 ## Related Documentation
 
-- [:octicons-book-24: **Code Style Guide**](./style.md) — Formatting, naming, and code standards
-- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Test organization and practices
-- [:octicons-book-24: **Development Setup**](./setup.md) — Local environment setup
-- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) — Automated testing and deployment
+- [:octicons-book-24: **Code Style Guide**](./style.md) - Formatting, naming, and code standards
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) - Test organization and practices
+- [:octicons-book-24: **Development Setup**](./setup.md) - Local environment setup
+- [:octicons-book-24: **CI/CD Pipeline**](./cicd.md) - Automated testing and deployment
 
 ## Getting Help
 

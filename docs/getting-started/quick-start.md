@@ -6,8 +6,8 @@ Get Muto up and running locally to see it in action.
 
 - **Go 1.26+**: Download from [golang.org](https://golang.org/dl/)
 - **Docker**: [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
-- **kind**: Kubernetes in Docker — `go install sigs.k8s.io/kind@latest`
-- **kubectl**: Kubernetes CLI — `curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl`
+- **kind**: Kubernetes in Docker - `go install sigs.k8s.io/kind@latest`
+- **kubectl**: Kubernetes CLI - `curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl`
 - **make**: Standard build tool (included on macOS/Linux; Windows users: `choco install make`)
 
 **Verify installations:**
@@ -50,8 +50,8 @@ make build
 ```
 
 This creates:
-- `./bin/muto-operator` — Kubernetes controller that manages agent jobs
-- `./bin/muto-mcp` — MCP server for Claude/LLM integration
+- `./bin/muto-operator` - Kubernetes controller that manages agent jobs
+- `./bin/muto-mcp` - MCP server for Claude/LLM integration
 
 **Verify binaries exist:**
 ```bash
@@ -140,10 +140,10 @@ This allows Claude or other MCP clients to:
 
 You now have Muto running! Next steps:
 
-- **[Install on Kubernetes](../deployment/k8s.md)** — Deploy to a real K8s cluster
-- **[Configuration](../configuration/env-vars.md)** — Customize behavior
-- **Architecture Overview** — Understand how it works (coming in Phase 2)
-- **Usage Patterns** — Build complex workflows (coming in Phase 5)
+- **[Install on Kubernetes](../deployment/k8s.md)** - Deploy to a real K8s cluster
+- **[Configuration](../configuration/env-vars.md)** - Customize behavior
+- **Architecture Overview** - Understand how it works (coming in Phase 2)
+- **Usage Patterns** - Build complex workflows (coming in Phase 5)
 
 ## Troubleshooting
 

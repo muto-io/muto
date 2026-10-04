@@ -58,8 +58,8 @@ spec:
                   type:
                     description: |-
                       Type selects the message bus implementation.
-                      nats: NATS JetStream — lightweight, low-latency, suited for simple agent tasks.
-                      kafka: Apache Kafka — high-throughput, durable, suited for complex pipelines.
+                      nats: NATS JetStream - lightweight, low-latency, suited for simple agent tasks.
+                      kafka: Apache Kafka - high-throughput, durable, suited for complex pipelines.
                     enum:
                     - nats
                     - kafka

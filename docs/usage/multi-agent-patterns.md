@@ -726,9 +726,9 @@ kubectl top pods -l job=workflow
 
 ## Next Steps
 
-- **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** — Job configuration details
-- **[Best Practices](./best-practices.md)** — Optimize workflow performance
-- **[Examples](./examples/multi-agent-workflow.md)** — See complex workflow example
-- **[Configuration](../configuration/multi-tenant-setup.md)** — Multi-tenant orchestration
+- **[Scheduling Agent Jobs](./scheduling-agent-jobs.md)** - Job configuration details
+- **[Best Practices](./best-practices.md)** - Optimize workflow performance
+- **[Examples](./examples/multi-agent-workflow.md)** - See complex workflow example
+- **[Configuration](../configuration/multi-tenant-setup.md)** - Multi-tenant orchestration
 
 ---

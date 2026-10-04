@@ -226,6 +226,6 @@ Validate or mutate jobs before creation:
 
 ## Next Steps
 
-- **[Quick Start](./quick-start.md)** — See it in action
-- **[Architecture Deep Dives](../architecture/)** — Detailed component docs
-- **[Deployment](../deployment/)** — Run in production
+- **[Quick Start](./quick-start.md)** - See it in action
+- **[Architecture Deep Dives](../architecture/)** - Detailed component docs
+- **[Deployment](../deployment/)** - Run in production

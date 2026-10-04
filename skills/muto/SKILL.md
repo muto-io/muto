@@ -12,11 +12,11 @@ Muto runs on **Kubernetes** (primary) or **Cloud Foundry** (single instance). Th
 
 ## Standard Workflow
 
-1. **Verify tenant** — always call `muto:describe_tenant` first to confirm the tenant is ready and note its isolation tier.
-2. **Schedule job** — call `muto:schedule_agent_job` with a unique job ID, tenant ID, image, and TTL.
-3. **Poll status** — call `muto:get_job_status` every 5–10 seconds until phase is `Succeeded` or `Failed`.
-4. **Cancel if needed** — call `muto:cancel_job` if the user requests early termination.
-5. **Fleet view** — call `muto:list_active_agents` to see all running jobs for a tenant.
+1. **Verify tenant** - always call `muto:describe_tenant` first to confirm the tenant is ready and note its isolation tier.
+2. **Schedule job** - call `muto:schedule_agent_job` with a unique job ID, tenant ID, image, and TTL.
+3. **Poll status** - call `muto:get_job_status` every 5–10 seconds until phase is `Succeeded` or `Failed`.
+4. **Cancel if needed** - call `muto:cancel_job` if the user requests early termination.
+5. **Fleet view** - call `muto:list_active_agents` to see all running jobs for a tenant.
 
 ## Tools
 

@@ -6,10 +6,10 @@ Comprehensive guide to writing unit tests in Muto.
 
 Unit tests verify individual functions and types in isolation. They are:
 
-- **Fast** — Run in milliseconds
-- **Isolated** — No external dependencies
-- **Deterministic** — Same input always gives same output
-- **Focused** — Test one behavior per test
+- **Fast** - Run in milliseconds
+- **Isolated** - No external dependencies
+- **Deterministic** - Same input always gives same output
+- **Focused** - Test one behavior per test
 
 ## Test Structure
 
@@ -508,9 +508,9 @@ If you're mocking more than 2 dependencies, it's a sign the unit is too coupled:
 
 ## Related Documentation
 
-- [:octicons-book-24: **Testing Overview**](./overview.md) — Testing strategy
-- [:octicons-book-24: **Integration Tests**](./integration-tests.md) — Component integration
-- [:octicons-book-24: **Code Style Guide**](../development/style.md) — Code quality standards
-- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) — Contribution workflow
+- [:octicons-book-24: **Testing Overview**](./overview.md) - Testing strategy
+- [:octicons-book-24: **Integration Tests**](./integration-tests.md) - Component integration
+- [:octicons-book-24: **Code Style Guide**](../development/style.md) - Code quality standards
+- [:octicons-book-24: **Contributing Guide**](../development/contributing.md) - Contribution workflow
 
 ---

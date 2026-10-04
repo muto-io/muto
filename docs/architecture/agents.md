@@ -6,10 +6,10 @@ An agent is a containerized workload that executes within a Muto job. This secti
 
 An agent is:
 - A **containerized application** (Docker image, OCI container)
-- **Stateless** — No persistent local state between executions
-- **Coordinated** — Communicates with other agents via message bus
-- **Observable** — Provides logs and metrics for monitoring
-- **Resource-bounded** — Runs with defined CPU/memory limits
+- **Stateless** - No persistent local state between executions
+- **Coordinated** - Communicates with other agents via message bus
+- **Observable** - Provides logs and metrics for monitoring
+- **Resource-bounded** - Runs with defined CPU/memory limits
 
 An agent executes a specific task:
 - Extract data from a source
@@ -191,12 +191,12 @@ Agents publish/receive standardized messages:
 
 Each agent specifies resource constraints:
 
-- **Requests** — Resources guaranteed by scheduler
+- **Requests** - Resources guaranteed by scheduler
   - Platform reserves these resources
   - Agent scheduled only if resources available
   - Use for capacity planning
 
-- **Limits** — Maximum resources agent can consume
+- **Limits** - Maximum resources agent can consume
   - Platform kills/throttles if exceeded
   - Prevents runaway processes
   - On Kubernetes: OOMKilled if exceeds memory
@@ -215,7 +215,7 @@ resources:
 
 ### Storage
 
-Agents should be **stateless** — store output externally:
+Agents should be **stateless** - store output externally:
 
 ```yaml
 agents:
@@ -229,16 +229,16 @@ agents:
 ```
 
 Muto supports:
-- **Object storage** (S3, GCS) — Preferred for sharing between agents
-- **Databases** — For structured results
-- **Message bus** — For inter-agent coordination
-- **Ephemeral local storage** — For temporary scratch space
+- **Object storage** (S3, GCS) - Preferred for sharing between agents
+- **Databases** - For structured results
+- **Message bus** - For inter-agent coordination
+- **Ephemeral local storage** - For temporary scratch space
 
 ## Reliability Patterns
 
 ### Idempotency
 
-Agents should be **idempotent** — safe to run multiple times:
+Agents should be **idempotent** - safe to run multiple times:
 
 ```yaml
 # ✅ Good: Idempotent
@@ -378,6 +378,6 @@ docker run -e MUTO_JOB_ID -e MUTO_AGENT_ROLE -e MUTO_MESSAGE_BUS_URL \
 
 ## Related Documentation
 
-- [:octicons-book-24: **Agent Lifecycle**](./agent-lifecycle.md) — Job state machine
-- [:octicons-book-24: **Messaging Architecture**](./messaging.md) — Inter-agent communication
-- [:octicons-book-24: **Best Practices**](../usage/best-practices.md) — Production guidance
+- [:octicons-book-24: **Agent Lifecycle**](./agent-lifecycle.md) - Job state machine
+- [:octicons-book-24: **Messaging Architecture**](./messaging.md) - Inter-agent communication
+- [:octicons-book-24: **Best Practices**](../usage/best-practices.md) - Production guidance

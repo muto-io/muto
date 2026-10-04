@@ -97,7 +97,7 @@ spec:
                 properties:
                   source:
                     description: |-
-                      Source is the trigger origin — a message bus topic URL for event triggers,
+                      Source is the trigger origin - a message bus topic URL for event triggers,
                       or a cron expression for cron triggers.
                     type: string
                   type:

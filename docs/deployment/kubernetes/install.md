@@ -314,9 +314,9 @@ kubectl logs -n muto-system deployment/muto-operator | grep -i "pending\|schedul
 
 ## Next Steps
 
-- **[Helm Chart Reference](./helm-chart.md)** — Customize values and options
-- **[Kubernetes Configuration](./configuration.md)** — Advanced K8s-specific settings
-- **[Production Checklist](../production-checklist.md)** — Pre-launch verification
-- **[Configuration Guide](../../configuration/)** — Environment variables and tuning
+- **[Helm Chart Reference](./helm-chart.md)** - Customize values and options
+- **[Kubernetes Configuration](./configuration.md)** - Advanced K8s-specific settings
+- **[Production Checklist](../production-checklist.md)** - Pre-launch verification
+- **[Configuration Guide](../../configuration/)** - Environment variables and tuning
 
 ---

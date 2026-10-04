@@ -22,15 +22,15 @@ type TenantSpec struct {
 	// shared: tenant shares the controller's message bus infrastructure.
 	// dedicated: tenant gets its own message bus instance (NATS or Kafka StatefulSet).
 	// +kubebuilder:validation:Enum=shared;dedicated
-	IsolationTier string        `json:"isolationTier"`
+	IsolationTier string `json:"isolationTier"`
 	// MessageBus configures which message bus implementation and mode to use.
-	MessageBus    TenantBusSpec `json:"messageBus,omitempty"`
+	MessageBus TenantBusSpec `json:"messageBus,omitempty"`
 }
 
 type TenantBusSpec struct {
 	// Type selects the message bus implementation.
-	// nats: NATS JetStream — lightweight, low-latency, suited for simple agent tasks.
-	// kafka: Apache Kafka — high-throughput, durable, suited for complex pipelines.
+	// nats: NATS JetStream - lightweight, low-latency, suited for simple agent tasks.
+	// kafka: Apache Kafka - high-throughput, durable, suited for complex pipelines.
 	// +kubebuilder:validation:Enum=nats;kafka;a2a
 	Type string `json:"type"`
 	// Dedicated provisions a per-tenant message bus instance in the tenant namespace.

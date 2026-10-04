@@ -39,7 +39,7 @@ type TriggerSpec struct {
 	// manual: triggered explicitly via the API or MCP tool.
 	// +kubebuilder:validation:Enum=event;cron;manual
 	Type string `json:"type"`
-	// Source is the trigger origin — a message bus topic URL for event triggers,
+	// Source is the trigger origin - a message bus topic URL for event triggers,
 	// or a cron expression for cron triggers.
 	Source string `json:"source,omitempty"`
 }
@@ -74,13 +74,13 @@ type AgentJobStatus struct {
 	// Failed: one or more agents failed.
 	// Terminating: cleanup in progress.
 	// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Terminating
-	Phase        string       `json:"phase,omitempty"`
+	Phase string `json:"phase,omitempty"`
 	// ActiveAgents is the count of currently running agent instances.
-	ActiveAgents int32        `json:"activeAgents,omitempty"`
+	ActiveAgents int32 `json:"activeAgents,omitempty"`
 	// StartedAt is the time the job transitioned to Running.
-	StartedAt    *metav1.Time `json:"startedAt,omitempty"`
+	StartedAt *metav1.Time `json:"startedAt,omitempty"`
 	// CompletedAt is the time the job reached a terminal phase.
-	CompletedAt  *metav1.Time `json:"completedAt,omitempty"`
+	CompletedAt *metav1.Time `json:"completedAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true

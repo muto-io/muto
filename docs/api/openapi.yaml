@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Muto Agent Scheduler — CRD API Reference
+  title: Muto Agent Scheduler - CRD API Reference
   description: |
     OpenAPI 3.0 schemas for Muto's Kubernetes custom resources (muto.io/v1alpha1).
 
@@ -25,7 +25,7 @@ components:
   schemas:
 
     # -------------------------------------------------------------------------
-    # Tenant — cluster-scoped, defines a scheduling tenant and its isolation
+    # Tenant - cluster-scoped, defines a scheduling tenant and its isolation
     # -------------------------------------------------------------------------
     Tenant:
       type: object
@@ -71,8 +71,8 @@ components:
           enum: [nats, kafka]
           description: |
             Selects the message bus implementation.
-            - nats: NATS JetStream — lightweight, low-latency, suited for simple agent tasks.
-            - kafka: Apache Kafka — high-throughput, durable, suited for complex agent pipelines.
+            - nats: NATS JetStream - lightweight, low-latency, suited for simple agent tasks.
+            - kafka: Apache Kafka - high-throughput, durable, suited for complex agent pipelines.
         dedicated:
           type: boolean
           description: |
@@ -89,7 +89,7 @@ components:
             and the message bus (if dedicated) is running.
 
     # -------------------------------------------------------------------------
-    # AgentJob — namespaced, the unit of agent work
+    # AgentJob - namespaced, the unit of agent work
     # -------------------------------------------------------------------------
     AgentJob:
       type: object
@@ -148,7 +148,7 @@ components:
         source:
           type: string
           description: |
-            Trigger origin — a message bus topic URL for event triggers,
+            Trigger origin - a message bus topic URL for event triggers,
             or a cron expression for cron triggers.
 
     AgentRoleSpec:
@@ -211,7 +211,7 @@ components:
           description: Time the job reached a terminal phase.
 
     # -------------------------------------------------------------------------
-    # AgentFleet — namespaced, groups related AgentJobs
+    # AgentFleet - namespaced, groups related AgentJobs
     # -------------------------------------------------------------------------
     AgentFleet:
       type: object

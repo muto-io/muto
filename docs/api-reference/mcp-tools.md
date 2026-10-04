@@ -6,11 +6,11 @@ Complete specification of Muto's Model Context Protocol (MCP) tools for LLM inte
 
 Muto provides 5 primary MCP tools that allow LLMs (Claude, etc.) to interact with the agent scheduler:
 
-1. **ScheduleJob** — Create and schedule a new agent job
-2. **GetJobStatus** — Retrieve current status of a job
-3. **ListJobs** — List active jobs for a tenant
-4. **CancelJob** — Cancel a running or pending job
-5. **DescribeTenant** — Get tenant configuration and status
+1. **ScheduleJob** - Create and schedule a new agent job
+2. **GetJobStatus** - Retrieve current status of a job
+3. **ListJobs** - List active jobs for a tenant
+4. **CancelJob** - Cancel a running or pending job
+5. **DescribeTenant** - Get tenant configuration and status
 
 All tools operate through the Muto MCP server endpoint (default: `http://localhost:3000`).
 
@@ -705,9 +705,9 @@ Breaking changes will follow semantic versioning:
 
 ## Related Documentation
 
-- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** — Practical job creation patterns
-- **[Message API](./message-api.md)** — Inter-agent messaging details
-- **[CRD Types](./crd-types.md)** — Complete CRD field reference
+- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** - Practical job creation patterns
+- **[Message API](./message-api.md)** - Inter-agent messaging details
+- **[CRD Types](./crd-types.md)** - Complete CRD field reference
 
 ---
 

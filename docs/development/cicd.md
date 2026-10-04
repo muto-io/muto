@@ -5,11 +5,11 @@ Muto uses GitHub Actions for continuous integration and deployment. This documen
 ## Overview
 
 The CI/CD pipeline automates:
-- **Testing** — Unit tests, integration tests, E2E tests
-- **Building** — Compile code, build container images
-- **Quality** — Code linting, type checking, security scanning
-- **Deployment** — Deploy to staging/production environments
-- **Documentation** — Build and deploy API documentation
+- **Testing** - Unit tests, integration tests, E2E tests
+- **Building** - Compile code, build container images
+- **Quality** - Code linting, type checking, security scanning
+- **Deployment** - Deploy to staging/production environments
+- **Documentation** - Build and deploy API documentation
 
 ## Workflows
 
@@ -24,16 +24,16 @@ Runs on every pull request and push to main branch.
 
 **Steps:**
 
-1. **Checkout code** — Clone repository
-2. **Setup Go** — Install Go toolchain (version from go.mod)
-3. **Setup dependencies** — Install required tools
-4. **Lint** — Run golangci-lint for code quality
-5. **Format** — Check code formatting (gofmt)
-6. **Build** — Compile binaries for multiple platforms
-7. **Unit tests** — Run `go test ./...`
-8. **Generate code** — Run code generators if needed
-9. **Security scan** — Run security vulnerability scanner
-10. **Upload artifacts** — Save build results
+1. **Checkout code** - Clone repository
+2. **Setup Go** - Install Go toolchain (version from go.mod)
+3. **Setup dependencies** - Install required tools
+4. **Lint** - Run golangci-lint for code quality
+5. **Format** - Check code formatting (gofmt)
+6. **Build** - Compile binaries for multiple platforms
+7. **Unit tests** - Run `go test ./...`
+8. **Generate code** - Run code generators if needed
+9. **Security scan** - Run security vulnerability scanner
+10. **Upload artifacts** - Save build results
 
 **Outputs:**
 - Test results and coverage reports
@@ -80,13 +80,13 @@ Builds and deploys documentation to GitHub Pages.
 
 **Steps:**
 
-1. **Checkout** — Clone repository
-2. **Setup Python** — Install Python 3.11
-3. **Install dependencies** — `pip install -r docs-requirements.txt`
-4. **Build docs** — `mkdocs build`
-5. **Add .nojekyll** — Disable Jekyll processing
-6. **Upload artifact** — Save built site
-7. **Deploy to Pages** — GitHub Pages deployment
+1. **Checkout** - Clone repository
+2. **Setup Python** - Install Python 3.11
+3. **Install dependencies** - `pip install -r docs-requirements.txt`
+4. **Build docs** - `mkdocs build`
+5. **Add .nojekyll** - Disable Jekyll processing
+6. **Upload artifact** - Save built site
+7. **Deploy to Pages** - GitHub Pages deployment
 
 **Output:** Deployed to `muto-io.github.io/muto`
 
@@ -106,11 +106,11 @@ Automatically merges safe dependency updates.
 
 The following checks must pass before merging to main:
 
-- ✅ **ci / lint** — Code quality checks
-- ✅ **ci / test** — Unit test suite
-- ✅ **ci / build** — Build succeeds
-- ✅ **e2e-tests / k8s-e2e** — Kubernetes E2E tests
-- ✅ **e2e-tests / cf-e2e** — CloudFoundry E2E tests
+- ✅ **ci / lint** - Code quality checks
+- ✅ **ci / test** - Unit test suite
+- ✅ **ci / build** - Build succeeds
+- ✅ **e2e-tests / k8s-e2e** - Kubernetes E2E tests
+- ✅ **e2e-tests / cf-e2e** - CloudFoundry E2E tests
 
 Failed checks block merging. Review the logs to diagnose issues.
 
@@ -403,7 +403,7 @@ gh run view <run-id> --log
 
 ## Related Documentation
 
-- [:octicons-book-24: **Code Style Guide**](./style.md) — Formatting, linting, and code standards
-- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) — Test organization and best practices
-- [:octicons-book-24: **Contributing Guide**](./contributing.md) — Contributing workflow
-- [:octicons-book-24: **Development Setup**](./setup.md) — Local development environment
+- [:octicons-book-24: **Code Style Guide**](./style.md) - Formatting, linting, and code standards
+- [:octicons-book-24: **Testing Strategy**](./testing-strategy.md) - Test organization and best practices
+- [:octicons-book-24: **Contributing Guide**](./contributing.md) - Contributing workflow
+- [:octicons-book-24: **Development Setup**](./setup.md) - Local development environment

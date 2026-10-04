@@ -283,11 +283,11 @@ export MUTO_RECONCILER_MAX_RETRIES=5
 
 Monitor these Prometheus metrics (controller-runtime built-in, labelled by `controller`):
 
-- `workqueue_depth` — Number of pending reconciliations
-- `controller_runtime_reconcile_time_seconds` — Time to complete reconciliations
-- `controller_runtime_reconcile_errors_total` — Failed reconciliation count
-- `controller_runtime_active_workers` — Number of active workers
-- `workqueue_queue_duration_seconds` — Time an event waits before it is reconciled
+- `workqueue_depth` - Number of pending reconciliations
+- `controller_runtime_reconcile_time_seconds` - Time to complete reconciliations
+- `controller_runtime_reconcile_errors_total` - Failed reconciliation count
+- `controller_runtime_active_workers` - Number of active workers
+- `workqueue_queue_duration_seconds` - Time an event waits before it is reconciled
 
 ### Alerts to Configure
 
@@ -342,6 +342,6 @@ histogram_quantile(0.95, sum by (controller, le) (rate(controller_runtime_reconc
 
 ## Related Documentation
 
-- [:octicons-book-24: **Architecture: Reconcilers**](../architecture/reconcilers.md) — Reconciliation design patterns
-- [:octicons-book-24: **Environment Variables**](./env-vars.md) — All configuration options
-- [:octicons-book-24: **Best Practices**](../usage/best-practices.md) — Production configuration guide
+- [:octicons-book-24: **Architecture: Reconcilers**](../architecture/reconcilers.md) - Reconciliation design patterns
+- [:octicons-book-24: **Environment Variables**](./env-vars.md) - All configuration options
+- [:octicons-book-24: **Best Practices**](../usage/best-practices.md) - Production configuration guide

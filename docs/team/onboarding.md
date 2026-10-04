@@ -62,7 +62,7 @@ The muto project is organized around functional teams, each with specific respon
 
 ### How Teams Overlap
 
-Teams are not siloed—ownership is cumulative:
+Teams are not siloed-ownership is cumulative:
 - Maintainers review all PRs regardless of team
 - Platform Team reviews all platform changes alongside specialists (K8s/CF teams)
 - QA Team reviews test-related changes across all areas
@@ -86,11 +86,11 @@ platform/ @muto-io/maintainers @muto-io/platform-team
 platform/k8s/ @muto-io/maintainers @muto-io/platform-team @muto-io/k8s-team
 ```
 
-Each line specifies a path pattern and the team(s) who must review changes to that area. Multiple teams can be listed—all must approve.
+Each line specifies a path pattern and the team(s) who must review changes to that area. Multiple teams can be listed-all must approve.
 
 ### Current Ownership Structure
 
-The table below shows the main ownership areas. **Note:** All teams listed are required reviewers—there is no hierarchy. Additionally, CODEOWNERS defines many specific patterns beyond these main areas (security files, specific reconcilers, Docker config, etc.).
+The table below shows the main ownership areas. **Note:** All teams listed are required reviewers-there is no hierarchy. Additionally, CODEOWNERS defines many specific patterns beyond these main areas (security files, specific reconcilers, Docker config, etc.).
 
 | Area | Required Reviewers |
 |------|---|
@@ -107,7 +107,7 @@ The table below shows the main ownership areas. **Note:** All teams listed are r
 
 ### CODEOWNERS Best Practices
 
-1. **All reviewers are equal**: When a code owner is requested, all listed teams have equal authority. All must approve before merge—there's no hierarchy
+1. **All reviewers are equal**: When a code owner is requested, all listed teams have equal authority. All must approve before merge-there's no hierarchy
 2. **Respect required reviews**: Code owners are not suggestions; their approval is required by GitHub
 3. **Proactive communication**: If you need quick review, comment on the PR explaining urgency or blocking items
 4. **Know your domain**: If you're a code owner, review promptly during business hours (within 4 hours target)
@@ -145,7 +145,7 @@ When Dependabot opens a PR:
 ### Handling Dependabot PRs
 
 **As a Reviewer:**
-- Check CI status first—if tests fail, the update may have breaking changes
+- Check CI status first-if tests fail, the update may have breaking changes
 - Review the changelog in the PR for significant changes
 - Approve safe updates quickly to keep dependencies current
 - Request changes if breaking behavior is detected
@@ -195,18 +195,18 @@ Each team owns specific areas of the project and is accountable for quality, tes
 
 | Responsibility | Maintainers | Platform | K8s | CF | Core | QA | DevOps | Docs |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Code review & approval | ✓ | — | — | — | — | — | — | — |
-| Release decisions | ✓ | — | — | — | — | — | — | — |
-| Architecture decisions | ✓ | ✓ | — | — | ✓ | — | — | — |
-| Feature development | — | ✓ | ✓ | ✓ | ✓ | — | — | ✓ |
-| Bug fixes (own domain) | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Unit tests | — | ✓ | ✓ | ✓ | ✓ | ✓ | — | — |
-| Integration tests | — | — | ✓ | ✓ | — | ✓ | — | — |
-| Test infrastructure | — | — | — | — | — | ✓ | — | — |
-| CI/CD & Deployment | — | — | — | — | — | — | ✓ | — |
-| Performance optimization | — | ✓ | ✓ | ✓ | ✓ | ✓ | — | — |
-| Security review | ✓ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-| Documentation | — | — | — | — | — | — | — | ✓ |
+| Code review & approval | ✓ | - | - | - | - | - | - | - |
+| Release decisions | ✓ | - | - | - | - | - | - | - |
+| Architecture decisions | ✓ | ✓ | - | - | ✓ | - | - | - |
+| Feature development | - | ✓ | ✓ | ✓ | ✓ | - | - | ✓ |
+| Bug fixes (own domain) | - | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Unit tests | - | ✓ | ✓ | ✓ | ✓ | ✓ | - | - |
+| Integration tests | - | - | ✓ | ✓ | - | ✓ | - | - |
+| Test infrastructure | - | - | - | - | - | ✓ | - | - |
+| CI/CD & Deployment | - | - | - | - | - | - | ✓ | - |
+| Performance optimization | - | ✓ | ✓ | ✓ | ✓ | ✓ | - | - |
+| Security review | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - |
+| Documentation | - | - | - | - | - | - | - | ✓ |
 
 ### Key Responsibilities by Team
 
@@ -376,7 +376,7 @@ When you encounter a situation that needs attention beyond your immediate team, 
 **Action**: Comment on the GitHub PR or ping maintainers in `#muto-maintainers` Slack
 **Expected Response**: Within 24 hours
 **Examples**:
-- "We disagree on the approach—can a maintainer decide?"
+- "We disagree on the approach-can a maintainer decide?"
 - "This PR affects two teams' domains and we can't agree"
 - "Security concern that needs immediate attention"
 
@@ -450,7 +450,7 @@ Once escalated:
   2. Link your first PR in team channel
   3. Ask for feedback
 
-- [ ] **Read your team's docs**: Each team has specific patterns—learn yours
+- [ ] **Read your team's docs**: Each team has specific patterns-learn yours
   - Platform team: Review `docs/deployment/` and `docs/architecture/platform-design.md`
   - K8s team: Review `docs/architecture/k8s.md` and `docs/deployment/kubernetes/`
   - CF team: Review `docs/architecture/cf.md` and `docs/deployment/cloudfoundry/`
@@ -495,8 +495,8 @@ Once escalated:
 ### Ongoing: Stay Connected
 
 - **Weekly**: Attend your team standup
-- **As needed**: Ask questions in team channel—don't get stuck alone
-- **Monthly**: Review this guide—you'll understand more each time
+- **As needed**: Ask questions in team channel-don't get stuck alone
+- **Monthly**: Review this guide-you'll understand more each time
 - **Ongoing**: Update this guide if you find it's missing something
 
 ### You're Part of the Team

@@ -36,7 +36,7 @@ Every agent job follows this state machine:
 ### State Definitions
 
 #### Pending
-**Initial state** — Job created, waiting for scheduler to process.
+**Initial state** - Job created, waiting for scheduler to process.
 
 - Job CRD/API request received
 - Job validated (syntax, resource limits, image availability)
@@ -50,7 +50,7 @@ Transitions:
 - -> **Failed**: Validation failed (e.g., invalid image, missing fields)
 
 #### Scheduled
-**Transition state** — Resources allocated, platform-specific execution initiated.
+**Transition state** - Resources allocated, platform-specific execution initiated.
 
 - Platform adapter accepted the job
 - Pod created (K8s) or Task queued (CF)
@@ -64,7 +64,7 @@ Transitions:
 - -> **Cancelled**: User cancelled during scheduling
 
 #### Running
-**Active state** — Agent container executing.
+**Active state** - Agent container executing.
 
 - Container started (entrypoint running)
 - Agent processing input
@@ -79,7 +79,7 @@ Transitions:
 - -> **Cancelled**: User cancelled during execution
 
 #### Completed
-**Terminal state** — Agent finished successfully.
+**Terminal state** - Agent finished successfully.
 
 - Container exited with code 0
 - All resources released (CPU, memory, I/O)
@@ -87,27 +87,27 @@ Transitions:
 - Job recorded in history for audit trail
 - No further transitions
 
-**Final state** — Processing complete.
+**Final state** - Processing complete.
 
 #### Failed
-**Terminal state** — Agent execution failed.
+**Terminal state** - Agent execution failed.
 
 - Container exited with non-zero code, timeout, or platform error
 - Failure reason recorded:
-  - `ContainerExited(exitCode)` — Non-zero exit
-  - `Timeout` — Exceeded timeout threshold
-  - `OutOfMemory` — Killed due to memory limit
-  - `ImagePullError` — Could not pull container image
-  - `SchedulingError` — Platform couldn't schedule job
+  - `ContainerExited(exitCode)` - Non-zero exit
+  - `Timeout` - Exceeded timeout threshold
+  - `OutOfMemory` - Killed due to memory limit
+  - `ImagePullError` - Could not pull container image
+  - `SchedulingError` - Platform couldn't schedule job
 - Resources released
 - Failure details available in job status
 
 Transitions (if retry policy allows):
 - -> **Scheduled**: Will retry execution
-- **Final state** — If retries exhausted, job terminates
+- **Final state** - If retries exhausted, job terminates
 
 #### Cancelled
-**Terminal state** — Job terminated by user or system.
+**Terminal state** - Job terminated by user or system.
 
 - User explicitly cancelled via API
 - System cancelled (e.g., tenant deleted)
@@ -115,7 +115,7 @@ Transitions (if retry policy allows):
 - Resources cleaned up
 - May have partial results depending on when cancelled
 
-**Final state** — Job stopped before completion.
+**Final state** - Job stopped before completion.
 
 ## Detailed State Transitions
 
@@ -396,6 +396,6 @@ Agents should handle SIGTERM:
 
 ## Next Steps
 
-- **[Reconcilers](./reconcilers.md)** — How reconciliation drives job lifecycle
-- **[Platform Design](./platform-design.md)** — Platform-specific implementations
-- **[Concepts (Job States)](../getting-started/concepts.md#job-states)** — Return to concepts
+- **[Reconcilers](./reconcilers.md)** - How reconciliation drives job lifecycle
+- **[Platform Design](./platform-design.md)** - Platform-specific implementations
+- **[Concepts (Job States)](../getting-started/concepts.md#job-states)** - Return to concepts

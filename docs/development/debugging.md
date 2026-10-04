@@ -501,8 +501,8 @@ kubectl top pod -n nats-io  # or -n kafka
 
 ## Next Steps
 
-- [Setup Guide](./setup.md) — Development environment setup
-- [Testing Strategy](./testing-strategy.md) — Comprehensive testing
-- [Code Style](./style.md) — Coding standards
+- [Setup Guide](./setup.md) - Development environment setup
+- [Testing Strategy](./testing-strategy.md) - Comprehensive testing
+- [Code Style](./style.md) - Coding standards
 
 ---

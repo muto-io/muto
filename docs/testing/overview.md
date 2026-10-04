@@ -320,9 +320,9 @@ All tests must pass before merging to main.
 
 ## Next Steps
 
-- **[Unit Tests](./unit-tests.md)** — Writing unit tests
-- **[Integration Tests](./integration-tests.md)** — Integration test guide
-- **[E2E Tests](./e2e-tests.md)** — End-to-end tests
-- **[Running Tests Locally](./running-locally.md)** — Local testing setup
+- **[Unit Tests](./unit-tests.md)** - Writing unit tests
+- **[Integration Tests](./integration-tests.md)** - Integration test guide
+- **[E2E Tests](./e2e-tests.md)** - End-to-end tests
+- **[Running Tests Locally](./running-locally.md)** - Local testing setup
 
 ---

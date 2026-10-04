@@ -8,9 +8,9 @@ This page provides an overview of Muto API types and schemas. For detailed speci
 
 Muto defines several Kubernetes Custom Resource Definitions (CRDs) for managing agent workloads:
 
-- **Tenant** — A logical boundary with isolated compute, messaging, and RBAC
-- **AgentJob** — A unit of agent work to be scheduled
-- **AgentFleet** — Groups related AgentJobs for coordinated operations
+- **Tenant** - A logical boundary with isolated compute, messaging, and RBAC
+- **AgentJob** - A unit of agent work to be scheduled
+- **AgentFleet** - Groups related AgentJobs for coordinated operations
 
 ### Type Structures
 
@@ -82,10 +82,10 @@ spec:
 
 For complete field specifications, validation rules, and detailed examples, see:
 
-[:octicons-book-24: **CRD Type Reference**](../api-reference/crd-types.md) — Complete Kubernetes CRD schemas with all fields and validation rules
+[:octicons-book-24: **CRD Type Reference**](../api-reference/crd-types.md) - Complete Kubernetes CRD schemas with all fields and validation rules
 
 ## Related Documentation
 
-- **[Message API Types](../api-reference/message-api.md)** — Message structure and headers
-- **[Webhook API Types](../api-reference/webhook-api.md)** — Event and webhook payload types
-- **[Architecture Documentation](../architecture/)** — Design and concepts behind the types
+- **[Message API Types](../api-reference/message-api.md)** - Message structure and headers
+- **[Webhook API Types](../api-reference/webhook-api.md)** - Event and webhook payload types
+- **[Architecture Documentation](../architecture/)** - Design and concepts behind the types

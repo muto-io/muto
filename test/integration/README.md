@@ -246,23 +246,23 @@ make test-e2e
 E2E tests run automatically via `.github/workflows/e2e-tests.yml`:
 
 ### Triggers
-- **Pull Requests** — When changes affect platform, core, or test code
-- **Push to main** — On every push to main branch
-- **Weekly Schedule** — Runs every Monday at 2 AM UTC
+- **Pull Requests** - When changes affect platform, core, or test code
+- **Push to main** - On every push to main branch
+- **Weekly Schedule** - Runs every Monday at 2 AM UTC
 
 ### PR Validation
 
 For PRs:
-- **K8s tests** — Always run (required to pass)
-- **CF tests** — Run if `CF_E2E_API_URL` secret is configured (optional)
+- **K8s tests** - Always run (required to pass)
+- **CF tests** - Run if `CF_E2E_API_URL` secret is configured (optional)
 
 To enable CF testing in CI/CD, configure GitHub secrets:
 
 Settings -> Secrets and Variables -> Actions
 
-- `CF_API_URL` — CloudFoundry API endpoint
-- `CF_USERNAME` — Admin username
-- `CF_PASSWORD` — Admin password
+- `CF_API_URL` - CloudFoundry API endpoint
+- `CF_USERNAME` - Admin username
+- `CF_PASSWORD` - Admin password
 
 ### Workflow Configuration
 
@@ -424,13 +424,13 @@ func waitForPhase(t GinkgoTInterface, ctx context.Context, name, namespace, phas
 
 #### K8s Test Best Practices
 
-**Use unique namespaces** — Avoid test conflicts:
+**Use unique namespaces** - Avoid test conflicts:
 ```go
 testCounter++
 nsName := fmt.Sprintf("my-test-%d", testCounter)
 ```
 
-**Clean up resources** — Always delete in `AfterEach`:
+**Clean up resources** - Always delete in `AfterEach`:
 ```go
 AfterEach(func() {
 	ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: nsName}}
@@ -438,7 +438,7 @@ AfterEach(func() {
 })
 ```
 
-**Use Eventually for async checks** — Don't use `time.Sleep`:
+**Use Eventually for async checks** - Don't use `time.Sleep`:
 ```go
 Eventually(func(g Gomega) {
 	// Check condition
@@ -549,7 +549,7 @@ func WaitForTaskState(ctx context.Context, client cf.CFClient, taskGUID, targetS
 
 #### CF Test Best Practices
 
-**Skip if CF not available** — Handle missing CF gracefully:
+**Skip if CF not available** - Handle missing CF gracefully:
 ```go
 BeforeEach(func() {
 	if cfCluster == nil {
@@ -559,18 +559,18 @@ BeforeEach(func() {
 })
 ```
 
-**Generate unique names** — Use the helper:
+**Generate unique names** - Use the helper:
 ```go
 spaceName := cfHelper.NextSpace()   // Generates "muto-test-1", "muto-test-2", etc.
 tenantName := cfHelper.NextTenant() // Generates "tenant-1", "tenant-2", etc.
 ```
 
-**Use Docker images** — Always specify images:
+**Use Docker images** - Always specify images:
 ```go
 DockerImage: "busybox:latest"
 ```
 
-**Set resource constraints** — Test with realistic limits:
+**Set resource constraints** - Test with realistic limits:
 ```go
 taskReq := cf.TaskRequest{
 	Name:       "constrained-task",
@@ -580,7 +580,7 @@ taskReq := cf.TaskRequest{
 }
 ```
 
-**Wait for async operations** — Use the wait helper:
+**Wait for async operations** - Use the wait helper:
 ```go
 err := WaitForTaskState(ctx, cfCluster.Client, task.GUID, "SUCCEEDED", 30*time.Second)
 Expect(err).NotTo(HaveOccurred())
@@ -704,11 +704,11 @@ ginkgo -timeout 15m ./test/integration/cf
 
 ## Submitting New Tests
 
-1. **Create tests** — Add files to appropriate folder (k8s/ or cf/)
-2. **Follow patterns** — Use existing tests as templates
-3. **Test locally** — Verify tests pass before pushing
-4. **Create PR** — GitHub Actions will validate automatically
-5. **Address feedback** — Fix any issues flagged by CI
+1. **Create tests** - Add files to appropriate folder (k8s/ or cf/)
+2. **Follow patterns** - Use existing tests as templates
+3. **Test locally** - Verify tests pass before pushing
+4. **Create PR** - GitHub Actions will validate automatically
+5. **Address feedback** - Fix any issues flagged by CI
 
 ---
 
@@ -716,12 +716,12 @@ ginkgo -timeout 15m ./test/integration/cf
 
 When adding tests, consider which category they fit:
 
-- **Lifecycle** — Job/task creation and completion
-- **Multi-Agent** — Role coordination and communication
-- **Failure** — Error handling and recovery
-- **Isolation** — Tenant/platform separation
-- **Stress** — High-volume and concurrency scenarios
-- **Cleanup** — Resource cleanup and TTL
+- **Lifecycle** - Job/task creation and completion
+- **Multi-Agent** - Role coordination and communication
+- **Failure** - Error handling and recovery
+- **Isolation** - Tenant/platform separation
+- **Stress** - High-volume and concurrency scenarios
+- **Cleanup** - Resource cleanup and TTL
 
 Reference existing tests in these categories for patterns.
 

@@ -555,9 +555,9 @@ If subscription encounters errors, implement reconnection logic:
 
 ## Related Documentation
 
-- **[Usage: Multi-Agent Patterns](../usage/multi-agent-patterns.md)** — Orchestration patterns using message bus
-- **[CRD Types](./crd-types.md)** — AgentJob and Tenant specs
-- **[MCP Tools](./mcp-tools.md)** — Scheduling and monitoring tools
+- **[Usage: Multi-Agent Patterns](../usage/multi-agent-patterns.md)** - Orchestration patterns using message bus
+- **[CRD Types](./crd-types.md)** - AgentJob and Tenant specs
+- **[MCP Tools](./mcp-tools.md)** - Scheduling and monitoring tools
 
 ---
 

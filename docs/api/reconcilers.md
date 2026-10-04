@@ -197,10 +197,10 @@ kubectl describe agentjob my-job
 
 For complete reconciler implementation details and API specifications, see:
 
-[:octicons-book-24: **Architecture: Reconcilers**](../architecture/reconcilers.md) — Deep dive into reconciler design, state machines, and implementation patterns
+[:octicons-book-24: **Architecture: Reconcilers**](../architecture/reconcilers.md) - Deep dive into reconciler design, state machines, and implementation patterns
 
 ## Related Documentation
 
-- **[Architecture: Agent Lifecycle](../architecture/agent-lifecycle.md)** — Agent execution model and lifecycle
-- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** — Practical guide to scheduling jobs
-- **[Development: Contributing](../development/contributing.md)** — Contributing improvements to reconcilers
+- **[Architecture: Agent Lifecycle](../architecture/agent-lifecycle.md)** - Agent execution model and lifecycle
+- **[Usage: Scheduling Agent Jobs](../usage/scheduling-agent-jobs.md)** - Practical guide to scheduling jobs
+- **[Development: Contributing](../development/contributing.md)** - Contributing improvements to reconcilers

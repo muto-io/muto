@@ -53,19 +53,19 @@ QUEUE RESULT Phase
 
 All reconcilers implement a standard interface with two main methods:
 
-- **Reconcile()** — Called when a resource needs reconciliation. Takes the resource identifier and returns a result indicating success/failure and retry behavior.
-- **SetupWithManager()** — Registers the reconciler with the control manager so it watches the appropriate resources.
+- **Reconcile()** - Called when a resource needs reconciliation. Takes the resource identifier and returns a result indicating success/failure and retry behavior.
+- **SetupWithManager()** - Registers the reconciler with the control manager so it watches the appropriate resources.
 
 ### Reconciliation Pattern in Practice
 
 A typical reconciliation flow:
 
-1. **Load desired state** — Fetch the job/tenant/resource definition
-2. **Load actual state** — Get the current status from the platform
-3. **Compare** — Check if actual matches desired
-4. **Act** — If drift detected, take corrective actions (create/update/delete resources)
-5. **Update status** — Record the new state in the resource
-6. **Return result** — Indicate success or schedule retry if needed```
+1. **Load desired state** - Fetch the job/tenant/resource definition
+2. **Load actual state** - Get the current status from the platform
+3. **Compare** - Check if actual matches desired
+4. **Act** - If drift detected, take corrective actions (create/update/delete resources)
+5. **Update status** - Record the new state in the resource
+6. **Return result** - Indicate success or schedule retry if needed```
 
 ## Key Properties of Reconcilers
 
@@ -322,6 +322,6 @@ After reconciliation retries and automatic recovery:
 
 ## Next Steps
 
-- **[Agent Lifecycle](./agent-lifecycle.md)** — State transitions that reconcilers drive
-- **[Platform Design](./platform-design.md)** — Adapters called by reconcilers
-- **[Concepts (Control Loop)](../getting-started/concepts.md#control-loop)** — Return to concepts
+- **[Agent Lifecycle](./agent-lifecycle.md)** - State transitions that reconcilers drive
+- **[Platform Design](./platform-design.md)** - Adapters called by reconcilers
+- **[Concepts (Control Loop)](../getting-started/concepts.md#control-loop)** - Return to concepts

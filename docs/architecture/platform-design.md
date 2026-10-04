@@ -4,7 +4,7 @@ Muto supports multiple execution platforms through a pluggable adapter architect
 
 ## Overview
 
-Muto's core logic is **platform-agnostic** — the scheduler, reconcilers, and job lifecycle don't care whether agents run on Kubernetes or CloudFoundry. Platform differences are handled by adapters that implement a common interface.
+Muto's core logic is **platform-agnostic** - the scheduler, reconcilers, and job lifecycle don't care whether agents run on Kubernetes or CloudFoundry. Platform differences are handled by adapters that implement a common interface.
 
 ```
 Muto Core (Platform-agnostic)
@@ -35,22 +35,22 @@ Muto Core (Platform-agnostic)
 All platform adapters implement a common interface with these operations:
 
 **Job Management:**
-- **CreateJob** — Schedule a job on the platform
-- **GetJobStatus** — Retrieve current job status
-- **UpdateJobStatus** — Modify job status
-- **DeleteJob** — Terminate and clean up a job
+- **CreateJob** - Schedule a job on the platform
+- **GetJobStatus** - Retrieve current job status
+- **UpdateJobStatus** - Modify job status
+- **DeleteJob** - Terminate and clean up a job
 
 **Monitoring:**
-- **WatchEvents** — Subscribe to platform events (job status changes)
-- **GetLogs** — Retrieve job execution logs
+- **WatchEvents** - Subscribe to platform events (job status changes)
+- **GetLogs** - Retrieve job execution logs
 
 **Resource Management:**
-- **AllocateResources** — Reserve platform resources for a job
-- **ReleaseResources** — Return resources to the platform
+- **AllocateResources** - Reserve platform resources for a job
+- **ReleaseResources** - Return resources to the platform
 
 **Health & Lifecycle:**
-- **HealthCheck** — Verify the adapter can communicate with the platform
-- **Name** — Return the adapter name (e.g., "kubernetes", "cloudfoundry")
+- **HealthCheck** - Verify the adapter can communicate with the platform
+- **Name** - Return the adapter name (e.g., "kubernetes", "cloudfoundry")
 
 Each adapter translates Muto's generic job concepts into platform-specific resources (K8s Pods, CF Tasks, etc.).
 
@@ -413,12 +413,12 @@ Adding a new platform adapter requires:
 3. **Update Tenant CRD** with new platform config
 4. **Test with adapter mock** in reconcilers
 
-The core scheduler, reconcilers, and message bus don't change — they work with any adapter.
+The core scheduler, reconcilers, and message bus don't change - they work with any adapter.
 
 ---
 
 ## Next Steps
 
-- **[Agent Lifecycle](./agent-lifecycle.md)** — Job states and transitions
-- **[Reconcilers](./reconcilers.md)** — How adapters are used in reconciliation loops
-- **[Concepts (Platform)](../getting-started/concepts.md#platform)** — Return to core concepts
+- **[Agent Lifecycle](./agent-lifecycle.md)** - Job states and transitions
+- **[Reconcilers](./reconcilers.md)** - How adapters are used in reconciliation loops
+- **[Concepts (Platform)](../getting-started/concepts.md#platform)** - Return to core concepts

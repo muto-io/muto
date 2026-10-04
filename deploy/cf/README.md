@@ -52,7 +52,7 @@ cf logs muto-operator --recent
 | `CF_USERNAME` | CF username | required |
 | `CF_PASSWORD` | CF password | required |
 | `CF_ISOLATION_TIER` | `dedicated` (org per tenant) or `shared` (space per tenant) | `dedicated` |
-| `CF_SHARED_ORG` | Org name when `CF_ISOLATION_TIER=shared` | — |
+| `CF_SHARED_ORG` | Org name when `CF_ISOLATION_TIER=shared` | - |
 
 ## Updating
 

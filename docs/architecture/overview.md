@@ -143,8 +143,8 @@ See [:octicons-book-24: **Security Model**](./security-model.md) for comprehensi
 
 ## Related Documentation
 
-- [:octicons-book-24: **Agent Lifecycle**](./agent-lifecycle.md) — Job state machine and transitions
-- [:octicons-book-24: **Reconcilers**](./reconcilers.md) — Control loop architecture
-- [:octicons-book-24: **Messaging**](./messaging.md) — Inter-agent communication
-- [:octicons-book-24: **Platform Design**](./platform-design.md) — Adapter abstraction
-- [:octicons-book-24: **Security Model**](./security-model.md) — Multi-tenancy and isolation
+- [:octicons-book-24: **Agent Lifecycle**](./agent-lifecycle.md) - Job state machine and transitions
+- [:octicons-book-24: **Reconcilers**](./reconcilers.md) - Control loop architecture
+- [:octicons-book-24: **Messaging**](./messaging.md) - Inter-agent communication
+- [:octicons-book-24: **Platform Design**](./platform-design.md) - Adapter abstraction
+- [:octicons-book-24: **Security Model**](./security-model.md) - Multi-tenancy and isolation

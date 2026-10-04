@@ -2,7 +2,7 @@
 
 Muto is a Kubernetes-native agent scheduler and orchestrator for multi-agent AI workloads.
 
-> The name comes from the Godzilla universe: M.U.T.O. (Massive Unidentified Terrestrial Organism) — a creature that consumes energy and adapts. Fitting for a scheduler that consumes workloads and adapts to multi-tenant demand.
+> The name comes from the Godzilla universe: M.U.T.O. (Massive Unidentified Terrestrial Organism) - a creature that consumes energy and adapts. Fitting for a scheduler that consumes workloads and adapts to multi-tenant demand.
 
 ## The Problem
 
@@ -10,7 +10,7 @@ Coordinating multiple AI agents across distributed platforms is complex:
 
 - **Multi-platform headache**: You need to support both Kubernetes and CloudFoundry, but they have different APIs and operational models
 - **Coordination complexity**: Agents need to communicate and coordinate, but building message-based systems is error-prone
-- **Tenant isolation**: In multi-tenant environments, you need complete isolation—compute, network, storage, messaging
+- **Tenant isolation**: In multi-tenant environments, you need complete isolation-compute, network, storage, messaging
 - **Operational burden**: Monitoring, scaling, and maintaining agent workloads across platforms is time-consuming
 - **Integration friction**: Existing orchestration tools don't understand AI agent patterns and state management
 
@@ -131,9 +131,9 @@ Each tenant has complete isolation:
 
 ## Next Steps
 
-1. **[Core Concepts](../getting-started/concepts.md)** — Understand key Muto concepts
-2. **[Quick Start](../getting-started/quick-start.md)** — Get running in 5 minutes
-3. **[Installation](../getting-started/installation.md)** — Detailed setup instructions
-4. **Architecture Overview** — Deep dive into system design (coming in Phase 2)
+1. **[Core Concepts](../getting-started/concepts.md)** - Understand key Muto concepts
+2. **[Quick Start](../getting-started/quick-start.md)** - Get running in 5 minutes
+3. **[Installation](../getting-started/installation.md)** - Detailed setup instructions
+4. **Architecture Overview** - Deep dive into system design (coming in Phase 2)
 
 ---

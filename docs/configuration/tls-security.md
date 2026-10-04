@@ -750,9 +750,9 @@ openssl s_client \
 
 ## See Also
 
-- [Environment Variables](./environment-variables.md) — TLS configuration options
-- [Deployment Checklist](../deployment/production-checklist.md) — Security verification
-- [Architecture: Security Model](../architecture/security-model.md) — How security works
-- [Kubernetes Secrets Documentation](https://kubernetes.io/docs/concepts/configuration/secret/) — Official K8s secrets guide
+- [Environment Variables](./environment-variables.md) - TLS configuration options
+- [Deployment Checklist](../deployment/production-checklist.md) - Security verification
+- [Architecture: Security Model](../architecture/security-model.md) - How security works
+- [Kubernetes Secrets Documentation](https://kubernetes.io/docs/concepts/configuration/secret/) - Official K8s secrets guide
 
 ---

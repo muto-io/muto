@@ -569,9 +569,9 @@ WithEventFilter(predicate....)
 
 ## Next Steps
 
-- **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** — Job configuration
-- **[Architecture: Reconcilers](../../architecture/reconcilers.md)** — How reconcilers work
-- **[Development Setup](../../development/setup.md)** — Set up dev environment
-- **[Monitoring](../../operations/monitoring-observability.md)** (coming in Phase 8) — Monitor reconcilers
+- **[Scheduling Agent Jobs](../scheduling-agent-jobs.md)** - Job configuration
+- **[Architecture: Reconcilers](../../architecture/reconcilers.md)** - How reconcilers work
+- **[Development Setup](../../development/setup.md)** - Set up dev environment
+- **[Monitoring](../../operations/monitoring-observability.md)** (coming in Phase 8) - Monitor reconcilers
 
 ---

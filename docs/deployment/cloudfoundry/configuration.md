@@ -74,7 +74,7 @@ cf set-env muto-operator RECONCILER_RETRY_MAX_RETRIES 15
 
 ### Logging Configuration
 
-Logging isn't configurable: the operator writes plain-text key/value lines to stderr at a fixed verbosity, and variables such as `LOG_FORMAT` or `LOG_LEVEL` have no effect. Configurable logging is planned in [#79](https://github.com/muto-io/muto/issues/79).
+Logging is configurable as of [#102](https://github.com/muto-io/muto/pull/102): the operator writes structured JSON lines to stderr by default. Set `MUTO_LOG_FORMAT` (`json`, default, or `console`) and `MUTO_LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`).
 
 ### Resource Management
 

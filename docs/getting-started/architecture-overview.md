@@ -194,18 +194,19 @@ The operator exposes the observability that controller-runtime provides:
 ```
 Muto Operator
         │
-        ├─ Logs (plain-text key/value, stderr)
+        ├─ Logs (JSON by default, stderr)
         │  └─ e.g. "adding tenant finalizer", reconcile errors
         │
         ├─ Prometheus Metrics (:8080/metrics)
         │  ├─ controller_runtime_reconcile_total (counter)
         │  ├─ controller_runtime_reconcile_time_seconds (histogram)
-        │  └─ workqueue_depth (gauge)
+        │  ├─ workqueue_depth (gauge)
+        │  └─ muto_jobs_total, muto_job_duration_seconds, muto_agents_running, ... (custom)
         │
         └─ Health Probes (:8081/healthz, :8081/readyz)
 ```
 
-Muto-specific job metrics and OpenTelemetry tracing are planned ([#79](https://github.com/muto-io/muto/issues/79)).
+OpenTelemetry tracing across the reconcile/scheduler/platform-adapter path is in review in [#104](https://github.com/muto-io/muto/pull/104) (tracked in [#79](https://github.com/muto-io/muto/issues/79)).
 
 ## Extensibility
 

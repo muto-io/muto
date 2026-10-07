@@ -197,7 +197,7 @@ Complete this checklist before deploying Muto to production.
 
 ### Distributed Tracing
 
-- [ ] Not available yet: OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79)
+- [ ] Not yet merged: OpenTelemetry tracing is in review in [#104](https://github.com/muto-io/muto/pull/104) (tracked in [#79](https://github.com/muto-io/muto/issues/79))
 
 ### Dashboards
 

@@ -138,7 +138,7 @@ kubectl logs deployment/muto-operator -n muto-system | grep '"controller"="agent
 
 ### Verbose Logging
 
-Log verbosity is fixed at `0`: `log.V(1).Info(...)` and higher are discarded, and no environment variable raises the level. While debugging, log at `V(0)` (see below) or use a debugger. Configurable log levels are planned in [#79](https://github.com/muto-io/muto/issues/79).
+Set `MUTO_LOG_LEVEL=debug` to raise verbosity so `V(1)`-and-above messages are emitted too (default `info`; also accepts `warn`/`error`) - see [#102](https://github.com/muto-io/muto/pull/102).
 
 View logs:
 ```bash
@@ -231,7 +231,7 @@ go tool pprof http://localhost:6060/debug/pprof/profile
 
 ## Tracing
 
-Distributed tracing isn't implemented yet: the operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` environment variables have no effect. OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79).
+Distributed tracing isn't merged yet: on `main`, the operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` environment variables have no effect. It's implemented and in review in [#104](https://github.com/muto-io/muto/pull/104) (tracked in [#79](https://github.com/muto-io/muto/issues/79)).
 
 To follow a single reconciliation, filter the logs by its `reconcileID`:
 

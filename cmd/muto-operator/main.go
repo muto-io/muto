@@ -2,16 +2,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/muto-io/muto/core/env"
 	"github.com/muto-io/muto/core/logging"
+	coremetrics "github.com/muto-io/muto/core/metrics"
+	"github.com/muto-io/muto/core/scheduler"
+	"github.com/muto-io/muto/core/shutdown"
+	"github.com/muto-io/muto/core/tracing"
 	cfplatform "github.com/muto-io/muto/platform/cf"
 	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
-	"github.com/muto-io/muto/core/scheduler"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -55,23 +60,64 @@ func newManager(cfg *rest.Config, metricsAddr, probeAddr string) (ctrl.Manager, 
 }
 
 func main() {
+	os.Exit(run())
+}
+
+// run contains the entirety of the operator's startup/serve logic and
+// returns a process exit code rather than calling os.Exit itself. os.Exit
+// terminates the process immediately without running any deferred
+// functions, which would otherwise skip the tracing shutdown deferred
+// below on every error path; returning normally from run lets main's
+// single os.Exit(run()) call happen only after those defers (including the
+// bounded-timeout trace flush) have run.
+func run() int {
 	logFormat := env.OrDefault("MUTO_LOG_FORMAT", "json")
 	logLevel := env.OrDefault("MUTO_LOG_LEVEL", "info")
 	logger, err := logging.BuildLogger(logFormat, logLevel, os.Stdout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid logging configuration: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	ctrl.SetLogger(logger)
 	log := ctrl.Log.WithName("muto-operator")
 
+	// Registered once, up front: whichever shutdown funcs have been
+	// appended by the time run() returns all flush concurrently under one
+	// shared 5s deadline, instead of each Init's shutdown getting its own
+	// deadline and running sequentially in LIFO defer order.
+	var shutdowns []shutdown.Func
+	defer func() { shutdown.All(context.Background(), log, 5*time.Second, shutdowns...) }()
+
+	shutdownTracing, err := tracing.Init(context.Background(), "muto-operator")
+	if err != nil {
+		log.Error(err, "unable to initialize tracing")
+		return 1
+	}
+	shutdowns = append(shutdowns, shutdown.Func{Name: "tracing", Run: shutdownTracing})
+
+	shutdownOTLPMetrics, err := coremetrics.Init(context.Background(), "muto-operator")
+	if err != nil {
+		log.Error(err, "unable to initialize OTLP metrics")
+		return 1
+	}
+	shutdowns = append(shutdowns, shutdown.Func{Name: "OTLP metrics", Run: shutdownOTLPMetrics})
+
 	metricsAddr := env.OrDefault("MUTO_METRICS_BIND_ADDRESS", ":8080")
 	probeAddr := env.OrDefault("MUTO_HEALTH_PROBE_BIND_ADDRESS", ":8081")
 
-	mgr, err := newManager(ctrl.GetConfigOrDie(), metricsAddr, probeAddr)
+	// ctrl.GetConfigOrDie calls os.Exit(1) on failure, which would skip the
+	// tracing/metrics shutdown defers above; ctrl.GetConfig lets that error
+	// flow through run()'s normal return path instead.
+	cfg, err := ctrl.GetConfig()
+	if err != nil {
+		log.Error(err, "unable to load kubeconfig")
+		return 1
+	}
+
+	mgr, err := newManager(cfg, metricsAddr, probeAddr)
 	if err != nil {
 		log.Error(err, "unable to start manager")
-		os.Exit(1)
+		return 1
 	}
 
 	platform := env.OrDefault("MUTO_PLATFORM", "k8s")
@@ -80,12 +126,12 @@ func main() {
 	switch platform {
 	case "k8s":
 		namespace := env.OrDefault("MUTO_NAMESPACE", "default")
-		c, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+		c, err := client.New(cfg, client.Options{Scheme: scheme})
 		if err != nil {
 			log.Error(err, "unable to create k8s client for adapter")
-			os.Exit(1)
+			return 1
 		}
-		platformAdapter = k8sadapter.NewK8sAdapter(c, namespace)
+		platformAdapter = tracing.WrapPlatformAdapter(k8sadapter.NewK8sAdapter(c, namespace))
 	case "cf":
 		cfClient, err := cfplatform.NewRealCFClient(
 			os.Getenv("CF_API_URL"),
@@ -94,15 +140,15 @@ func main() {
 		)
 		if err != nil {
 			log.Error(err, "unable to create CF client")
-			os.Exit(1)
+			return 1
 		}
-		platformAdapter = cfplatform.NewCFAdapter(cfClient, cfplatform.CFAdapterConfig{
+		platformAdapter = tracing.WrapPlatformAdapter(cfplatform.NewCFAdapter(cfClient, cfplatform.CFAdapterConfig{
 			IsolationTier: os.Getenv("CF_ISOLATION_TIER"),
 			SharedOrgName: os.Getenv("CF_SHARED_ORG"),
-		})
+		}))
 	default:
 		log.Error(nil, "unknown MUTO_PLATFORM value", "platform", platform)
-		os.Exit(1)
+		return 1
 	}
 
 	// platformAdapter is used by the DefaultScheduler for direct job scheduling
@@ -116,7 +162,7 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create TenantReconciler")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := (&reconcilers.AgentJobReconciler{
@@ -124,7 +170,7 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create AgentJobReconciler")
-		os.Exit(1)
+		return 1
 	}
 
 	if err := (&reconcilers.AgentFleetReconciler{
@@ -132,12 +178,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create AgentFleetReconciler")
-		os.Exit(1)
+		return 1
 	}
 
 	log.Info("starting muto-operator", "platform", platform)
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		log.Error(err, "operator exited with error")
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }

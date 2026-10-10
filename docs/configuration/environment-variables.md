@@ -641,12 +641,13 @@ export MUTO_MTLS_CLIENT_KEY_FILE=/etc/muto/certs/client.key
 
 | Setting | Current behavior |
 |---|---|
-| Metrics endpoint | `:8080/metrics` by default; configurable via `MUTO_METRICS_BIND_ADDRESS` (`"0"` disables it) |
+| Metrics endpoint | `:8080/metrics` by default; configurable via `MUTO_METRICS_BIND_ADDRESS` (`"0"` disables it); exposes the `muto_*` families alongside controller-runtime's own metrics |
 | Health probes | `:8081/healthz` and `:8081/readyz` by default; configurable via `MUTO_HEALTH_PROBE_BIND_ADDRESS` |
 | Logs | `MUTO_LOG_LEVEL` (`debug`/`info`/`warn`/`error`, default `info`) and `MUTO_LOG_FORMAT` (`json`, default, or `console`) |
-| Tracing | Not implemented |
+| Tracing | Available (off by default); set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable |
+| OTLP metrics export | Available (off by default); set `OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` to push the same `muto_*` families over OTLP - the only option on platforms with no Prometheus scraping (e.g. CF) |
 
-Custom `muto_*` metrics and OpenTelemetry tracing are planned in [#79](https://github.com/muto-io/muto/issues/79). See [Monitoring and Observability](../operations/monitoring-observability.md).
+The `muto_*` custom metrics shipped in [#103](https://github.com/muto-io/muto/pull/103); OTLP metrics export shipped in [#104](https://github.com/muto-io/muto/pull/104). See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ---
 

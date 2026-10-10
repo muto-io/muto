@@ -56,7 +56,11 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		agentIDs = append(agentIDs, id)
 	}
 
-	// context.Background() - watch goroutines must outlive the request context.
+	// context.Background() - watch goroutines must outlive the request
+	// context, so WatchAgent deliberately starts its own trace rather than
+	// joining the scheduling one (documented in
+	// docs/operations/monitoring-observability.md's Distributed Tracing
+	// section and pinned by test/integration/k8s/tracing_test.go).
 	watchCtx, cancelWatch := context.WithCancel(context.Background())
 	var watchChans []<-chan agent.Event
 	for _, id := range agentIDs {

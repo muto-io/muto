@@ -237,7 +237,7 @@ This pattern ensures that even if a message is delivered multiple times, process
 
 ### Key Metrics to Track
 
-Muto doesn't export job- or agent-level metrics yet ([#79](https://github.com/muto-io/muto/issues/79)). Track operator health with controller-runtime's built-in metrics, and agent resource usage with container metrics (cAdvisor, kube-state-metrics):
+Job- and agent-level metrics are implemented - see [Monitoring and Observability](../operations/monitoring-observability.md#available-metrics) for the full `muto_*` reference. Combine those with controller-runtime's built-in metrics for operator health, and container metrics (cAdvisor, kube-state-metrics) for agent resource usage:
 
 ```
 # Reconciliation
@@ -248,6 +248,12 @@ controller_runtime_reconcile_time_seconds{controller="agentjob"}   # Reconcile l
 # Backlog
 workqueue_depth{controller="agentjob"}                             # Pending reconciliations
 workqueue_queue_duration_seconds{controller="agentjob"}            # Time waiting in the queue
+
+# Jobs and agents (muto_*)
+muto_jobs_total{tenant="...",status="succeeded|failed"}            # AgentJobs that reached a terminal state
+muto_job_duration_seconds{tenant="...",status="..."}                # AgentJob duration from start to completion
+muto_agents_running{tenant="..."}                                   # Agent pods currently running
+muto_job_queue_depth{tenant="..."}                                   # AgentJobs currently in the Running phase
 ```
 
 ### Alert Rules

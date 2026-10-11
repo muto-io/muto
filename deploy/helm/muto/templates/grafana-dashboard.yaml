@@ -1,0 +1,15 @@
+{{- if and .Values.metrics.enabled .Values.metrics.grafanaDashboard.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "muto.fullname" . }}-dashboard
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "muto.labels" . | nindent 4 }}
+    {{- with .Values.metrics.grafanaDashboard.additionalLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+data:
+  muto-operator.json: |-
+    {{- .Files.Get "dashboards/muto-operator.json" | nindent 4 }}
+{{- end }}

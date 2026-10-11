@@ -138,7 +138,7 @@ kubectl logs deployment/muto-operator -n muto-system | grep '"controller"="agent
 
 ### Verbose Logging
 
-Log verbosity is fixed at `0`: `log.V(1).Info(...)` and higher are discarded, and no environment variable raises the level. While debugging, log at `V(0)` (see below) or use a debugger. Configurable log levels are planned in [#79](https://github.com/muto-io/muto/issues/79).
+Set `MUTO_LOG_LEVEL=debug` to raise verbosity so `V(1)`-and-above messages are emitted too (default `info`; also accepts `warn`/`error`).
 
 View logs:
 ```bash

@@ -190,10 +190,10 @@ Check [Configuration Reference](../configuration/environment-variables.md) for e
 The operator currently provides:
 
 1. **Health probes**: `/healthz` and `/readyz` on port `8081`
-2. **Metrics**: controller-runtime's built-in Prometheus metrics (reconcile rate, errors, latency, work queues) at `:8080/metrics`
-3. **Logs**: plain-text key/value lines on stderr
+2. **Metrics**: controller-runtime's built-in Prometheus metrics (reconcile rate, errors, latency, work queues) plus custom `muto_*` job/reconcile metrics, at `:8080/metrics`
+3. **Logs**: structured JSON lines on stderr by default, configurable via `MUTO_LOG_FORMAT`/`MUTO_LOG_LEVEL`
 
-Custom `muto_*` metrics, JSON logs and OpenTelemetry tracing aren't implemented yet ([#79](https://github.com/muto-io/muto/issues/79)).
+OpenTelemetry tracing is already in place and supported:
 
 ```bash
 # View metrics

@@ -1,0 +1,136 @@
+{
+  "title": "Muto Operator",
+  "uid": "muto-operator",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "tags": ["muto"],
+  "timezone": "browser",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {}
+      },
+      {
+        "name": "tenant",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(muto_jobs_total, tenant)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Reconcile rate by reconciler and result",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(rate(muto_reconciliations_total[5m])) by (reconciler, result)",
+          "legendFormat": "{{reconciler}} ({{result}})"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Reconcile duration (p50 / p95 / p99)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.50, sum(rate(muto_reconciliation_duration_seconds_bucket[5m])) by (le, reconciler))",
+          "legendFormat": "p50 {{reconciler}}"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.95, sum(rate(muto_reconciliation_duration_seconds_bucket[5m])) by (le, reconciler))",
+          "legendFormat": "p95 {{reconciler}}"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.99, sum(rate(muto_reconciliation_duration_seconds_bucket[5m])) by (le, reconciler))",
+          "legendFormat": "p99 {{reconciler}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "AgentJobs completed, by tenant and status",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "sum(rate(muto_jobs_total{tenant=~\"$tenant\"}[5m])) by (tenant, status)",
+          "legendFormat": "{{tenant}} ({{status}})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "AgentJob duration (p50 / p95)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.50, sum(rate(muto_job_duration_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, tenant))",
+          "legendFormat": "p50 {{tenant}}"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "histogram_quantile(0.95, sum(rate(muto_job_duration_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le, tenant))",
+          "legendFormat": "p95 {{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Agents running, by tenant",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "muto_agents_running{tenant=~\"$tenant\"}",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "AgentJob queue depth, by tenant",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "muto_job_queue_depth{tenant=~\"$tenant\"}",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    }
+  ]
+}

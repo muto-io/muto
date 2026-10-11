@@ -407,7 +407,7 @@ echo "Throughput: $THROUGHPUT jobs/minute"
 
 ### Metrics to Monitor
 
-During load testing, monitor these metrics. Muto has no job-level metrics yet ([#79](https://github.com/muto-io/muto/issues/79)), so use controller-runtime's reconcile metrics and container metrics:
+During load testing, monitor these metrics. Muto has job-level `muto_*` metrics, so combine those with controller-runtime's reconcile metrics and container metrics:
 
 ```promql
 # AgentJob reconciliations per second

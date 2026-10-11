@@ -333,7 +333,7 @@ controller_runtime_reconcile_total{controller="agentjob",result="requeue_after"}
 controller_runtime_reconcile_time_seconds_count{controller="agentjob"} 7
 ```
 
-Job-level metrics (jobs by end state, job duration, running jobs per tenant) and structured lifecycle log events are planned in [#79](https://github.com/muto-io/muto/issues/79).
+Job-level metrics (jobs by end state, job duration, running jobs per tenant - `muto_jobs_total`, `muto_job_duration_seconds`, `muto_agents_running`, `muto_job_queue_depth`) and structured JSON lifecycle log events are both available, along with OpenTelemetry tracing across the reconcile/scheduler/platform-adapter path. See [Monitoring and Observability](../operations/monitoring-observability.md).
 
 ## Common Patterns
 

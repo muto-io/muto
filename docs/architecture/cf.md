@@ -205,7 +205,7 @@ task.failed    -> Task failed
 ```
 
 ### Metrics
-CF-specific metrics (task duration, task failures, quota usage, service binding errors) aren't exported yet; they're planned in [#79](https://github.com/muto-io/muto/issues/79). The operator's built-in controller-runtime metrics are served on `:8080/metrics` inside the container.
+CF-specific metrics (task duration, task failures, quota usage, service binding errors) aren't exported yet. The operator's built-in controller-runtime metrics are served on `:8080/metrics` inside the container.
 
 ## Advantages of CloudFoundry Platform
 

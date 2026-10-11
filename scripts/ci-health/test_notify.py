@@ -109,14 +109,24 @@ class DecideMessageTest(unittest.TestCase):
 
     def test_success_after_failure_sends_recovery(self):
         previous = [
-            {"id": 99, "conclusion": "failure", "created_at": "2026-10-11T09:00:00Z"},
+            {"id": 99, "conclusion": "failure", "created_at": "2026-10-11T09:00:00Z",
+             "event": "push", "head_branch": "main"},
         ]
         event = {"workflow_run": run(conclusion="success")}
         text = self.decide("workflow_run", event, FakeClient(previous_runs=previous))
         self.assertIn("recovered", text)
 
+    def test_recovery_ignores_failed_fork_pr_run_on_branch_named_main(self):
+        previous = [
+            {"id": 99, "conclusion": "failure", "created_at": "2026-10-11T09:00:00Z",
+             "event": "pull_request", "head_branch": "main"},
+        ]
+        event = {"workflow_run": run(conclusion="success")}
+        self.assertIsNone(self.decide("workflow_run", event, FakeClient(previous_runs=previous)))
+
     def test_success_after_success_is_silent(self):
-        previous = [{"id": 99, "conclusion": "success", "created_at": "2026-10-11T09:00:00Z"}]
+        previous = [{"id": 99, "conclusion": "success", "created_at": "2026-10-11T09:00:00Z",
+                     "event": "push", "head_branch": "main"}]
         event = {"workflow_run": run(conclusion="success")}
         self.assertIsNone(self.decide("workflow_run", event, FakeClient(previous_runs=previous)))
 
@@ -126,9 +136,12 @@ class DecideMessageTest(unittest.TestCase):
 
     def test_recovery_skips_cancelled_runs_and_the_run_itself(self):
         previous = [
-            {"id": 100, "conclusion": "success", "created_at": "2026-10-11T10:00:00Z"},
-            {"id": 99, "conclusion": "cancelled", "created_at": "2026-10-11T09:30:00Z"},
-            {"id": 98, "conclusion": "failure", "created_at": "2026-10-11T09:00:00Z"},
+            {"id": 100, "conclusion": "success", "created_at": "2026-10-11T10:00:00Z",
+             "event": "push", "head_branch": "main"},
+            {"id": 99, "conclusion": "cancelled", "created_at": "2026-10-11T09:30:00Z",
+             "event": "push", "head_branch": "main"},
+            {"id": 98, "conclusion": "failure", "created_at": "2026-10-11T09:00:00Z",
+             "event": "push", "head_branch": "main"},
         ]
         event = {"workflow_run": run(conclusion="success")}
         text = self.decide("workflow_run", event, FakeClient(previous_runs=previous))

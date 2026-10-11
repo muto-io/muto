@@ -74,6 +74,8 @@ def previous_conclusion(client, repo: str, run: dict):
     for candidate in body.get("workflow_runs", []):
         if candidate["id"] == run["id"]:
             continue
+        if not metrics.is_health_run(candidate):
+            continue
         if candidate["created_at"] >= run["created_at"]:
             continue
         if candidate.get("conclusion") in metrics.COUNTED_CONCLUSIONS:

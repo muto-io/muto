@@ -62,6 +62,8 @@ nav:
   - Configuration:
       - Environment Variables: configuration/env-vars.md
       - Reconcilers: configuration/reconcilers.md
+  - Operations:
+      - CI/CD Health: operations/ci-health.md
   - Development:
       - Contributing: development/contributing.md
       - Development Setup: development/setup.md
@@ -76,6 +78,12 @@ plugins:
       lang: en
   - glightbox:
       auto_load: true
+
+extra_css:
+  - operations/ci-health/dashboard.css
+
+extra_javascript:
+  - operations/ci-health/dashboard.js
 
 markdown_extensions:
   - abbr

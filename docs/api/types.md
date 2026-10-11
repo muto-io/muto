@@ -87,5 +87,5 @@ For complete field specifications, validation rules, and detailed examples, see:
 ## Related Documentation
 
 - **[Message API Types](../api-reference/message-api.md)** - Message structure and headers
-- **[Webhook API Types](../api-reference/webhook-api.md)** - Event and webhook payload types
+- **[Webhook API Reference](../api-reference/webhook-api.md)** - Why no webhook mechanism exists yet
 - **[Architecture Documentation](../architecture/)** - Design and concepts behind the types

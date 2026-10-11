@@ -156,7 +156,8 @@ The Message API defines inter-agent communication protocols and message bus sema
 |-----|---------|-----------|-----------|----------|
 | **NATS JetStream** | Very Low | Medium | Configurable | Low-latency, simple agent tasks |
 | **Apache Kafka** | Low | Very High | High | Complex pipelines, high throughput |
-| **RabbitMQ** | Low | Medium | High | Traditional queue patterns |
+
+RabbitMQ is not implemented - `core/messaging` only has NATS and Kafka backends. See [Message Bus Setup](../configuration/message-bus-setup.md) for what's actually wired up today (neither backend is used in production yet).
 
 ### Full Reference
 
@@ -166,46 +167,9 @@ The Message API defines inter-agent communication protocols and message bus sema
 
 ## Webhook API
 
-The Webhook API sends event notifications when agent jobs change state. Configure webhooks to integrate Muto with external systems.
+There is no webhook delivery mechanism in Muto today - no event notifications are sent when agent jobs change state, and none of the configuration below is real.
 
-### Event Types
-
-- **job.created**: AgentJob resource created
-- **job.started**: Job transitioned to Running phase
-- **job.completed**: Job reached terminal phase (Succeeded or Failed)
-- **job.failed**: Job transitioned to Failed phase
-- **fleet.updated**: Fleet composition or status changed
-
-### Webhook Payload
-
-```json
-{
-  "event": "job.completed",
-  "timestamp": "2026-09-05T12:00:00Z",
-  "jobId": "my-job",
-  "jobNamespace": "agents-my-tenant",
-  "tenantRef": "my-tenant",
-  "phase": "Succeeded",
-  "activeAgents": 0,
-  "startedAt": "2026-09-05T11:50:00Z",
-  "completedAt": "2026-09-05T12:00:00Z"
-}
-```
-
-### Webhook Configuration
-
-Define webhooks in your Muto controller deployment:
-
-```yaml
-MUTO_WEBHOOKS_ENABLED: "true"
-MUTO_WEBHOOK_URLS: |
-  https://your-system.com/muto-webhooks
-MUTO_WEBHOOK_EVENTS: job.created,job.completed,job.failed
-```
-
-### Full Reference
-
-[:octicons-book-24: **Webhook API Reference**](../api-reference/webhook-api.md) - Complete webhook specification, retry behavior, and integration examples
+See [Webhook API Reference](../api-reference/webhook-api.md) for what's confirmed missing and what building one would take.
 
 ---
 
@@ -301,7 +265,7 @@ For detailed specifications, use these reference documents:
 |----------|----------|----------|
 | [CRD Type Reference](../api-reference/crd-types.md) | Complete Kubernetes CRD schemas with all fields and validation | Defining resource manifests, understanding field constraints |
 | [Message API Reference](../api-reference/message-api.md) | Message format, routing, headers, and protocol behavior | Building agents, implementing message handlers |
-| [Webhook API Reference](../api-reference/webhook-api.md) | Webhook configuration, event types, retry logic | Setting up event notifications and integrations |
+| [Webhook API Reference](../api-reference/webhook-api.md) | Why no webhook mechanism exists yet, and what building one would take | Understanding the current gap before building a notification integration |
 | [MCP Tools Reference](../api-reference/mcp-tools.md) | Tool specifications, parameters, and response formats | LLM integration, scheduling from Claude |
 
 ---
@@ -317,9 +281,8 @@ For detailed specifications, use these reference documents:
 
 ### For Integration Engineers
 
-1. Read [Webhook API Reference](../api-reference/webhook-api.md)
-2. Configure webhook endpoints in your Muto deployment
-3. Handle events in your external system
+1. Read [Webhook API Reference](../api-reference/webhook-api.md) - there's no webhook delivery mechanism yet, so this covers what you'd need to build instead
+2. Review [Message API Reference](../api-reference/message-api.md) for the one real integration point today
 4. Use [Troubleshooting Guide](../operations/troubleshooting.md) if webhooks don't fire
 
 ### For LLM Application Developers

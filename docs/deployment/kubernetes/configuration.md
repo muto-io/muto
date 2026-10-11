@@ -1,607 +1,152 @@
 # Kubernetes-Specific Configuration
 
-Advanced Kubernetes configuration options for Muto.
+What the real Muto CRDs and Helm chart (`deploy/helm/muto/`) actually let you configure on Kubernetes.
 
 ## Custom Resource Definitions (CRDs)
 
-Muto extends Kubernetes with three custom resource types:
+Muto defines **three** CRDs, all under `muto.io/v1alpha1` (not `v1` - there is no `v1`): `AgentJob`, `Tenant`, `AgentFleet`. There is no `ReconcilerConfig` CRD or any other custom resource.
 
-### AgentJob CRD
+### AgentJob
 
-An AgentJob represents a request to execute one or more agents.
+The real schema (`platform/k8s/types/v1alpha1/agentjob_types.go`):
 
 ```yaml
-apiVersion: muto.io/v1
+apiVersion: muto.io/v1alpha1
 kind: AgentJob
 metadata:
   name: data-pipeline
-  namespace: default
+  namespace: tenant-acme   # must be the namespace the owning Tenant creates
 spec:
-  # Tenant this job belongs to
-  tenant: default-tenant
-  
-  # List of agents to execute
+  tenantRef: acme-corp       # name of the owning Tenant
+  trigger:
+    type: manual              # event | cron | manual
+    source: ""                 # topic URL (event) or cron expression (cron)
   agents:
-    - name: extractor
-      image: myregistry.io/extractor:v1.2.0
-      command: ["python", "extract.py"]
-      args: ["--source", "s3://data/input"]
-      env:
-        - name: AWS_REGION
-          value: us-east-1
-        - name: AWS_CREDENTIALS
-          valueFrom:
-            secretKeyRef:
-              name: aws-credentials
-              key: secret-access-key
-      resources:
-        requests:
-          memory: "256Mi"
-          cpu: "250m"
-        limits:
-          memory: "512Mi"
-          cpu: "500m"
-      timeout: 5m
-      retryPolicy:
-        maxRetries: 3
-        backoffSeconds: 10
-  
-  # Global job configuration
-  timeout: 30m
-  parallelism: 2
-  
-  # Define dependencies between agents
-  dependencies:
-    - agent: extractor
-      triggers:
-        - event: completed
-          topic: "workflow/extract-done"
-      condition: "status == 'Completed'"
-  
-  # Message bus subscriptions for coordination
-  subscriptions:
-    - agent: processor
-      topic: "workflow/extract-done"
-      filter: "source == 'extractor'"
+    - role: extractor
+      image: myregistry.io/extractor:v1.2.0   # required when MUTO_PLATFORM=k8s
+      maxReplicas: 1                            # defaults to 1
+  messageBus:
+    topic: extract-done   # namespaced to tenant.<tenantRef>.extract-done at runtime
+  ttlAfterCompletion: 300  # seconds to keep the job around after it finishes; 0 = no cleanup
 
 status:
-  phase: Running
-  conditions:
-    - type: Scheduled
-      status: "True"
-      lastTransitionTime: "2026-09-03T10:00:00Z"
-  startTime: "2026-09-03T10:00:00Z"
-  completionTime: null
+  phase: Running   # Pending | Running | Succeeded | Failed | Terminating
+  activeAgents: 1
+  startedAt: "2026-09-03T10:00:00Z"
+  completedAt: null
 ```
 
-**CRD Schema Reference:**
+There is no `spec.timeout`, `spec.parallelism`, `spec.dependencies`, `spec.subscriptions`, per-agent `command`/`args`/`env`/`resources`/`timeout`/`retryPolicy`, or `status.conditions` - `AgentRoleSpec` is just `role`, `image`, `command` (CF only), and `maxReplicas`. The pod spec (image, env, resources) that actually runs is built by `AgentJobReconciler`, not supplied in the CRD.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `metadata.name` | string | Yes | Unique job identifier |
-| `spec.tenant` | string | Yes | Tenant namespace |
-| `spec.agents` | array | Yes | List of agents to run |
-| `spec.timeout` | duration | No | Overall job timeout (default: 1h) |
-| `spec.parallelism` | integer | No | Max concurrent agent executions |
-| `spec.dependencies` | array | No | Agent dependency definitions |
-| `status.phase` | string | No | Current job state |
+### Tenant
 
-### Tenant CRD
+See [Multi-Tenant Setup](../../configuration/multi-tenant-setup.md) for the real 3-field spec (`namespace`, `isolationTier`, `messageBus`) and what the reconciler actually does with it - it's not reproduced here to avoid the two docs drifting apart again.
 
-A Tenant represents a logical isolation boundary.
+### AgentFleet
 
 ```yaml
-apiVersion: muto.io/v1
-kind: Tenant
+apiVersion: muto.io/v1alpha1
+kind: AgentFleet
 metadata:
-  name: acme-corp
-  namespace: muto-system
+  name: nightly-batch
 spec:
-  # Kubernetes namespace for this tenant
-  namespace: acme-corp-ns
-  
-  # Message bus topic prefix
-  messageBusConfig:
-    topicPrefix: "acme-corp"
-    subscriptionPrefix: "acme-corp-sub"
-  
-  # Resource quotas
-  resourceQuota:
-    jobs: 1000
-    agents: 5000
-    cpu: "100"
-    memory: "500Gi"
-  
-  # Network policies
-  networkPolicy:
-    enabled: true
-    allowIngressFromNamespaces:
-      - default
-      - monitoring
-  
-  # RBAC bindings
-  rbac:
-    roleBindings:
-      - role: admin
-        subjects:
-          - kind: User
-            name: alice@acme.com
-      - role: developer
-        subjects:
-          - kind: Group
-            name: acme-engineers
+  tenantRef: acme-corp
+  jobRefs:
+    - data-pipeline
+    - cleanup-job
 
 status:
-  phase: Active
-  createdAt: "2026-09-03T10:00:00Z"
+  totalJobs: 2
+  runningJobs: 1
+  completedJobs: 1
 ```
 
-### ReconcilerConfig CRD
+A fleet is just a named grouping of `AgentJob` names for fleet-level status rollup - there's no fleet-level scheduling, dependency, or cancellation logic beyond what's in `AgentFleetStatus`.
 
-Configuration for reconcilers.
+## Helm Chart Configuration
+
+Everything configurable via Helm lives in `deploy/helm/muto/values.yaml`. This is the complete set - the chart has no other templated values:
 
 ```yaml
-apiVersion: muto.io/v1
-kind: ReconcilerConfig
-metadata:
-  name: agent-job-reconciler
-  namespace: muto-system
-spec:
-  reconcilerName: agent-job-reconciler
-  
-  # Concurrency settings
-  concurrency:
-    workers: 10
-    maxConcurrentReconciles: 20
-  
-  # Retry settings
-  retry:
-    initialBackoffSeconds: 1
-    maxBackoffSeconds: 300
-    maxRetries: 15
-  
-  # Sync settings
-  sync:
-    period: 10m
-    jitter: 1m
-  
-  # Features
-  features:
-    enableWebhooks: true
-    enableMetrics: true
+replicaCount: 1
+
+image:
+  repository: ghcr.io/muto-io/muto-operator
+  tag: ""              # defaults to .Chart.AppVersion when empty
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+rbac:
+  create: true
+
+installCRDs: true        # set false if CRDs are managed externally (e.g. GitOps)
+
+env:
+  MUTO_PLATFORM: k8s
+  MUTO_NAMESPACE: default
+  MUTO_LOG_LEVEL: info
+  MUTO_LOG_FORMAT: json
+  CF_API_URL: ""
+  CF_USERNAME: ""
+  CF_PASSWORD: ""
+  CF_ISOLATION_TIER: dedicated
+  CF_SHARED_ORG: ""
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+metrics:
+  enabled: true
+  port: 8080
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    additionalLabels: {}
+
+healthProbe:
+  port: 8081
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
 ```
 
-## Kubernetes Namespaces
+See [Environment Variables](../../configuration/environment-variables.md) for what each `env` entry actually does.
 
-### System Namespace
+`replicaCount` is a plain integer with no leader-election coordination beyond what controller-runtime's manager does by default - there's no autoscaling (no `HorizontalPodAutoscaler` template), so scaling past 1 replica without external leader-election tuning isn't something this chart does for you.
 
-The muto-system namespace contains the operator and webhooks:
+### RBAC
 
-```bash
-kubectl get all -n muto-system
+`rbac.create: true` (with `serviceAccount.create: true`) templates a `ServiceAccount`, `ClusterRole`, and `ClusterRoleBinding` for the operator - **not** `cluster-admin`. See [Security Configuration](../../configuration/tls-security.md#kubernetes-rbac) for the exact permission table. There's no separate per-tenant RBAC template; "tenant RBAC" isn't a Muto feature (see [Multi-Tenant Setup](../../configuration/multi-tenant-setup.md) for what you'd set up yourself).
 
-# Create with proper labels
-kubectl create namespace muto-system
-kubectl label namespace muto-system muto.io/admission=enabled
-```
+### Metrics and Monitoring
 
-### Tenant Namespaces
+When `metrics.enabled: true` (the default), the chart creates a `-metrics` `Service` (`templates/service.yaml`) in front of the operator's `/metrics` port, plus `prometheus.io/scrape`/`port`/`path` pod annotations. Setting `metrics.serviceMonitor.enabled: true` additionally creates a real `ServiceMonitor` (`templates/servicemonitor.yaml`, Prometheus Operator CRD) selecting that Service, using `metrics.serviceMonitor.interval`/`additionalLabels`. No `PodMonitor` is needed or templated - the Service exists, so the `ServiceMonitor` has something to select.
 
-Each tenant gets a dedicated namespace:
+See [Monitoring and Observability](../../operations/monitoring-observability.md) for what metrics are actually exported.
 
-```bash
-# For tenant "customer-a"
-kubectl create namespace customer-a
-kubectl label namespace customer-a \
-  muto.io/tenant=customer-a \
-  muto.io/isolation=true
-```
+## Not Implemented
 
-Namespace isolation enforces:
-- RBAC: Only tenant users can access tenant namespace
-- Network policies: Isolate traffic between tenants
-- Storage: Separate PVCs per tenant
+The following were previously documented here as configurable. None of them exist in `deploy/helm/muto/` or the Go source - there's no template, CRD, or code path for any of them today:
 
-## RBAC Configuration
+- **Admission webhooks** (validating or mutating) - no webhook server, no `ValidatingWebhookConfiguration`/`MutatingWebhookConfiguration`, no TLS/CA bundle handling. See [Security Configuration](../../configuration/tls-security.md).
+- **`ReconcilerConfig` CRD**, or any per-reconciler concurrency/backoff/sync tuning - see [Reconciler Configuration](../../configuration/reconciler-config.md) for what the reconcilers actually do.
+- **NetworkPolicy, PodSecurityPolicy, PersistentVolume/PersistentVolumeClaim, DaemonSet, and HorizontalPodAutoscaler templates** - none are shipped by the chart. If you need any of these (e.g. a baseline deny-all `NetworkPolicy`, or a `ResourceQuota` per tenant namespace), they're plain Kubernetes objects you apply yourself against the namespace a `Tenant` creates - see [Multi-Tenant Setup](../../configuration/multi-tenant-setup.md#what-you-still-have-to-set-up-yourself) for worked examples.
+- **Tenant-level `resourceQuota`/`networkPolicy`/`rbac` spec fields** - the real `Tenant` CRD has none of these; namespace isolation (RBAC, network policies, storage) is not automatically enforced.
 
-### Operator Service Account
+## Log Collection
 
-The operator needs cluster-admin for CRD management:
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: muto-operator
-  namespace: muto-system
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: muto-operator
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: muto-operator
-    namespace: muto-system
-```
-
-### Tenant RBAC
-
-Define per-tenant access:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tenant-admin
-  namespace: customer-a
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: admin
-subjects:
-  - kind: User
-    name: alice@customer-a.com
-  - kind: Group
-    name: customer-a-admins
-```
-
-## Network Policies
-
-### Deny All by Default
-
-Create a baseline network policy that denies all traffic:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: default-deny-all
-  namespace: muto-system
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-```
-
-### Allow Operator to Webhook
-
-Allow communication from operator to webhook:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-operator-to-webhook
-  namespace: muto-system
-spec:
-  podSelector:
-    matchLabels:
-      app: muto-webhook
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-      - podSelector:
-          matchLabels:
-            app: muto-operator
-      ports:
-      - protocol: TCP
-        port: 8443
-```
-
-### Allow Agents to Message Bus
-
-Allow tenant agents to communicate with message bus:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-agents-to-messagebus
-  namespace: customer-a
-spec:
-  podSelector:
-    matchLabels:
-      muto.io/agent: "true"
-  policyTypes:
-    - Egress
-  egress:
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            name: message-bus
-      ports:
-      - protocol: TCP
-        port: 4222  # NATS default
-```
-
-## Storage Configuration
-
-### Persistent Volumes for Muto State
-
-Create a PV for operator state and logs:
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: muto-state-pv
-spec:
-  capacity:
-    storage: 100Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: fast-ssd
-  hostPath:
-    path: /data/muto-state
-```
-
-### Persistent Volume Claim
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: muto-state
-  namespace: muto-system
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: fast-ssd
-  resources:
-    requests:
-      storage: 50Gi
-```
-
-## Admission Webhooks
-
-Muto uses admission webhooks for validation and mutation.
-
-### Validating Webhook
-
-Validates AgentJob specs before creation:
-
-```yaml
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: muto-operator-validation
-webhooks:
-  - name: validation.muto.io
-    admissionReviewVersions: ["v1"]
-    clientConfig:
-      service:
-        name: muto-webhook
-        namespace: muto-system
-        path: "/validate/v1/agentjobs"
-      caBundle: <base64-encoded-ca-cert>
-    rules:
-      - operations: ["CREATE", "UPDATE"]
-        apiGroups: ["muto.io"]
-        apiVersions: ["v1"]
-        resources: ["agentjobs"]
-    failurePolicy: Fail
-    sideEffects: None
-```
-
-### Mutating Webhook
-
-Mutates AgentJob specs (adds defaults, injects config):
-
-```yaml
-apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
-metadata:
-  name: muto-operator-mutation
-webhooks:
-  - name: mutation.muto.io
-    admissionReviewVersions: ["v1"]
-    clientConfig:
-      service:
-        name: muto-webhook
-        namespace: muto-system
-        path: "/mutate/v1/agentjobs"
-      caBundle: <base64-encoded-ca-cert>
-    rules:
-      - operations: ["CREATE", "UPDATE"]
-        apiGroups: ["muto.io"]
-        apiVersions: ["v1"]
-        resources: ["agentjobs"]
-    failurePolicy: Fail
-    sideEffects: NoneOnDryRun
-```
-
-## Pod Security Policies
-
-Define security constraints for tenant pods:
-
-```yaml
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: muto-agents
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
-  runAsUser:
-    rule: MustRunAsNonRoot
-  fsGroup:
-    rule: MustRunAs
-    ranges:
-      - min: 1000
-        max: 65535
-  readOnlyRootFilesystem: false
-  volumes:
-    - configMap
-    - emptyDir
-    - projected
-    - secret
-    - downwardAPI
-    - persistentVolumeClaim
-```
-
-## Resource Quotas
-
-Per-tenant resource quotas:
-
-```yaml
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: customer-a-quota
-  namespace: customer-a
-spec:
-  hard:
-    requests.cpu: "100"
-    requests.memory: "500Gi"
-    limits.cpu: "200"
-    limits.memory: "1000Gi"
-    pods: "5000"
-    persistentvolumeclaims: "10"
-  scopes:
-    - Terminating
-```
-
-## Quality of Service (QoS) Classes
-
-Ensure Muto pods have proper QoS:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  containers:
-  - name: operator
-    image: muto-io/muto-operator:0.1.0
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "250m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
-  # This pod gets Guaranteed QoS (requests == limits)
-```
-
-## DaemonSets for Node-Level Components
-
-For node-local agents:
-
-```yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: muto-node-agent
-  namespace: muto-system
-spec:
-  selector:
-    matchLabels:
-      app: muto-node-agent
-  template:
-    metadata:
-      labels:
-        app: muto-node-agent
-    spec:
-      nodeSelector:
-        muto.io/agent-capable: "true"
-      containers:
-      - name: agent
-        image: muto-io/muto-node-agent:0.1.0
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-```
-
-## Scaling Configuration
-
-### Horizontal Pod Autoscaling
-
-Auto-scale the operator based on metrics:
-
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: muto-operator-hpa
-  namespace: muto-system
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: muto-operator
-  minReplicas: 3
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
-```
-
-## Monitoring and Observability
-
-### Prometheus Scraping
-
-The operator serves controller-runtime's built-in metrics at `:8080/metrics`. The Helm chart adds `prometheus.io/scrape`, `prometheus.io/port` and `prometheus.io/path` annotations to the operator pod but doesn't create a Service, so a `ServiceMonitor` has nothing to select. With the Prometheus Operator, use a `PodMonitor`:
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: muto-operator
-  namespace: muto-system
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: muto
-  podMetricsEndpoints:
-    - port: metrics
-      path: /metrics
-      interval: 30s
-```
-
-See [Monitoring and Observability](../../operations/monitoring-observability.md#prometheus-metrics) for the available metrics.
-
-### Log Collection with Fluentd
-
-Collect Muto logs:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fluentd-muto-config
-  namespace: muto-system
-data:
-  input-kubernetes-muto.conf: |
-    <source>
-      @type tail
-      path /var/log/containers/*muto*.log
-      tag kubernetes.*
-      read_from_head true
-    </source>
-```
-
----
+Muto writes logs to stdout/stderr in the format set by `MUTO_LOG_FORMAT` (`json` by default) - it has no built-in log shipping. Point whatever log collector you already run (Fluentd, Fluent Bit, Vector, your cloud provider's node-level agent, etc.) at the operator pod's container logs the same way you would for any other workload; there's nothing Muto-specific to configure.

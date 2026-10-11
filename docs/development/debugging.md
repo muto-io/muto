@@ -231,7 +231,7 @@ go tool pprof http://localhost:6060/debug/pprof/profile
 
 ## Tracing
 
-Distributed tracing isn't implemented yet: the operator doesn't initialize an OpenTelemetry SDK, and `OTEL_*` environment variables have no effect. OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79).
+OpenTelemetry tracing is available, off by default. Set `OTEL_EXPORTER_OTLP_ENDPOINT` to enable it — see [Monitoring and Observability](../operations/monitoring-observability.md#distributed-tracing) for details.
 
 To follow a single reconciliation, filter the logs by its `reconcileID`:
 

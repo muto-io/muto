@@ -56,7 +56,7 @@ func (s *DefaultScheduler) Schedule(ctx context.Context, job *agent.Job) error {
 		agentIDs = append(agentIDs, id)
 	}
 
-	// context.Background() - watch goroutines must outlive the request context.
+	// context.Background() - watch goroutines must outlive the request context
 	watchCtx, cancelWatch := context.WithCancel(context.Background())
 	var watchChans []<-chan agent.Event
 	for _, id := range agentIDs {

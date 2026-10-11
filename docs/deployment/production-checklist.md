@@ -197,7 +197,8 @@ Complete this checklist before deploying Muto to production.
 
 ### Distributed Tracing
 
-- [ ] Not available yet: OpenTelemetry tracing is planned in [#79](https://github.com/muto-io/muto/issues/79)
+- [ ] Set `OTEL_EXPORTER_OTLP_ENDPOINT` if you want tracing enabled (off by default)
+- [ ] `OTEL_SERVICE_NAME` and other standard `OTEL_*` variables set to match your environment, if applicable
 
 ### Dashboards
 

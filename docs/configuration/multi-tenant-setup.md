@@ -1,283 +1,115 @@
 # Multi-Tenant Setup and Configuration
 
-Configure and manage Muto for multi-tenant environments with complete isolation.
+What the `Tenant` custom resource actually provisions today, and what you still have to set up yourself.
 
 ## Overview
 
-Multi-tenancy in Muto provides logical isolation of:
-- **Compute**: Separate namespaces (K8s) or spaces (CloudFoundry)
-- **Storage**: Isolated data and configuration per tenant
-- **Messaging**: Tenant-scoped message bus topics
-- **Access Control**: RBAC boundaries preventing cross-tenant access
+A `Tenant` is a cluster-scoped CRD (`muto.io/v1alpha1`, kind `Tenant`). Creating one gets you exactly two things from the `TenantReconciler`:
 
-This guide covers creating, configuring, and verifying tenants.
+- a Kubernetes namespace (created if it doesn't exist, labeled `muto.io/tenant: <tenant-name>`)
+- optionally, a dedicated A2A gateway (`Deployment` + `Service` + `Secret`) in that namespace, if the tenant opts into one
 
----
+Everything else commonly associated with "multi-tenancy" - resource quotas, network policies, per-tenant RBAC, storage isolation - is **not** created or enforced by Muto. If you need those, you apply standard Kubernetes objects against the namespace yourself; see [What You Still Have to Set Up](#what-you-still-have-to-set-up-yourself) below.
 
-## Tenant Lifecycle
+## The Tenant Resource
 
-### Create a Tenant
-
-#### On Kubernetes
-
-**Step 1: Define Tenant Resource**
+The real `TenantSpec` (`platform/k8s/types/v1alpha1/tenant_types.go`) has three fields:
 
 ```yaml
-apiVersion: muto.io/v1
+apiVersion: muto.io/v1alpha1
 kind: Tenant
 metadata:
   name: customer-acme
-  namespace: muto-system
 spec:
-  # Display name
-  displayName: "ACME Corporation"
-  
-  # Email contact
-  adminEmail: "ops@acme.com"
-  
-  # Platform configuration
-  platform:
-    type: kubernetes
-    namespace: tenant-acme
-    
-  # Resource quotas
-  quotas:
-    cpu: "50"           # 50 cores
-    memory: "100Gi"     # 100 GB
-    jobs: "500"         # Max 500 concurrent jobs
-    storage: "1Ti"      # 1 TB storage
-    
-  # Isolation level
-  isolation:
-    level: strong       # strong or moderate
-    networkPolicy: true # Enable network policies
-    rbac: true         # Enable RBAC
-    
-  # Message bus configuration
+  # Required. Namespace the reconciler creates/uses for this tenant's agent pods.
+  namespace: tenant-acme
+
+  # Required. shared: tenant uses the cluster's shared message bus / CF org.
+  #            dedicated: tenant gets its own message bus instance / CF org.
+  isolationTier: dedicated
+
   messageBus:
-    topicPrefix: "tenant-acme"
-    consumerGroupPrefix: "tenant-acme"
-    
-  # Optional: Network policies
-  networkPolicies:
-    - name: deny-ingress
-      policyTypes:
-      - Ingress
-      podSelector: {}
-      ingress:
-      - from:
-        - namespaceSelector:
-            matchLabels:
-              name: tenant-acme
-      
-  # Annotations for custom metadata
-  metadata:
-    customerID: "cust-12345"
-    tier: "premium"
-    supportLevel: "24x7"
+    # Required. nats | kafka | a2a
+    type: a2a
+    # Only meaningful when isolationTier is dedicated and type is a2a:
+    # provisions a per-tenant A2A gateway. Ignored for nats/kafka today -
+    # there's no per-tenant NATS/Kafka instance provisioning yet, despite
+    # what TenantBusSpec's doc comment says is intended.
+    dedicated: true
 ```
 
-**Step 2: Apply Tenant**
+There is no `displayName`, `adminEmail`, `platform`, `quotas`, `isolation`, `networkPolicies`, or `metadata` block in the real spec - a manifest with those fields will be rejected by the CRD's OpenAPI schema (or silently ignored on fields that happen to overlap, like `metadata`, which is just the standard Kubernetes object metadata, not tenant-specific).
 
 ```bash
 kubectl apply -f tenant-acme.yaml
-```
 
-**Step 3: Verify Tenant Created**
+# Check status - the only status field is `ready`
+kubectl get tenant customer-acme -o jsonpath='{.status.ready}'
 
-```bash
-# Check tenant status
-kubectl get tenant customer-acme -n muto-system -o wide
-
-# Expected output:
-# NAME             DISPLAYNAME        STATUS   NAMESPACE     AGE
-# customer-acme    ACME Corporation   Ready    tenant-acme   2m
-
-# Check namespace was created
-kubectl get namespace tenant-acme
-
-# Check namespace labels
+# Namespace gets created with a tenant label
 kubectl get namespace tenant-acme --show-labels
 ```
 
-#### On CloudFoundry
+## What the Reconciler Does on Create
 
-**Step 1: Create Org and Space**
+1. Adds a finalizer (`muto.io/tenant-cleanup`) so gateway resources get cleaned up explicitly on delete.
+2. Creates the namespace in `spec.namespace` if it doesn't already exist.
+3. If `messageBus.type: a2a` and `messageBus.dedicated: true`, creates (idempotently) a `Secret` (`muto-a2a-token`, a random 32-byte hex token), a `Deployment` (`a2a-gateway`, image from the **operator's** `MUTO_A2A_GATEWAY_IMAGE` environment variable - see [Environment Variables](./environment-variables.md) - reconciliation fails if that's unset), and a `Service` (`a2a-gateway`, port 8080), all owned by the `Tenant` object.
+4. Sets `status.ready: true`.
 
-```bash
-# Login to CloudFoundry
-cf login -a https://api.cf.example.com
+## What the Reconciler Does on Delete
 
-# Create organization
-cf create-org acme-corp
-
-# Create space within org
-cf create-space production -o acme-corp
-
-# Target the space
-cf target -o acme-corp -s production
-```
-
-**Step 2: Create Service Bindings (Message Bus)**
-
-For NATS:
-```bash
-# Create NATS service
-cf create-service nats-service default nats-acme
-
-# Create user-provided service for credentials
-cf create-user-provided-service nats-config \
-  -p '{"url":"nats://nats:4222","credentials":"path/to/creds"}'
-```
-
-For Kafka:
-```bash
-# Create Kafka service
-cf create-service kafka-service default kafka-acme
-
-# Configuration via environment
-cf set-env muto-app MUTO_KAFKA_BROKERS kafka-broker:9092
-```
-
-**Step 3: Register with Muto (via API)**
+`kubectl delete tenant customer-acme` does **not** cascade-delete the namespace, its pods, RBAC, or anything else in it. The finalizer only deletes the three A2A gateway resources above (each is a no-op if it was never created). The namespace and everything running in it are left behind - clean those up yourself if that's not what you want:
 
 ```bash
-# Call Muto MCP API to register tenant
-curl -X POST http://muto-mcp:3000/tenants \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "customer-acme",
-    "displayName": "ACME Corporation",
-    "platform": "cloudfoundry",
-    "org": "acme-corp",
-    "space": "production",
-    "topicPrefix": "tenant-acme"
-  }'
+kubectl delete tenant customer-acme
+kubectl delete namespace tenant-acme   # not automatic
 ```
 
----
+## CloudFoundry Isolation
 
-## Tenant Configuration
+On CF, isolation is driven by the operator's `CF_ISOLATION_TIER` and `CF_SHARED_ORG` environment variables (not a per-`Tenant` field - the CF adapter doesn't read the `Tenant` CRD at all today):
 
-### Resource Quotas
+- `CF_ISOLATION_TIER=dedicated`: each tenant gets its own CF **org**, named after the tenant ID, with a fixed `muto-agents` space.
+- `CF_ISOLATION_TIER=shared`: all tenants share one org (`CF_SHARED_ORG`), each tenant gets its own **space** within it, named after the tenant ID.
 
-Define resource limits per tenant to prevent one tenant from consuming all resources:
+The adapter resolves (and caches) the org/space GUIDs via the CF API - it does not create orgs or spaces for you. Create them yourself before a tenant's first job runs:
 
-```yaml
-apiVersion: muto.io/v1
-kind: Tenant
-metadata:
-  name: customer-acme
-spec:
-  quotas:
-    cpu: "50"           # Total CPU cores
-    memory: "100Gi"     # Total memory
-    jobs: "500"         # Max concurrent jobs
-    storage: "1Ti"      # Max storage
-    
-    # Optional: Per-job limits
-    jobDefaults:
-      cpuRequest: "100m"
-      cpuLimit: "2"
-      memoryRequest: "256Mi"
-      memoryLimit: "1Gi"
-      timeout: "4h"
-```
-
-**Verify Quotas Applied:**
 ```bash
-# On Kubernetes
-kubectl get resourcequota -n tenant-acme
+# dedicated tier
+cf create-org customer-acme
+cf create-space muto-agents -o customer-acme
 
-# Check quota usage
-kubectl describe resourcequota -n tenant-acme
-
-# Example output:
-# Name:          tenant-acme-quota
-# Resource       Used     Hard
-# --------       ---      ----
-# cpu            5        50
-# memory         8Gi      100Gi
-# pods           12       500
+# shared tier
+cf create-space customer-acme -o acme-shared-org
 ```
 
-### Access Control (RBAC)
+## Message Bus Topic Isolation
 
-Configure who can manage tenant resources:
+`core/tenant.TopicPrefix(tenantID)` returns a fixed `tenant.<tenantID>.` prefix. `mcp/tools` uses it to build every job's topic as `tenant.<tenantID>.<jobID>` when a job is scheduled through the MCP server - this is automatic and not configurable (no `topicPrefix` field exists on `Tenant` or anywhere else).
 
-#### Kubernetes RBAC
+`core/tenant.ValidateTopic(tenantID, topic)` checks a topic string against that prefix and errors if it doesn't match - this is exercised directly in `test/integration/k8s/isolation_test.go`, confirming the prefix format. It's a plain library function, though: nothing in the NATS/Kafka adapters currently calls it to reject a cross-tenant publish or subscribe at the bus level. Treat the prefix as a naming convention applied when Muto builds a topic string, not a hard boundary enforced by the message bus itself.
+
+## What You Still Have to Set Up Yourself
+
+None of the following are created by Muto. These are plain Kubernetes objects you apply against the namespace a `Tenant` creates, if you want them.
+
+**Resource quotas:**
 
 ```yaml
 apiVersion: v1
-kind: ServiceAccount
+kind: ResourceQuota
 metadata:
-  name: tenant-admin
+  name: tenant-acme-quota
   namespace: tenant-acme
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: tenant-admin
-  namespace: tenant-acme
-rules:
-# Agents can create jobs
-- apiGroups: ["muto.io"]
-  resources: ["agentjobs"]
-  verbs: ["create", "list", "get", "watch"]
-# Agents can read config
-- apiGroups: [""]
-  resources: ["configmaps", "secrets"]
-  verbs: ["get", "list"]
-# Agents can write logs
-- apiGroups: [""]
-  resources: ["pods/log"]
-  verbs: ["get"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tenant-admin-binding
-  namespace: tenant-acme
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tenant-admin
-subjects:
-- kind: ServiceAccount
-  name: tenant-admin
-  namespace: tenant-acme
-- kind: Group
-  name: acme-ops
-  apiGroup: rbac.authorization.k8s.io
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: 100Gi
+    pods: "500"
 ```
 
-**Grant User Access:**
-```bash
-# Add user to tenant-admin role
-kubectl create rolebinding tenant-admin:alice \
-  --clusterrole=tenant-admin \
-  --user=alice@acme.com \
-  -n tenant-acme
-```
-
-#### CloudFoundry RBAC
-
-```bash
-# Add org manager
-cf set-org-role alice@acme.com acme-corp OrgManager
-
-# Add space developer
-cf set-space-role alice@acme.com acme-corp production SpaceDeveloper
-
-# Add space auditor (read-only)
-cf set-space-role bob@acme.com acme-corp production SpaceAuditor
-```
-
-### Network Isolation
-
-#### Kubernetes Network Policies
+**Network policy:**
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -287,470 +119,33 @@ metadata:
   namespace: tenant-acme
 spec:
   podSelector: {}
-  policyTypes:
-  - Ingress
-  - Egress
+  policyTypes: [Ingress]
   ingress:
-  # Allow from within same namespace
   - from:
     - podSelector: {}
-  # Allow from muto-system namespace
-  - from:
     - namespaceSelector:
         matchLabels:
           name: muto-system
-  egress:
-  # Allow DNS
-  - to:
-    - namespaceSelector: {}
-      podSelector:
-        matchLabels:
-          k8s-app: kube-dns
-    ports:
-    - protocol: UDP
-      port: 53
-  # Allow to message bus
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: muto-system
-      podSelector:
-        matchLabels:
-          app: nats
-  # Allow external (with restrictions)
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-        except:
-        - 169.254.169.254/32  # Metadata service
 ```
 
-#### CloudFoundry Security Groups
-
-```bash
-# Create security group for tenant
-cf create-security-group tenant-acme-sg \
-  - protocol: tcp
-    destination: 10.0.0.0/8
-    ports: 443,4222,9092
-  - protocol: udp
-    destination: 8.8.8.8
-    ports: 53
-
-# Bind to space
-cf bind-security-group tenant-acme-sg acme-corp production
-```
-
-### Message Bus Isolation
-
-#### Topic Prefix Configuration
+**Per-tenant RBAC:**
 
 ```yaml
-apiVersion: muto.io/v1
-kind: Tenant
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: customer-acme
-spec:
-  messageBus:
-    topicPrefix: "tenant-acme"
-    consumerGroupPrefix: "tenant-acme"
-    # Message retention per tenant
-    retentionHours: 168
-    # Partition count (Kafka)
-    partitionCount: 3
-```
-
-**Topic Naming Pattern:**
-```
-tenant-acme/workflow/job-123/started
-tenant-acme/workflow/job-123/completed
-tenant-acme/notifications/error
-tenant-acme/system/status
-```
-
-**Verify Topic Isolation:**
-
-For NATS:
-```bash
-# List all subscriptions
-curl http://nats:8222/connz | jq '.conns[].subs'
-
-# Should show tenant-specific subjects:
-# tenant-acme.workflow
-# tenant-acme.notifications
-```
-
-For Kafka:
-```bash
-# List topics (should be prefixed)
-kafka-topics.sh --list --bootstrap-server kafka:9092 | grep tenant-acme
-
-# Expected output:
-# tenant-acme-workflow
-# tenant-acme-notifications
-# tenant-acme-system
-```
-
----
-
-## Tenant Monitoring and Verification
-
-### Verify Tenant Isolation
-
-#### Compute Isolation
-
-```bash
-# Verify namespace exists and is isolated
-kubectl get ns tenant-acme --show-labels
-
-# Check RBAC - user should NOT see other tenant namespaces
-kubectl get ns -o name | grep -v tenant-acme
-# Should return no results when accessed as tenant user
-
-# Verify network policies
-kubectl get networkpolicies -n tenant-acme
-
-# Test network isolation
-# From within tenant pod, try to reach another tenant
-kubectl exec -it <pod> -n tenant-acme -- \
-  curl http://pod-in-other-tenant
-# Should timeout or be refused
-```
-
-#### Storage Isolation
-
-```bash
-# On Kubernetes - verify PVC/PV isolation
-kubectl get pvc -n tenant-acme
-
-# Check etcd keys are prefixed
-etcdctl get --prefix /muto/tenant-acme/
-
-# On CloudFoundry - verify service bindings
-cf services -o acme-corp -s production
-# Should only see services bound to this space
-```
-
-#### Messaging Isolation
-
-```bash
-# NATS - verify topic subscriptions
-curl http://nats:8222/connz | \
-  jq '.conns[] | select(.subs[] | startswith("tenant-acme")) | .subs'
-
-# Kafka - verify consumer group
-kafka-consumer-groups.sh \
-  --bootstrap-server kafka:9092 \
-  --group tenant-acme-operator \
-  --describe
-```
-
-#### Access Control Verification
-
-```bash
-# As tenant user, verify they can:
-# 1. List jobs in their namespace
-kubectl get agentjobs -n tenant-acme
-
-# 2. Create jobs in their namespace
-kubectl apply -f agentjob.yaml -n tenant-acme
-
-# 3. Cannot access other namespace
-kubectl get agentjobs -n tenant-other
-# Should be forbidden
-
-# 4. Cannot create cluster-wide resources
-kubectl apply -f clusterrole.yaml
-# Should be forbidden
-```
-
-### Monitor Quota Usage
-
-```bash
-# Get quota status
-kubectl describe resourcequota -n tenant-acme
-
-# Example monitoring query (Prometheus)
-container_memory_usage_bytes{namespace="tenant-acme"}
-
-# Check CPU usage
-kubectl top pods -n tenant-acme
-
-# Check storage usage
-kubectl exec -n tenant-acme <pod> -- du -sh /mnt/storage
-```
-
----
-
-## Tenant Scaling and Management
-
-### Add More Capacity to Tenant
-
-```yaml
-apiVersion: muto.io/v1
-kind: Tenant
-metadata:
-  name: customer-acme
-spec:
-  quotas:
-    cpu: "100"    # Increased from 50
-    memory: "200Gi"  # Increased from 100Gi
-    jobs: "1000"  # Increased from 500
-    storage: "2Ti"   # Increased from 1Ti
-```
-
-Apply the update:
-```bash
-kubectl apply -f tenant-updated.yaml
-
-# Verify quota was updated
-kubectl describe resourcequota -n tenant-acme
-```
-
-### Manage Tenant Keys/Credentials
-
-#### CloudFoundry Service Credentials
-
-```bash
-# Get service credentials
-cf service-key nats-acme muto-creds
-
-# Rotate credentials
-cf delete-service-key nats-acme muto-creds
-cf create-service-key nats-acme muto-creds
-
-# Update in Muto
-cf set-env muto-app NATS_CREDENTIALS_FILE /path/to/new-creds
-cf restage muto-app
-```
-
-#### Kubernetes Secrets
-
-```bash
-# Create secret for tenant credentials
-kubectl create secret generic tenant-acme-creds \
-  --from-literal=username=acme-user \
-  --from-literal=password=secret-password \
-  -n tenant-acme
-
-# Reference in AgentJob
-apiVersion: muto.io/v1
-kind: AgentJob
-metadata:
-  name: secure-job
+  name: tenant-viewer
   namespace: tenant-acme
-spec:
-  agents:
-  - name: processor
-    image: myorg/processor:v1
-    env:
-    - name: DB_USER
-      valueFrom:
-        secretKeyRef:
-          name: tenant-acme-creds
-          key: username
+rules:
+- apiGroups: ["muto.io"]
+  resources: ["agentjobs"]
+  verbs: ["get", "list", "watch"]
 ```
 
----
-
-## Tenant Cleanup and Deletion
-
-### Offboard a Tenant
-
-**Step 1: Stop accepting new jobs**
-```bash
-kubectl patch tenant customer-acme \
-  -p '{"spec":{"status":"suspended"}}' \
-  -n muto-system
-```
-
-**Step 2: Wait for running jobs to complete**
-```bash
-# Monitor job completion
-kubectl get agentjobs -n tenant-acme --watch
-
-# Or force-terminate long-running jobs
-kubectl delete agentjobs --all -n tenant-acme --grace-period=30
-```
-
-**Step 3: Export data (if needed)**
-```bash
-# Backup tenant configuration
-kubectl get all -n tenant-acme -o yaml > tenant-acme-backup.yaml
-
-# Export message bus data
-# For NATS - configure backup
-# For Kafka - run consumer to export topics
-kafka-console-consumer.sh \
-  --bootstrap-server kafka:9092 \
-  --group tenant-acme-backup \
-  --topic tenant-acme-workflow \
-  --from-beginning > tenant-acme-messages.json
-```
-
-**Step 4: Delete tenant**
-```bash
-# On Kubernetes
-kubectl delete tenant customer-acme -n muto-system
-
-# This triggers cascading delete of:
-# - Tenant namespace
-# - All resources in namespace
-# - RBAC policies
-# - Network policies
-# - Quotas
-
-# On CloudFoundry
-cf delete-space production -o acme-corp
-cf delete-org acme-corp
-```
-
-**Step 5: Verify cleanup**
-```bash
-# Confirm namespace is gone
-kubectl get ns tenant-acme
-# Should return "not found"
-
-# Confirm message bus topics are cleaned
-kafka-topics.sh --list --bootstrap-server kafka:9092 | grep tenant-acme
-# Should return nothing (or topics can persist for audit)
-```
-
----
-
-## Multi-Tenant Patterns
-
-### Pattern 1: Single Tenant per Cluster
-
-Simplest deployment - entire cluster for one tenant.
-
-**Pros:** Maximum isolation, simplest management
-**Cons:** Higher infrastructure cost, underutilization possible
-
-```bash
-export MUTO_PLATFORM=k8s
-export MUTO_K8S_NAMESPACE=muto-system
-# Single tenant namespace
-export MUTO_TENANT_NAMESPACE_PREFIX=production-
-```
-
-### Pattern 2: Multiple Tenants in One Cluster
-
-Multiple tenants in a shared cluster with isolation via namespaces.
-
-**Pros:** Cost-efficient, dynamic tenant onboarding
-**Cons:** More complex isolation verification
-
-```yaml
-# Create multiple tenant namespaces
----
-apiVersion: muto.io/v1
-kind: Tenant
-metadata:
-  name: customer-acme
-spec:
-  quotas:
-    cpu: "50"
-    memory: "100Gi"
----
-apiVersion: muto.io/v1
-kind: Tenant
-metadata:
-  name: customer-globex
-spec:
-  quotas:
-    cpu: "75"
-    memory: "150Gi"
-```
-
-### Pattern 3: Shared Message Bus, Isolated Namespaces
-
-Shared message bus infrastructure but isolated topics per tenant.
-
-**Pros:** Simpler ops, efficient messaging infrastructure
-**Cons:** Message bus becomes critical path
-
-```bash
-# All tenants use same NATS cluster
-export MUTO_NATS_URL=nats://shared-nats:4222
-
-# But use tenant-specific topic prefixes
-# Configured per-tenant in Tenant resource
-# tenant-acme/workflow/*
-# tenant-globex/workflow/*
-```
-
----
-
-## Best Practices for Multi-Tenancy
-
-1. **Start Simple**: Begin with single tenant, add multi-tenancy when needed
-
-2. **Test Isolation**: Regularly verify no cross-tenant access
-
-3. **Monitor per Tenant**: Track quota usage and enforce limits
-
-4. **Document Access**: Keep clear records of who has access to what
-
-5. **Rotate Credentials**: Regularly rotate tenant credentials and keys
-
-6. **Plan Capacity**: Build buffer into quotas for growth
-
-7. **Audit Access**: Log all tenant operations for compliance
-
-8. **Backup per Tenant**: Separate backups for each tenant when possible
-
----
-
-## Troubleshooting Multi-Tenancy
-
-### Tenant Jobs Not Scheduling
-
-```bash
-# Check tenant status
-kubectl get tenant <name> -n muto-system -o yaml
-
-# Verify namespace exists
-kubectl get ns tenant-<name>
-
-# Check resource quotas
-kubectl describe resourcequota -n tenant-<name>
-
-# Check reconciler logs
-kubectl logs -n muto-system deployment/muto-operator | grep <tenant-name>
-```
-
-### Cross-Tenant Access Detected
-
-```bash
-# Check network policies
-kubectl get networkpolicies -n tenant-<name>
-
-# Verify RBAC
-kubectl get rolebindings -n tenant-<name>
-
-# Check pod connectivity
-kubectl exec -it <pod> -n tenant-a -- nc -zv <pod-ip-in-tenant-b> 5000
-# Should fail if isolation is working
-```
-
-### Message Bus Topic Leakage
-
-```bash
-# NATS - check subject subscriptions
-curl http://nats:8222/connz | jq '.conns[].subs | select(contains("cross-tenant"))'
-
-# Kafka - verify consumer group
-kafka-consumer-groups.sh --bootstrap-server kafka:9092 --group <group> --describe
-```
-
----
+(For the RBAC the **operator itself** needs cluster-wide to manage all tenants, see [Security Configuration](./tls-security.md#kubernetes-rbac) - that's the chart-managed `ClusterRole`, a separate thing from the per-tenant `Role` above.)
 
 ## See Also
 
-- [Environment Variables](./environment-variables.md) - Tenant configuration options
-- [TLS and Security](./tls-security.md) - Tenant authentication and encryption
-- [Deployment Production Checklist](../deployment/production-checklist.md) - Multi-tenancy verification
-- [Architecture: Security Model](../architecture/security-model.md) - How isolation works
-
----
+- [Environment Variables](./environment-variables.md) - `MUTO_A2A_GATEWAY_IMAGE`, `CF_ISOLATION_TIER`, `CF_SHARED_ORG`, and other configuration variables
+- [Security Configuration](./tls-security.md) - what RBAC/TLS Muto itself manages vs. what's on you
+- [Message Bus Setup](./message-bus-setup.md) - NATS/Kafka connection configuration

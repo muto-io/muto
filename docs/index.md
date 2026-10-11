@@ -57,7 +57,7 @@ Deep dive into Muto's design. Understand messaging, reconciliation, multi-platfo
 | [Messaging](architecture/messaging.md) | Message bus design, communication patterns, guarantees | Engineers |
 | [Reconcilers](architecture/reconcilers.md) | Reconciliation framework and custom reconciler development | Engineers |
 | [Platform Design](architecture/platform-design.md) | Multi-platform abstraction layer (Kubernetes + CloudFoundry) | Engineers |
-| [Security Model](architecture/security-model.md) | Tenant isolation, RBAC, encryption, audit logging | Architects |
+| [Security Model](architecture/security-model.md) | What Muto actually isolates and controls access to today | Architects |
 
 **Next steps:** Start with [Platform Design](architecture/platform-design.md), then explore [Messaging](architecture/messaging.md), [Reconcilers](architecture/reconcilers.md), and [Security Model](architecture/security-model.md).
 
@@ -88,17 +88,17 @@ Deploy Muto to production on Kubernetes or CloudFoundry. Includes installation g
 
 ### 4. Configuration
 
-Configure Muto for your environment. Set up message buses, define reconcilers, enable TLS, and configure multi-tenancy.
+Configure Muto for your environment, and understand what's actually configurable today vs. what's on you to set up yourself.
 
 | File | Purpose | Audience |
 |------|---------|----------|
 | [Environment Variables](configuration/environment-variables.md) | Complete reference of all configuration variables | Operators |
-| [Message Bus Setup](configuration/message-bus-setup.md) | Configure NATS, RabbitMQ, or Kafka | Operators |
-| [Reconciler Configuration](configuration/reconciler-config.md) | Configure and extend reconcilers | Engineers |
-| [TLS & Security](configuration/tls-security.md) | Enable encryption, mTLS, and secure communication | Operators |
-| [Multi-Tenant Setup](configuration/multi-tenant-setup.md) | Configure tenant isolation and policies | Operators |
+| [Message Bus Setup](configuration/message-bus-setup.md) | What the NATS/Kafka message bus code does today, and what it doesn't | Operators |
+| [Reconciler Configuration](configuration/reconciler-config.md) | The real reconcilers and their actual (hardcoded) requeue behavior | Engineers |
+| [TLS & Security](configuration/tls-security.md) | RBAC, secrets, and what Muto deliberately doesn't do (TLS/mTLS/webhooks) | Operators |
+| [Multi-Tenant Setup](configuration/multi-tenant-setup.md) | What the `Tenant` CRD actually provisions, and what you still have to set up yourself | Operators |
 
-**Next steps:** Start with [Environment Variables](configuration/environment-variables.md), then configure [Message Bus](configuration/message-bus-setup.md) and [TLS](configuration/tls-security.md) based on your deployment model.
+**Next steps:** Start with [Environment Variables](configuration/environment-variables.md), then read [Multi-Tenant Setup](configuration/multi-tenant-setup.md) and [TLS & Security](configuration/tls-security.md) to understand what Muto manages vs. what you're responsible for.
 
 ---
 
@@ -129,10 +129,10 @@ Complete API documentation: CRD types, message API, webhook API, and MCP tools.
 | [API Documentation](api/index.md) | Complete API overview, guides, and integration examples | Everyone |
 | [CRD Types](api-reference/crd-types.md) | Agent, Job, Reconciler CRD definitions and fields | Engineers |
 | [Message API](api-reference/message-api.md) | Message bus protocol and message formats | Engineers |
-| [Webhook API](api-reference/webhook-api.md) | Webhook endpoints and event notifications | Engineers |
+| [Webhook API](api-reference/webhook-api.md) | Why no webhook delivery mechanism exists yet, and what building one would take | Engineers |
 | [MCP Tools](api-reference/mcp-tools.md) | Model Context Protocol tools and integration | Engineers |
 
-**Next steps:** Start with [API Documentation](api/index.md) for an overview, then dive into [CRD Types](api-reference/crd-types.md) to understand the data model and explore [Message API](api-reference/message-api.md) and [Webhook API](api-reference/webhook-api.md) for communication patterns.
+**Next steps:** Start with [API Documentation](api/index.md) for an overview, then dive into [CRD Types](api-reference/crd-types.md) to understand the data model and [Message API](api-reference/message-api.md) for communication patterns. (There's no webhook delivery mechanism yet - see [Webhook API](api-reference/webhook-api.md) for what's missing.)
 
 ---
 
@@ -294,8 +294,8 @@ Start here to get up to speed with the team and project:
 
 **Configuration:**
 - [All Environment Variables](configuration/environment-variables.md) - Complete config reference
-- [Message Bus Setup](configuration/message-bus-setup.md) - Choose and configure a message bus
-- [Security & TLS](configuration/tls-security.md) - Enable encryption
+- [Message Bus Setup](configuration/message-bus-setup.md) - What the NATS/Kafka code actually does
+- [Security & TLS](configuration/tls-security.md) - RBAC and known limitations
 
 ---
 

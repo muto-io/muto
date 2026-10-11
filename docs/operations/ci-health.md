@@ -1,6 +1,6 @@
 # CI/CD Health
 
-Health of the Muto CI/CD pipeline over the last 30 days, refreshed daily by the docs build. Only runs on `main`, scheduled runs and release tags are counted; pull-request runs are excluded.
+Health of the Muto CI/CD pipeline over the last 30 days, refreshed daily by the docs build. Only the `CI`, `E2E Tests`, `Release` and `Build and Deploy GitHub Pages` workflows are counted, and only runs on `main`, scheduled runs and release tags; pull-request runs are excluded.
 
 <div id="ci-health-root" data-src="data.json">Loading…</div>
 

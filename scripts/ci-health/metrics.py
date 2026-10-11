@@ -23,6 +23,9 @@ TEST_JOBS = {
     ),
 }
 
+# Workflows whose runs count towards the success rates (dashboard rows).
+TRACKED_WORKFLOWS = ("CI", "E2E Tests", "Release", "Build and Deploy GitHub Pages")
+
 # Conclusions that count towards a success rate. cancelled/skipped/None
 # (still running) say nothing about health and are excluded.
 COUNTED_CONCLUSIONS = ("success", "failure", "timed_out")
@@ -64,16 +67,22 @@ def _rate(success: int, failed: int) -> dict:
 
 
 def workflow_success_rates(runs) -> dict:
-    """Overall and per-workflow success rate from workflow-run dicts."""
-    counts: dict[str, list[int]] = {}
+    """Overall and per-workflow success rate from workflow-run dicts.
+
+    Only runs of TRACKED_WORKFLOWS are counted. Every tracked workflow appears
+    in by_workflow, with a null rate when it has no counted runs.
+    """
+    counts: dict[str, list[int]] = {name: [0, 0] for name in TRACKED_WORKFLOWS}
     for run in runs:
         if not is_health_run(run):
             continue
         conclusion = run.get("conclusion")
         if conclusion not in COUNTED_CONCLUSIONS:
             continue
-        success_failed = counts.setdefault(run["name"], [0, 0])
-        success_failed[0 if conclusion == "success" else 1] += 1
+        name = run["name"]
+        if name not in TRACKED_WORKFLOWS:
+            continue
+        counts[name][0 if conclusion == "success" else 1] += 1
     overall_success = sum(c[0] for c in counts.values())
     overall_failed = sum(c[1] for c in counts.values())
     return {

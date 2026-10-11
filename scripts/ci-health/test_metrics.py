@@ -56,11 +56,29 @@ class WorkflowSuccessRatesTest(unittest.TestCase):
         self.assertAlmostEqual(result["by_workflow"]["CI"]["rate"], 0.75)
         self.assertEqual(result["by_workflow"]["E2E Tests"]["rate"], 0.0)
 
+    def test_untracked_workflows_are_excluded(self):
+        runs = [
+            run("CI", "success"),
+            run("go_modules in /. - Update #1", "success"),
+            run("SLA Monitor", "failure", event="schedule"),
+        ]
+        result = metrics.workflow_success_rates(runs)
+        self.assertEqual(result["overall"]["total"], 1)
+        self.assertEqual(result["overall"]["success"], 1)
+        self.assertEqual(set(result["by_workflow"]), set(metrics.TRACKED_WORKFLOWS))
+        self.assertEqual(result["by_workflow"]["CI"]["total"], 1)
+
     def test_no_runs_gives_null_rate_not_zero(self):
         result = metrics.workflow_success_rates([])
         self.assertEqual(result["overall"]["total"], 0)
         self.assertIsNone(result["overall"]["rate"])
-        self.assertEqual(result["by_workflow"], {})
+        self.assertEqual(
+            result["by_workflow"],
+            {
+                name: {"success": 0, "failed": 0, "total": 0, "rate": None}
+                for name in ("CI", "E2E Tests", "Release", "Build and Deploy GitHub Pages")
+            },
+        )
 
 
 class TestJobPassRatesTest(unittest.TestCase):

@@ -1,0 +1,32 @@
+name: CI Failure Notify
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+      - E2E Tests
+      - Release
+      - Build and Deploy GitHub Pages
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Test message to post to Slack (verifies the webhook wiring)
+        required: false
+        default: "CI/CD health notifications: test message"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Send notification
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python3 scripts/ci-health/notify.py

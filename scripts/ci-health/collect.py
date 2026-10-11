@@ -64,11 +64,18 @@ def attach_reviews(client, repo, prs):
 
 
 def _section(errors, name, fn):
+    """Run one metric; on failure null it and record why under `errors`.
+
+    Any malformed API payload (missing keys, wrong types, unparseable
+    timestamps) must only cost this section, never the whole build.
+    """
     try:
         return fn()
     except GitHubError as exc:
         errors[name] = str(exc)
-        return None
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        errors[name] = f"{type(exc).__name__}: {exc}"
+    return None
 
 
 def collect(client, repo, now, window_days=WINDOW_DAYS):
@@ -76,26 +83,34 @@ def collect(client, repo, now, window_days=WINDOW_DAYS):
     errors: dict[str, str] = {}
 
     runs = _section(errors, "workflows", lambda: fetch_runs(client, repo, start))
-    workflows = metrics.workflow_success_rates(runs) if runs is not None else None
+    workflows = None
+    if runs is not None:
+        workflows = _section(errors, "workflows", lambda: metrics.workflow_success_rates(runs))
 
     test_jobs = None
     if runs is None:
         errors["test_jobs"] = "workflow runs unavailable"
     else:
-        pairs = _section(errors, "test_jobs", lambda: fetch_test_job_pairs(client, repo, runs))
-        if pairs is not None:
-            test_jobs = metrics.test_job_pass_rates(pairs)
+        test_jobs = _section(
+            errors,
+            "test_jobs",
+            lambda: metrics.test_job_pass_rates(fetch_test_job_pairs(client, repo, runs)),
+        )
 
     prs = _section(errors, "dependabot", lambda: fetch_prs(client, repo, start))
-    dependabot = metrics.dependabot_stats(prs, start) if prs is not None else None
+    dependabot = None
+    if prs is not None:
+        dependabot = _section(errors, "dependabot", lambda: metrics.dependabot_stats(prs, start))
 
     review = None
     if prs is None:
         errors["review"] = "pull requests unavailable"
     else:
-        with_reviews = _section(errors, "review", lambda: attach_reviews(client, repo, prs))
-        if with_reviews is not None:
-            review = metrics.review_turnaround(with_reviews, start)
+        review = _section(
+            errors,
+            "review",
+            lambda: metrics.review_turnaround(attach_reviews(client, repo, prs), start),
+        )
 
     return {
         "generated_at": now.isoformat(timespec="seconds"),

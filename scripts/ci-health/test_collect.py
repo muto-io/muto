@@ -118,5 +118,27 @@ class CollectTest(unittest.TestCase):
         self.assertIsNone(result["review"]["first_review_hours"])
 
 
+    def test_pr_missing_created_at_nulls_only_dependabot_and_review(self):
+        bad_prs = [{"number": 9, "user": {"login": "alice"}, "merged_at": None}] + PRS
+        client = FakeClient(data(**{f"/repos/{REPO}/pulls": bad_prs}))
+        result = collect.collect(client, REPO, NOW)
+        self.assertIsNone(result["dependabot"])
+        self.assertIsNone(result["review"])
+        self.assertIn("dependabot", result["errors"])
+        self.assertIn("review", result["errors"])
+        self.assertIsNotNone(result["workflows"])
+        self.assertIsNotNone(result["test_jobs"])
+
+    def test_run_missing_name_nulls_workflows_but_not_other_sections(self):
+        bad_runs = [{"id": 9, "conclusion": "failure", "head_branch": "main", "event": "push"}] + RUNS
+        client = FakeClient(data(**{f"/repos/{REPO}/actions/runs": bad_runs}))
+        result = collect.collect(client, REPO, NOW)
+        self.assertIsNone(result["workflows"])
+        self.assertIn("workflows", result["errors"])
+        self.assertIsNotNone(result["test_jobs"])
+        self.assertEqual(result["dependabot"]["opened"], 1)
+        self.assertIsNotNone(result["review"])
+
+
 if __name__ == "__main__":
     unittest.main()

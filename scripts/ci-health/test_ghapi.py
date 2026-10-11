@@ -1,4 +1,6 @@
+import http.client
 import unittest
+from unittest import mock
 
 import ghapi
 
@@ -48,6 +50,19 @@ class PaginateTest(unittest.TestCase):
         link = '<https://example.test/again>; rel="next"'
         client = FakeClient([([1], link)] * 5)
         self.assertEqual(list(client.paginate("/x", max_pages=3)), [1, 1, 1])
+
+
+class RequestErrorWrappingTest(unittest.TestCase):
+    def _assert_wrapped(self, exc):
+        with mock.patch("urllib.request.urlopen", side_effect=exc):
+            with self.assertRaises(ghapi.GitHubError):
+                ghapi.GitHubClient()._request("https://example.test/x")
+
+    def test_connection_reset_is_wrapped(self):
+        self._assert_wrapped(ConnectionResetError("reset"))
+
+    def test_incomplete_read_is_wrapped(self):
+        self._assert_wrapped(http.client.IncompleteRead(b""))
 
 
 if __name__ == "__main__":

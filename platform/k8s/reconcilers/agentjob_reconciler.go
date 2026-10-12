@@ -172,6 +172,18 @@ func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1al
 			return ctrl.Result{}, fmt.Errorf("terminate agent %s: %w", id, err)
 		}
 	}
+	// Remove the finalizer before deleting so this TTL-driven delete doesn't
+	// re-enter finalizeAgentJob and terminate every agent a second time -
+	// harmless on K8s (TerminateAgent swallows NotFound) but not on CF
+	// (CFAdapter.TerminateAgent only swallows "succeeded"/"failed" errors,
+	// so a second cancel on an already-canceling task would stick the
+	// finalizer forever).
+	if controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+		controllerutil.RemoveFinalizer(job, agentJobFinalizer)
+		if err := r.Update(ctx, job); err != nil {
+			return ctrl.Result{}, fmt.Errorf("remove finalizer: %w", err)
+		}
+	}
 	if err := r.Delete(ctx, job); err != nil && !errors.IsNotFound(err) {
 		return ctrl.Result{}, fmt.Errorf("delete agentjob: %w", err)
 	}

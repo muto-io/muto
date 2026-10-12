@@ -13,6 +13,7 @@ import (
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -578,6 +579,56 @@ func TestAgentJobReconcilerDeletionTerminatesAgentsAndRemovesFinalizer(t *testin
 	err := fakeClient.Get(context.Background(), types.NamespacedName{Name: "deleting-job", Namespace: "deleting-ns"}, remaining)
 	if err == nil {
 		t.Errorf("expected AgentJob to be fully deleted once finalizer is removed, got finalizers: %v", remaining.Finalizers)
+	}
+}
+
+func TestAgentJobReconcilerTerminatingDeletesWithoutDoubleTerminate(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+
+	job := &v1alpha1.AgentJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "ttl-job",
+			Namespace:  "ttl-ns",
+			Finalizers: []string{"muto.io/agentjob-cleanup"},
+		},
+		Spec: v1alpha1.AgentJobSpec{
+			TenantRef: "ttl-tenant",
+			Agents:    []v1alpha1.AgentRoleSpec{{Role: "worker", Image: "img:1", MaxReplicas: 2}},
+		},
+		Status: v1alpha1.AgentJobStatus{
+			Phase:    "Terminating",
+			AgentIDs: []string{"ttl-ns/agent-0", "ttl-ns/agent-1"},
+		},
+	}
+
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(job).
+		WithStatusSubresource(&v1alpha1.AgentJob{}).Build()
+
+	adapter := newFakeAdapter()
+	r := &reconcilers.AgentJobReconciler{Client: fakeClient, Scheme: scheme, Adapter: adapter}
+
+	// The job is already in the TTL-driven Terminating phase (not a direct
+	// delete), with the finalizer already present as every reconciled
+	// AgentJob now carries it. A single reconcile must terminate each
+	// tracked agent exactly once and fully delete the object - not merely
+	// set a DeletionTimestamp that would bounce back through
+	// finalizeAgentJob and terminate everything a second time.
+	if _, err := r.Reconcile(context.Background(), ctrl.Request{
+		NamespacedName: types.NamespacedName{Name: "ttl-job", Namespace: "ttl-ns"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(adapter.terminated) != 2 {
+		t.Fatalf("expected TerminateAgent called exactly once per tracked agent (2), got %d: %v", len(adapter.terminated), adapter.terminated)
+	}
+
+	remaining := &v1alpha1.AgentJob{}
+	err := fakeClient.Get(context.Background(), types.NamespacedName{Name: "ttl-job", Namespace: "ttl-ns"}, remaining)
+	if !errors.IsNotFound(err) {
+		t.Fatalf("expected AgentJob to be fully deleted in one pass, got err=%v remaining=%+v", err, remaining)
 	}
 }
 

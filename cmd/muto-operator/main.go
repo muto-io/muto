@@ -139,9 +139,10 @@ func run() int {
 		return 1
 	}
 
-	// platformAdapter is used by the DefaultScheduler for direct job scheduling
-	// (e.g. via the MCP server). K8s reconcilers use mgr.GetClient() directly
-	// and are platform-independent.
+	// AgentJobReconciler delegates agent spawn/status/terminate calls to
+	// platformAdapter, so it is platform-independent regardless of which
+	// adapter was selected above. The other reconcilers only manage CRD
+	// state via mgr.GetClient() and never touch agent compute directly.
 	log.Info("platform adapter initialized", "platform", platform, "type", fmt.Sprintf("%T", platformAdapter))
 
 	if err := (&reconcilers.TenantReconciler{
@@ -153,8 +154,9 @@ func run() int {
 	}
 
 	if err := (&reconcilers.AgentJobReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Adapter: platformAdapter,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create AgentJobReconciler")
 		return 1

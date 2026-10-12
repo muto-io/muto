@@ -138,4 +138,6 @@ extra:
       name: GitHub
 
 docs_dir: docs
+exclude_docs: |
+  superpowers/
 site_dir: site

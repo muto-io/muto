@@ -24,8 +24,6 @@ permissions:
   contents: read
   actions: read
   pull-requests: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -74,6 +72,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

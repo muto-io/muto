@@ -72,8 +72,9 @@ type Spec struct {
 	Agents             []AgentRole
 	MessageBus         MessageBusConfig
 	TTLAfterCompletion int32
-	Name               string // unique instance hint, e.g. "<job>-<role>-<replica>"
-	Namespace          string // k8s target namespace hint; ignored by non-k8s adapters
+	Name               string            // unique instance hint, e.g. "<job>-<role>-<replica>"
+	Namespace          string            // k8s target namespace hint; ignored by non-k8s adapters
+	Labels             map[string]string // k8s pod labels hint; ignored by non-k8s adapters
 }
 
 type MessageBusConfig struct {
@@ -82,10 +83,26 @@ type MessageBusConfig struct {
 }
 ```
 
-Both new `Spec` fields and the new `MessageBus.Type` field are optional/additive.
+All new `Spec` fields and the new `MessageBus.Type` field are optional/additive.
 Existing callers (`DefaultScheduler`) that don't set them get today's behavior
 unchanged, because every adapter falls back to its current default when a field is
 empty.
+
+> **Correction found during implementation planning:** the existing integration test
+> suite (`test/integration/k8s/agentjob_lifecycle_test.go`,
+> `k8s_multiagent_coordination_test.go`, `k8s_advanced_failure_test.go`,
+> `k8s_stress_comprehensive_test.go`, `failure_scenarios_test.go`,
+> `helm_deployment_test.go`, `a2a_gateway_test.go`) extensively asserts on
+> `muto.io/job`, `muto.io/tenant`, and `muto.io/role` pod labels (list-by-label,
+> read-label-back). `K8sAdapter.SpawnAgent` only sets `muto.io/tenant` and
+> `muto.io/role` today; the reconciler's own `buildPod` additionally sets `muto.io/job`.
+> Moving pod creation into the adapter must preserve all three. Added:
+> `Labels map[string]string` on `Spec` — when non-empty, `K8sAdapter.SpawnAgent` uses it
+> verbatim as the pod's labels; when empty (the `DefaultScheduler`/MCP path, which never
+> sets it), it falls back to today's `{"muto.io/tenant": ..., "muto.io/role": ...}`
+> default, unchanged. The reconciler sets
+> `{"muto.io/tenant": job.Spec.TenantRef, "muto.io/job": job.Name, "muto.io/role":
+> roleSpec.Role}` per spawn call.
 
 ### 2. `core/scheduler.PlatformAdapter` additions
 
@@ -112,7 +129,13 @@ Each adapter extracts that single check into a private helper (e.g.
 logic.
 
 Adding this method to the interface is a superset change — `DefaultScheduler` is
-unaffected and continues to use `WatchAgent` exactly as today.
+unaffected and continues to use `WatchAgent` exactly as today. It does, however, mean
+every existing hand-written `PlatformAdapter` fake must grow a trivial `AgentStatus`
+stub to keep compiling: `mockAdapter`, `completingAdapter`, `failingAdapter`, and
+`blockingAdapter` in `core/scheduler/scheduler_test.go`, and `stubAdapter` in
+`core/tracing/scheduler_test.go`. `core/tracing.tracedPlatformAdapter`
+(`core/tracing/scheduler.go`) also needs a real (non-stub) `AgentStatus` method that
+wraps `inner.AgentStatus` in a span, consistent with its other three methods.
 
 ### 3. `K8sAdapter` changes
 
@@ -120,7 +143,8 @@ unaffected and continues to use `WatchAgent` exactly as today.
   `muto-<tenant>-<role>` default (preserves exact behavior for `DefaultScheduler`
   callers, which never set `Name`). Pod namespace becomes `spec.Namespace` when
   non-empty, else `a.namespace` (the adapter's constructor default, used as-is by
-  `DefaultScheduler`).
+  `DefaultScheduler`). Pod labels become `spec.Labels` when non-empty, else the
+  current `{"muto.io/tenant": ..., "muto.io/role": ...}` default.
 - **Opaque composite ID**: `SpawnAgent` returns `"<namespace>/<podName>"` instead of
   just `podName`. `TerminateAgent`, `WatchAgent`, and `AgentStatus` all parse this back
   into namespace + name via `strings.Cut(agentID, "/")`. This keeps the
@@ -175,6 +199,11 @@ Gains a field: `Adapter scheduler.PlatformAdapter`.
   	Agents:    []agent.AgentRole{roleSpec},
   	Name:      podName, // see naming scheme above
   	Namespace: job.Namespace,
+  	Labels: map[string]string{
+  		"muto.io/tenant": job.Spec.TenantRef,
+  		"muto.io/job":    job.Name,
+  		"muto.io/role":   roleSpec.Role,
+  	},
   	MessageBus: agent.MessageBusConfig{
   		Topic: job.Spec.MessageBus.Topic,
   		Type:  tenant.Spec.MessageBus.Type,
@@ -252,12 +281,22 @@ state: `AgentJobReconciler` is platform-independent *because* it delegates to
 
 ## Files touched
 
-- `core/agent/agent.go` (or wherever `Spec`/`MessageBusConfig` live)
-- `core/scheduler/scheduler.go`
+- `core/agent/types.go` (`Spec`, `MessageBusConfig`)
+- `core/scheduler/scheduler.go` (interface), `core/scheduler/scheduler_test.go` (fake
+  adapter stubs)
+- `core/tracing/scheduler.go` (`tracedPlatformAdapter.AgentStatus`),
+  `core/tracing/scheduler_test.go` (`stubAdapter` stub + wrap test)
 - `platform/k8s/adapter.go`, `platform/k8s/adapter_test.go`
 - `platform/cf/adapter.go`, `platform/cf/adapter_test.go`
 - `platform/k8s/types/v1alpha1/agentjob_types.go` (+ regenerate
-  `zz_generated.deepcopy.go`)
+  `zz_generated.deepcopy.go` and `deploy/crds/muto.io_agentjobs.yaml` /
+  `deploy/helm/muto/templates/crds/agentjobs.yaml` via `make generate`)
 - `platform/k8s/reconcilers/agentjob_reconciler.go`,
   `platform/k8s/reconcilers/agentjob_reconciler_test.go`
 - `cmd/muto-operator/main.go`
+
+No changes needed in `test/integration/...` — those exercise either the MCP/
+`DefaultScheduler` path (unaffected) or the `AgentJobReconciler` path at the black-box
+CR/Pod level, which this design preserves (same `muto.io/job`/`muto.io/tenant`/
+`muto.io/role` labels, same eventual `Phase`/`ActiveAgents` status fields). They require
+a live k3s cluster and are not run as part of this plan's verification.

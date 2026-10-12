@@ -85,7 +85,7 @@ func (a *K8sAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, 
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}
-	if err := a.client.Create(ctx, pod); err != nil {
+	if err := a.client.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
 		return "", fmt.Errorf("create pod: %w", err)
 	}
 	return namespace + "/" + podName, nil

@@ -210,6 +210,37 @@ func TestSpawnAgentNoA2AEnvVarsForOtherBusType(t *testing.T) {
 	}
 }
 
+func TestSpawnAgentToleratesAlreadyExists(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	adapter := k8sadapter.NewK8sAdapter(fakeClient, "acme-agents")
+	spec := &agent.Spec{
+		TenantRef: "acme",
+		Agents:    []agent.AgentRole{{Role: "worker", Image: "worker:latest"}},
+		Name:      "job-1-worker-0",
+		Namespace: "acme-agents",
+	}
+
+	firstID, err := adapter.SpawnAgent(context.Background(), spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-spawning the same role/replica name (e.g. a reconciler retry after a
+	// status-update failure that left the pod already created) must not
+	// error, and must return the same composite ID.
+	secondID, err := adapter.SpawnAgent(context.Background(), spec)
+	if err != nil {
+		t.Fatalf("expected re-spawn with same Name/Namespace to tolerate AlreadyExists, got error: %v", err)
+	}
+	if secondID != firstID {
+		t.Errorf("got id %q on retry, want same id %q", secondID, firstID)
+	}
+}
+
 func TestAgentStatusTransitions(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)

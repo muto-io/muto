@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import os
 import tempfile
@@ -193,6 +195,60 @@ class DecideMessageTest(unittest.TestCase):
         self.assertEqual(text, "hello")
         default = self.decide("workflow_dispatch", {}, FakeClient())
         self.assertEqual(default, notify.DEFAULT_TEST_MESSAGE)
+
+
+class MainTest(unittest.TestCase):
+    def setUp(self):
+        stdout = contextlib.redirect_stdout(io.StringIO())
+        stdout.__enter__()
+        self.addCleanup(stdout.__exit__, None, None, None)
+
+    def write_event(self, event):
+        handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
+        self.addCleanup(os.unlink, handle.name)
+        with handle:
+            json.dump(event, handle)
+        return handle.name
+
+    def env(self, event_path):
+        return {
+            "SLACK_WEBHOOK_URL": "https://hooks.test/abc",
+            "GITHUB_EVENT_NAME": "workflow_run",
+            "GITHUB_EVENT_PATH": event_path,
+            "GITHUB_REPOSITORY": REPO,
+            "GITHUB_TOKEN": "token",
+        }
+
+    def test_main_without_webhook_skips_everything(self):
+        with mock.patch.dict(os.environ, {}, clear=True), \
+                mock.patch.object(notify, "post_slack") as post, \
+                mock.patch.object(notify, "GitHubClient") as client_cls, \
+                mock.patch("builtins.open") as opened:
+            self.assertEqual(notify.main(), 0)
+        post.assert_not_called()
+        client_cls.assert_not_called()
+        opened.assert_not_called()
+
+    def test_main_failed_run_posts_alert(self):
+        path = self.write_event({"workflow_run": run()})
+        fake = FakeClient(jobs=[{"name": "Unit Tests", "conclusion": "failure"}])
+        with mock.patch.dict(os.environ, self.env(path), clear=True), \
+                mock.patch.object(notify, "GitHubClient", return_value=fake), \
+                mock.patch.object(notify, "post_slack") as post:
+            self.assertEqual(notify.main(), 0)
+        post.assert_called_once()
+        webhook, text = post.call_args.args
+        self.assertEqual(webhook, "https://hooks.test/abc")
+        self.assertIn("CI", text)
+        self.assertIn("Unit Tests", text)
+
+    def test_main_success_without_previous_failure_is_silent(self):
+        path = self.write_event({"workflow_run": run(conclusion="success")})
+        with mock.patch.dict(os.environ, self.env(path), clear=True), \
+                mock.patch.object(notify, "GitHubClient", return_value=FakeClient()), \
+                mock.patch.object(notify, "post_slack") as post:
+            self.assertEqual(notify.main(), 0)
+        post.assert_not_called()
 
 
 class PostSlackTest(unittest.TestCase):

@@ -16,6 +16,7 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	tck3s "github.com/testcontainers/testcontainers-go/modules/k3s"
 
+	k8sadapter "github.com/muto-io/muto/platform/k8s"
 	"github.com/muto-io/muto/platform/k8s/reconcilers"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -175,8 +176,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 
 	if err := (&reconcilers.AgentJobReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Adapter: k8sadapter.NewK8sAdapter(mgr.GetClient(), "default"),
 	}).SetupWithManager(mgr); err != nil {
 		Skip("Kubernetes cluster not available: failed to setup AgentJobReconciler: " + err.Error())
 	}

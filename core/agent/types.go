@@ -39,6 +39,7 @@ type Trigger struct {
 
 type MessageBusConfig struct {
 	Topic string
+	Type  string // mirrors TenantBusSpec.Type, e.g. "a2a"; "" means no special handling
 }
 
 type Spec struct {
@@ -47,6 +48,12 @@ type Spec struct {
 	Agents             []AgentRole
 	MessageBus         MessageBusConfig
 	TTLAfterCompletion int32
+	Name               string            // unique instance hint, e.g. "<job>-<role>-<replica>"
+	Namespace          string            // k8s target namespace hint; ignored by non-k8s adapters
+	Labels             map[string]string // k8s pod labels hint; ignored by non-k8s adapters
+	// JobID is the originating AgentJob's name; empty when spawned outside a
+	// CRD-backed job (e.g. via the MCP scheduler).
+	JobID string
 }
 
 type Status struct {

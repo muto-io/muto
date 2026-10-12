@@ -35,6 +35,10 @@ func (m *mockAdapter) WatchAgent(_ context.Context, _ string) (<-chan agent.Even
 	return ch, nil
 }
 
+func (m *mockAdapter) AgentStatus(_ context.Context, _ string) (*agent.Event, error) {
+	return nil, nil
+}
+
 // completingAdapter returns a channel that immediately sends EventCompleted.
 type completingAdapter struct {
 	spawned    []string
@@ -57,6 +61,10 @@ func (m *completingAdapter) WatchAgent(_ context.Context, agentID string) (<-cha
 	return ch, nil
 }
 
+func (m *completingAdapter) AgentStatus(_ context.Context, agentID string) (*agent.Event, error) {
+	return &agent.Event{AgentID: agentID, Type: agent.EventCompleted}, nil
+}
+
 // failingAdapter returns a channel that immediately sends EventFailed.
 type failingAdapter struct{ spawned []string }
 
@@ -71,6 +79,10 @@ func (m *failingAdapter) WatchAgent(_ context.Context, agentID string) (<-chan a
 	ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed}
 	close(ch)
 	return ch, nil
+}
+
+func (m *failingAdapter) AgentStatus(_ context.Context, agentID string) (*agent.Event, error) {
+	return &agent.Event{AgentID: agentID, Type: agent.EventFailed}, nil
 }
 
 // blockingAdapter returns a channel that blocks until ctx is cancelled.
@@ -93,6 +105,10 @@ func (m *blockingAdapter) WatchAgent(ctx context.Context, agentID string) (<-cha
 		<-ctx.Done()
 	}()
 	return ch, nil
+}
+
+func (m *blockingAdapter) AgentStatus(_ context.Context, _ string) (*agent.Event, error) {
+	return nil, nil
 }
 
 func TestScheduleWatchesAgents(t *testing.T) {

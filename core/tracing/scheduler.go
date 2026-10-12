@@ -36,6 +36,12 @@ func (t *tracedPlatformAdapter) WatchAgent(ctx context.Context, agentID string) 
 	})
 }
 
+func (t *tracedPlatformAdapter) AgentStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	return Wrap(ctx, "PlatformAdapter.AgentStatus", func(ctx context.Context) (*agent.Event, error) {
+		return t.inner.AgentStatus(ctx, agentID)
+	})
+}
+
 type tracedScheduler struct {
 	inner scheduler.Scheduler
 }

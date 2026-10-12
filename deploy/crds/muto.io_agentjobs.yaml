@@ -133,6 +133,15 @@ spec:
                   instances.
                 format: int32
                 type: integer
+              agentIDs:
+                description: |-
+                  AgentIDs holds the opaque platform-adapter-returned identifier for
+                  every agent instance spawned for this job (one per replica). The
+                  reconciler uses these to poll status and terminate agents without
+                  depending on any platform-specific lookup mechanism.
+                items:
+                  type: string
+                type: array
               completedAt:
                 description: CompletedAt is the time the job reached a terminal phase.
                 format: date-time

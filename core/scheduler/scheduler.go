@@ -13,6 +13,9 @@ type PlatformAdapter interface {
 	SpawnAgent(ctx context.Context, spec *agent.Spec) (string, error)
 	TerminateAgent(ctx context.Context, agentID string) error
 	WatchAgent(ctx context.Context, agentID string) (<-chan agent.Event, error)
+	// AgentStatus returns nil, nil while the agent is still running, or a
+	// terminal event (EventCompleted/EventFailed) once it has finished.
+	AgentStatus(ctx context.Context, agentID string) (*agent.Event, error)
 }
 
 type Scheduler interface {

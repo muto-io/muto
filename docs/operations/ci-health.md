@@ -12,5 +12,6 @@ Health of the Muto CI/CD pipeline over the last 30 days, refreshed daily by the 
 | Test pass rate | Same calculation per test job (unit, integration, E2E); this is job-level, not individual spec results |
 | Dependabot PRs | Pull requests opened and merged per ISO week, and median time to merge |
 | Time to first review | From PR open to the first submitted review by someone other than the author (Dependabot PRs excluded) |
+| Time to merge | From PR open to merge (Dependabot PRs excluded); median and p90, shown in the Review turnaround table |
 
 Failures on `main`, scheduled and release runs are also posted to Slack; see [Monitoring and Observability](monitoring-observability.md#cicd-health).

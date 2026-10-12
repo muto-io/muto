@@ -107,6 +107,10 @@ func (a *CFAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan agen
 	return ch, nil
 }
 
+func (a *CFAdapter) AgentStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	return nil, nil
+}
+
 // resolveSpaceGUID maps a tenant identifier to a CF space GUID, using the GUID
 // cache to avoid redundant API calls.
 func (a *CFAdapter) resolveSpaceGUID(ctx context.Context, tenantID string) (string, error) {

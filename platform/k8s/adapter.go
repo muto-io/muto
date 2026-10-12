@@ -112,3 +112,7 @@ func (a *K8sAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan age
 	}()
 	return ch, nil
 }
+
+func (a *K8sAdapter) AgentStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	return nil, nil
+}

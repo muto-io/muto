@@ -31,6 +31,10 @@ func (s *stubAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan ag
 	return ch, nil
 }
 
+func (s *stubAdapter) AgentStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	return &agent.Event{AgentID: agentID, Type: agent.EventCompleted}, nil
+}
+
 func TestWrapPlatformAdapterSpawnAgent(t *testing.T) {
 	sr := withRecorder(t)
 
@@ -46,6 +50,30 @@ func TestWrapPlatformAdapterSpawnAgent(t *testing.T) {
 	}
 	if spans[0].Name() != "PlatformAdapter.SpawnAgent" {
 		t.Errorf("span name = %q, want %q", spans[0].Name(), "PlatformAdapter.SpawnAgent")
+	}
+}
+
+func TestWrapPlatformAdapterAgentStatus(t *testing.T) {
+	sr := withRecorder(t)
+
+	wrapped := tracing.WrapPlatformAdapter(&stubAdapter{})
+	ev, err := wrapped.AgentStatus(context.Background(), "agent-1")
+	if err != nil {
+		t.Fatalf("AgentStatus: unexpected error %v", err)
+	}
+	if ev == nil || ev.Type != agent.EventCompleted {
+		t.Fatalf("AgentStatus: got %v, want a completed event", ev)
+	}
+
+	spans := sr.Ended()
+	found := false
+	for _, s := range spans {
+		if s.Name() == "PlatformAdapter.AgentStatus" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected a span named PlatformAdapter.AgentStatus")
 	}
 }
 

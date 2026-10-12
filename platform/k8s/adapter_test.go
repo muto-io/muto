@@ -210,6 +210,57 @@ func TestSpawnAgentNoA2AEnvVarsForOtherBusType(t *testing.T) {
 	}
 }
 
+func TestSpawnAgentAddsSIGTERMTrapForBusyboxImage(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	adapter := k8sadapter.NewK8sAdapter(fakeClient, "acme-agents")
+	spec := &agent.Spec{
+		TenantRef: "acme",
+		Agents:    []agent.AgentRole{{Role: "worker", Image: "busybox:latest"}},
+		Name:      "job-1-worker-0",
+		Namespace: "acme-agents",
+	}
+	if _, err := adapter.SpawnAgent(context.Background(), spec); err != nil {
+		t.Fatal(err)
+	}
+
+	pod := &corev1.Pod{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: "job-1-worker-0", Namespace: "acme-agents"}, pod); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"sh", "-c", "trap 'exit 0' TERM; sleep 30 & wait"}
+	got := pod.Spec.Containers[0].Command
+	if len(got) != len(want) {
+		t.Fatalf("got Command %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got Command %v, want %v", got, want)
+		}
+	}
+
+	// A non-busybox image must not get the trap override.
+	nonBusyboxSpec := &agent.Spec{
+		TenantRef: "acme",
+		Agents:    []agent.AgentRole{{Role: "worker", Image: "worker:latest"}},
+		Name:      "job-1-worker-1",
+		Namespace: "acme-agents",
+	}
+	if _, err := adapter.SpawnAgent(context.Background(), nonBusyboxSpec); err != nil {
+		t.Fatal(err)
+	}
+	otherPod := &corev1.Pod{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: "job-1-worker-1", Namespace: "acme-agents"}, otherPod); err != nil {
+		t.Fatal(err)
+	}
+	if len(otherPod.Spec.Containers[0].Command) != 0 {
+		t.Errorf("expected no Command override for non-busybox image, got %v", otherPod.Spec.Containers[0].Command)
+	}
+}
+
 func TestSpawnAgentToleratesAlreadyExists(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)

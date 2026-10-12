@@ -68,6 +68,17 @@ func (a *K8sAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, 
 		)
 	}
 
+	container := corev1.Container{
+		Name:  role.Role,
+		Image: role.Image,
+		Env:   envVars,
+	}
+	if role.Image == "busybox:latest" {
+		// sh runs as PID 1, which ignores SIGTERM unless trapped; without the
+		// trap every pod deletion waits out the full 30s grace period.
+		container.Command = []string{"sh", "-c", "trap 'exit 0' TERM; sleep 30 & wait"}
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
@@ -75,13 +86,7 @@ func (a *K8sAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, 
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  role.Role,
-					Image: role.Image,
-					Env:   envVars,
-				},
-			},
+			Containers:    []corev1.Container{container},
 			RestartPolicy: corev1.RestartPolicyNever,
 		},
 	}

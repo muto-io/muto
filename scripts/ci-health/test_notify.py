@@ -1,4 +1,8 @@
+import json
+import os
+import tempfile
 import unittest
+from unittest import mock
 
 import ghapi
 import notify
@@ -25,10 +29,12 @@ def run(**overrides):
 
 
 class FakeClient:
-    def __init__(self, jobs=None, previous_runs=None, jobs_error=None):
+    def __init__(self, jobs=None, previous_runs=None, jobs_error=None, attempt_runs=None):
         self.jobs = jobs or []
         self.previous_runs = previous_runs or []
         self.jobs_error = jobs_error
+        self.attempt_runs = attempt_runs or {}
+        self.get_paths = []
 
     def paginate(self, path, params=None, key=None, max_pages=20):
         if self.jobs_error:
@@ -36,6 +42,12 @@ class FakeClient:
         return iter(self.jobs)
 
     def get(self, path, params=None):
+        self.get_paths.append(path)
+        if path in self.attempt_runs:
+            result = self.attempt_runs[path]
+            if isinstance(result, Exception):
+                raise result
+            return result
         return {"workflow_runs": self.previous_runs}
 
 
@@ -146,6 +158,31 @@ class DecideMessageTest(unittest.TestCase):
         event = {"workflow_run": run(conclusion="success")}
         text = self.decide("workflow_run", event, FakeClient(previous_runs=previous))
         self.assertIn("recovered", text)
+
+    def test_rerun_passing_after_failed_attempt_sends_recovery(self):
+        path = f"/repos/{REPO}/actions/runs/100/attempts/1"
+        client = FakeClient(attempt_runs={path: {"conclusion": "failure"}})
+        event = {"workflow_run": run(conclusion="success", run_attempt=2)}
+        text = self.decide("workflow_run", event, client)
+        self.assertIn("recovered", text)
+
+    def test_rerun_after_successful_attempt_is_silent(self):
+        path = f"/repos/{REPO}/actions/runs/100/attempts/1"
+        client = FakeClient(attempt_runs={path: {"conclusion": "success"}})
+        event = {"workflow_run": run(conclusion="success", run_attempt=2)}
+        self.assertIsNone(self.decide("workflow_run", event, client))
+
+    def test_first_attempt_never_queries_attempts(self):
+        client = FakeClient()
+        event = {"workflow_run": run(conclusion="success", run_attempt=1)}
+        self.assertIsNone(self.decide("workflow_run", event, client))
+        self.assertFalse([p for p in client.get_paths if "/attempts/" in p])
+
+    def test_attempt_lookup_failure_is_silent(self):
+        path = f"/repos/{REPO}/actions/runs/100/attempts/1"
+        client = FakeClient(attempt_runs={path: ghapi.GitHubError("HTTP 502")})
+        event = {"workflow_run": run(conclusion="success", run_attempt=2)}
+        self.assertIsNone(self.decide("workflow_run", event, client))
 
     def test_cancelled_run_is_silent(self):
         event = {"workflow_run": run(conclusion="cancelled")}

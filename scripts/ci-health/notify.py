@@ -107,6 +107,14 @@ def decide_message(event_name: str, event: dict, client, repo: str):
     if conclusion == "success":
         try:
             previous = previous_conclusion(client, repo, run)
+            if previous not in FAILURE_CONCLUSIONS and run.get("run_attempt", 1) > 1:
+                # A re-run keeps the run id, so the failed attempt is only
+                # visible through the attempts endpoint.
+                attempt = run["run_attempt"] - 1
+                earlier = client.get(
+                    f"/repos/{repo}/actions/runs/{run['id']}/attempts/{attempt}"
+                )
+                previous = earlier.get("conclusion")
         except GitHubError as exc:
             print(f"::warning::could not look up previous run: {exc}")
             return None

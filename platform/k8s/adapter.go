@@ -50,6 +50,12 @@ func (a *K8sAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, 
 		{Name: "MUTO_TENANT", Value: spec.TenantRef},
 		{Name: "MUTO_ROLE", Value: role.Role},
 	}
+	if spec.JobID != "" {
+		envVars = append(envVars, corev1.EnvVar{Name: "MUTO_JOB_ID", Value: spec.JobID})
+	}
+	if spec.MessageBus.Topic != "" {
+		envVars = append(envVars, corev1.EnvVar{Name: "MUTO_MESSAGEBUS_TOPIC", Value: spec.MessageBus.Topic})
+	}
 	if spec.MessageBus.Type == a2a.BusTypeA2A {
 		envVars = append(envVars,
 			corev1.EnvVar{

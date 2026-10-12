@@ -35,6 +35,13 @@ func NewCFAdapter(client CFClient, config CFAdapterConfig) *CFAdapter {
 
 // SpawnAgent resolves the tenant's CF space, ensures a runner app exists, then
 // starts a one-off task on that app.
+//
+// Unlike K8sAdapter.SpawnAgent, this is not idempotent on retry: RunTask always
+// returns a fresh task GUID, so if the caller's subsequent Status().Update
+// fails and reconcilePending retries, a duplicate, untracked CF task is
+// spawned. Fixing this needs a CFClient capability to find an existing
+// non-terminal task by name, which does not exist today. Known limitation,
+// tracked for follow-up.
 func (a *CFAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, error) {
 	if len(spec.Agents) == 0 {
 		return "", fmt.Errorf("no agents in spec")

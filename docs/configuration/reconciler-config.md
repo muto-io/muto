@@ -14,12 +14,11 @@ Watches `Tenant` resources (`ctrl.NewControllerManagedBy(mgr).For(&v1alpha1.Tena
 
 ## AgentJobReconciler
 
-Watches `AgentJob` resources and the `Pod`s it owns (`.For(&v1alpha1.AgentJob{}).Owns(&corev1.Pod{})`). Its reconcile loop uses a few fixed, hardcoded requeue intervals - not configurable via any env var:
+Watches `AgentJob` resources (`.For(&v1alpha1.AgentJob{})`) and delegates agent spawn/status/terminate calls to a `scheduler.PlatformAdapter` instead of managing Pods directly. Its reconcile loop uses a few fixed, hardcoded requeue intervals - not configurable via any env var:
 
 | Situation | Behavior |
 |---|---|
-| Job just transitioned to `Running`, no pods found yet | Requeue after `1s` |
-| Pods exist but not all have reached a terminal phase | Requeue after `5s` |
+| Agent IDs are tracked but not all have reached a terminal phase (or none are tracked yet, e.g. right after an upgrade) | Requeue after `5s` |
 | All pods finished (job reached `Succeeded`/`Failed`) | Requeue after `job.Spec.TTLAfterCompletion` seconds |
 | Job is in a terminal phase and its TTL has elapsed | Transition to `Terminating` (no further requeue needed from this path) |
 
@@ -31,7 +30,7 @@ Watches `AgentFleet` resources (`.For(&v1alpha1.AgentFleet{})`) and updates flee
 
 ## EventWatcher
 
-`platform/k8s/eventwatcher.go` defines an `EventWatcher` type that subscribes to a message-bus topic for a tenant and invokes a handler per message. It is **not currently instantiated anywhere in `cmd/muto-operator` or `cmd/muto-mcp`** - it exists in the codebase but isn't wired into either binary yet. It has no worker pool, queue, or Kubernetes-event-watching behavior (despite the name, it watches message-bus messages, not Pod/CRD/Namespace/ConfigMap changes - those are handled by the reconcilers' own controller-runtime watches via `For`/`Owns` above).
+`platform/k8s/eventwatcher.go` defines an `EventWatcher` type that subscribes to a message-bus topic for a tenant and invokes a handler per message. It is **not currently instantiated anywhere in `cmd/muto-operator` or `cmd/muto-mcp`** - it exists in the codebase but isn't wired into either binary yet. It has no worker pool, queue, or Kubernetes-event-watching behavior (despite the name, it watches message-bus messages, not Pod/CRD/Namespace/ConfigMap changes - those are handled by the reconcilers' own controller-runtime watches via `For` above).
 
 ## Monitoring Reconciler Health
 

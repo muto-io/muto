@@ -290,3 +290,18 @@ func TestAgentStatusFailed(t *testing.T) {
 		t.Fatalf("expected EventFailed, got %v", ev)
 	}
 }
+
+func TestAgentStatusCanceling(t *testing.T) {
+	mock, adapter := setupMock()
+	task := &resource.Task{State: "CANCELING"}
+	task.GUID = "task-status-canceling"
+	mock.tasks["task-status-canceling"] = task
+
+	ev, err := adapter.AgentStatus(context.Background(), "task-status-canceling")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ev == nil || ev.Type != agent.EventFailed {
+		t.Fatalf("expected EventFailed, got %v", ev)
+	}
+}

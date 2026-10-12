@@ -18,7 +18,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+// agentJobFinalizer is added to every AgentJob so that its spawned agents are
+// explicitly terminated before the AgentJob object is removed. Dropping the
+// Pods' OwnerReference (so agents can live on non-K8s platforms too) means
+// Kubernetes garbage collection no longer cleans them up on delete; this
+// finalizer replaces that, and works identically whether the agents were
+// spawned on K8s or CF.
+const agentJobFinalizer = "muto.io/agentjob-cleanup"
 
 type AgentJobReconciler struct {
 	client.Client
@@ -31,6 +40,17 @@ func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		job := &v1alpha1.AgentJob{}
 		if err := r.Get(ctx, req.NamespacedName, job); err != nil {
 			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		if !job.DeletionTimestamp.IsZero() {
+			return r.finalizeAgentJob(ctx, job)
+		}
+
+		if !controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+			controllerutil.AddFinalizer(job, agentJobFinalizer)
+			if err := r.Update(ctx, job); err != nil {
+				return ctrl.Result{}, fmt.Errorf("add finalizer: %w", err)
+			}
 		}
 
 		switch job.Status.Phase {
@@ -84,6 +104,10 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 }
 
 func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	if len(job.Status.AgentIDs) == 0 {
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	allDone, anyFailed := true, false
 	for _, id := range job.Status.AgentIDs {
 		ev, err := r.Adapter.AgentStatus(ctx, id)
@@ -154,6 +178,26 @@ func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1al
 	return ctrl.Result{}, nil
 }
 
+// finalizeAgentJob runs when an AgentJob has a DeletionTimestamp set (a
+// direct delete, not the TTL->Terminating path). It terminates every
+// tracked agent before removing the finalizer, since dropping the Pods'
+// OwnerReference means nothing else will clean them up.
+func (r *AgentJobReconciler) finalizeAgentJob(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	if !controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+		return ctrl.Result{}, nil
+	}
+	for _, id := range job.Status.AgentIDs {
+		if err := r.Adapter.TerminateAgent(ctx, id); err != nil {
+			return ctrl.Result{}, fmt.Errorf("terminate agent %s: %w", id, err)
+		}
+	}
+	controllerutil.RemoveFinalizer(job, agentJobFinalizer)
+	if err := r.Update(ctx, job); err != nil {
+		return ctrl.Result{}, fmt.Errorf("remove finalizer: %w", err)
+	}
+	return ctrl.Result{}, nil
+}
+
 // buildAgentSpec translates one AgentJob role/replica into the generic
 // agent.Spec the PlatformAdapter understands. The pod-naming scheme matches
 // what the reconciler used to build directly: a plain "<job>-<role>" name
@@ -180,6 +224,7 @@ func (r *AgentJobReconciler) buildAgentSpec(
 		}},
 		Name:      name,
 		Namespace: job.Namespace,
+		JobID:     job.Name,
 		Labels: map[string]string{
 			"muto.io/tenant": job.Spec.TenantRef,
 			"muto.io/job":    job.Name,

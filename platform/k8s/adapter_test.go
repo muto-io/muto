@@ -292,6 +292,67 @@ func TestSpawnAgentToleratesAlreadyExists(t *testing.T) {
 	}
 }
 
+func TestSpawnAgentIncludesJobIDAndMessageBusTopic(t *testing.T) {
+	scheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+	adapter := k8sadapter.NewK8sAdapter(fakeClient, "acme-agents")
+	spec := &agent.Spec{
+		TenantRef:  "acme",
+		Agents:     []agent.AgentRole{{Role: "worker", Image: "worker:latest"}},
+		Name:       "job-1-worker-0",
+		Namespace:  "acme-agents",
+		JobID:      "job-1",
+		MessageBus: agent.MessageBusConfig{Topic: "tenant.acme.job-1"},
+	}
+	if _, err := adapter.SpawnAgent(context.Background(), spec); err != nil {
+		t.Fatal(err)
+	}
+
+	pod := &corev1.Pod{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: "job-1-worker-0", Namespace: "acme-agents"}, pod); err != nil {
+		t.Fatal(err)
+	}
+	envMap := map[string]string{}
+	for _, e := range pod.Spec.Containers[0].Env {
+		envMap[e.Name] = e.Value
+	}
+	if envMap["MUTO_JOB_ID"] != "job-1" {
+		t.Errorf("unexpected MUTO_JOB_ID: %q", envMap["MUTO_JOB_ID"])
+	}
+	if envMap["MUTO_MESSAGEBUS_TOPIC"] != "tenant.acme.job-1" {
+		t.Errorf("unexpected MUTO_MESSAGEBUS_TOPIC: %q", envMap["MUTO_MESSAGEBUS_TOPIC"])
+	}
+
+	// A spec with neither JobID nor MessageBus.Topic set (matching today's
+	// DefaultScheduler/MCP usage) must produce a pod with only
+	// MUTO_TENANT/MUTO_ROLE and no MUTO_JOB_ID/MUTO_MESSAGEBUS_TOPIC keys at
+	// all.
+	bareSpec := &agent.Spec{
+		TenantRef: "acme",
+		Agents:    []agent.AgentRole{{Role: "worker", Image: "worker:latest"}},
+		Name:      "job-bare-worker-0",
+		Namespace: "acme-agents",
+	}
+	if _, err := adapter.SpawnAgent(context.Background(), bareSpec); err != nil {
+		t.Fatal(err)
+	}
+	barePod := &corev1.Pod{}
+	if err := fakeClient.Get(context.Background(), client.ObjectKey{Name: "job-bare-worker-0", Namespace: "acme-agents"}, barePod); err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range barePod.Spec.Containers[0].Env {
+		if e.Name == "MUTO_JOB_ID" || e.Name == "MUTO_MESSAGEBUS_TOPIC" {
+			t.Errorf("unexpected env var %q when JobID/MessageBus.Topic unset", e.Name)
+		}
+	}
+	if len(barePod.Spec.Containers[0].Env) != 2 {
+		t.Errorf("expected exactly 2 env vars (MUTO_TENANT, MUTO_ROLE), got %v", barePod.Spec.Containers[0].Env)
+	}
+}
+
 func TestAgentStatusTransitions(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = v1alpha1.AddToScheme(scheme)

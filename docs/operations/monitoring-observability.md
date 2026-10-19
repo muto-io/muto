@@ -348,6 +348,20 @@ groups:
           summary: "Muto operator restarted more than twice in 30 minutes"
 ```
 
+## CI/CD Health
+
+Pipeline health is tracked separately from the operator's runtime metrics. The [CI/CD Health dashboard](ci-health.md) shows workflow success rate, test job pass rate, Dependabot activity and review turnaround over the last 30 days. It is regenerated daily (and on every docs build) by `scripts/ci-health/collect.py`.
+
+Failures are posted to Slack by the `CI Failure Notify` workflow (`.github/workflows/ci-failure-notify.yaml`). It reacts to failed or timed-out runs of `CI`, `E2E Tests`, `Release` and the Pages build on `main`, scheduled runs and release tags (pull-request failures are visible on the PR and are not posted), and sends one "recovered" message when a failing workflow goes green again.
+
+To enable notifications:
+
+1. Create a Slack incoming webhook for the target channel.
+2. Add it as the `SLACK_WEBHOOK_URL` repository secret (Settings → Secrets and variables → Actions).
+3. Verify the wiring: Actions → `CI Failure Notify` → Run workflow. A test message should appear in the channel.
+
+Without the secret the workflow logs a notice and succeeds, so forks are unaffected. The workflow is only triggered by other workflows' runs once it exists on `main`.
+
 ## Known Limitations
 
 - The metrics (`:8080`) and health probe (`:8081`) addresses are fixed. The Helm values `metrics.port` and `healthProbe.port` only change the container port declarations, so changing them breaks scraping or the probes.

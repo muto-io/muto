@@ -35,6 +35,13 @@ func NewCFAdapter(client CFClient, config CFAdapterConfig) *CFAdapter {
 
 // SpawnAgent resolves the tenant's CF space, ensures a runner app exists, then
 // starts a one-off task on that app.
+//
+// Unlike K8sAdapter.SpawnAgent, this is not idempotent on retry: RunTask always
+// returns a fresh task GUID, so if the caller's subsequent Status().Update
+// fails and reconcilePending retries, a duplicate, untracked CF task is
+// spawned. Fixing this needs a CFClient capability to find an existing
+// non-terminal task by name, which does not exist today. Known limitation,
+// tracked for follow-up.
 func (a *CFAdapter) SpawnAgent(ctx context.Context, spec *agent.Spec) (string, error) {
 	if len(spec.Agents) == 0 {
 		return "", fmt.Errorf("no agents in spec")
@@ -72,6 +79,28 @@ func (a *CFAdapter) TerminateAgent(ctx context.Context, agentID string) error {
 	return err
 }
 
+// AgentStatus returns nil, nil while the CF task is still running, or a
+// terminal event once it reaches SUCCEEDED/FAILED/CANCELING.
+func (a *CFAdapter) AgentStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	return a.checkTaskStatus(ctx, agentID)
+}
+
+// checkTaskStatus fetches the CF task and returns a terminal event once it
+// has finished, or nil while it is still running.
+func (a *CFAdapter) checkTaskStatus(ctx context.Context, agentID string) (*agent.Event, error) {
+	task, err := a.client.GetTask(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+	switch task.State {
+	case "SUCCEEDED":
+		return &agent.Event{AgentID: agentID, Type: agent.EventCompleted}, nil
+	case "FAILED", "CANCELING":
+		return &agent.Event{AgentID: agentID, Type: agent.EventFailed}, nil
+	}
+	return nil, nil
+}
+
 // WatchAgent polls the CF task state and emits a single event when the task
 // reaches a terminal state, then closes the channel. Cancelling ctx causes the
 // channel to close without an event.
@@ -80,7 +109,7 @@ func (a *CFAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan agen
 	go func() {
 		defer close(ch)
 		for {
-			task, err := a.client.GetTask(ctx, agentID)
+			ev, err := a.checkTaskStatus(ctx, agentID)
 			if err != nil {
 				// Don't report context cancellation as a failure
 				if errors.Is(err, context.Canceled) {
@@ -89,12 +118,8 @@ func (a *CFAdapter) WatchAgent(ctx context.Context, agentID string) (<-chan agen
 				ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed, Message: err.Error()}
 				return
 			}
-			switch task.State {
-			case "SUCCEEDED":
-				ch <- agent.Event{AgentID: agentID, Type: agent.EventCompleted}
-				return
-			case "FAILED", "CANCELING":
-				ch <- agent.Event{AgentID: agentID, Type: agent.EventFailed}
+			if ev != nil {
+				ch <- *ev
 				return
 			}
 			select {

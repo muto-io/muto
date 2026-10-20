@@ -245,3 +245,63 @@ func TestGUIDCacheHit(t *testing.T) {
 		t.Errorf("expected no additional org lookups on cache hit, got %d extra", mock.orgCalls-firstOrgCalls)
 	}
 }
+
+func TestAgentStatusStillRunning(t *testing.T) {
+	mock, adapter := setupMock()
+	task := &resource.Task{State: "RUNNING"}
+	task.GUID = "task-running-status"
+	mock.tasks["task-running-status"] = task
+
+	ev, err := adapter.AgentStatus(context.Background(), "task-running-status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ev != nil {
+		t.Fatalf("expected nil event for a running task, got %v", ev)
+	}
+}
+
+func TestAgentStatusSucceeded(t *testing.T) {
+	mock, adapter := setupMock()
+	task := &resource.Task{State: "SUCCEEDED"}
+	task.GUID = "task-status-done"
+	mock.tasks["task-status-done"] = task
+
+	ev, err := adapter.AgentStatus(context.Background(), "task-status-done")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ev == nil || ev.Type != agent.EventCompleted {
+		t.Fatalf("expected EventCompleted, got %v", ev)
+	}
+}
+
+func TestAgentStatusFailed(t *testing.T) {
+	mock, adapter := setupMock()
+	task := &resource.Task{State: "FAILED"}
+	task.GUID = "task-status-fail"
+	mock.tasks["task-status-fail"] = task
+
+	ev, err := adapter.AgentStatus(context.Background(), "task-status-fail")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ev == nil || ev.Type != agent.EventFailed {
+		t.Fatalf("expected EventFailed, got %v", ev)
+	}
+}
+
+func TestAgentStatusCanceling(t *testing.T) {
+	mock, adapter := setupMock()
+	task := &resource.Task{State: "CANCELING"}
+	task.GUID = "task-status-canceling"
+	mock.tasks["task-status-canceling"] = task
+
+	ev, err := adapter.AgentStatus(context.Background(), "task-status-canceling")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ev == nil || ev.Type != agent.EventFailed {
+		t.Fatalf("expected EventFailed, got %v", ev)
+	}
+}

@@ -81,6 +81,11 @@ type AgentJobStatus struct {
 	StartedAt *metav1.Time `json:"startedAt,omitempty"`
 	// CompletedAt is the time the job reached a terminal phase.
 	CompletedAt *metav1.Time `json:"completedAt,omitempty"`
+	// AgentIDs holds the opaque platform-adapter-returned identifier for
+	// every agent instance spawned for this job (one per replica). The
+	// reconciler uses these to poll status and terminate agents without
+	// depending on any platform-specific lookup mechanism.
+	AgentIDs []string `json:"agentIDs,omitempty"`
 }
 
 // +kubebuilder:object:root=true

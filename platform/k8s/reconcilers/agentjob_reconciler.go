@@ -7,22 +7,32 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muto-io/muto/core/a2a"
+	"github.com/muto-io/muto/core/agent"
+	"github.com/muto-io/muto/core/scheduler"
 	"github.com/muto-io/muto/platform/k8s/metrics"
 	"github.com/muto-io/muto/platform/k8s/tracing"
 	v1alpha1 "github.com/muto-io/muto/platform/k8s/types/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+// agentJobFinalizer is added to every AgentJob so that its spawned agents are
+// explicitly terminated before the AgentJob object is removed. Dropping the
+// Pods' OwnerReference (so agents can live on non-K8s platforms too) means
+// Kubernetes garbage collection no longer cleans them up on delete; this
+// finalizer replaces that, and works identically whether the agents were
+// spawned on K8s or CF.
+const agentJobFinalizer = "muto.io/agentjob-cleanup"
 
 type AgentJobReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
+	Adapter scheduler.PlatformAdapter
 }
 
 func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -30,6 +40,17 @@ func (r *AgentJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		job := &v1alpha1.AgentJob{}
 		if err := r.Get(ctx, req.NamespacedName, job); err != nil {
 			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		if !job.DeletionTimestamp.IsZero() {
+			return r.finalizeAgentJob(ctx, job)
+		}
+
+		if !controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+			controllerutil.AddFinalizer(job, agentJobFinalizer)
+			if err := r.Update(ctx, job); err != nil {
+				return ctrl.Result{}, fmt.Errorf("add finalizer: %w", err)
+			}
 		}
 
 		switch job.Status.Phase {
@@ -52,6 +73,7 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 		return ctrl.Result{}, fmt.Errorf("get tenant %q: %w", job.Spec.TenantRef, err)
 	}
 
+	var agentIDs []string
 	totalAgents := 0
 	for _, roleSpec := range job.Spec.Agents {
 		replicas := roleSpec.MaxReplicas
@@ -61,16 +83,19 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 		totalAgents += int(replicas)
 
 		for i := int32(0); i < replicas; i++ {
-			pod := r.buildPod(job, roleSpec, tenant, i)
-			if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
-				return ctrl.Result{}, fmt.Errorf("create pod: %w", err)
+			spec := r.buildAgentSpec(job, roleSpec, tenant, replicas, i)
+			id, err := r.Adapter.SpawnAgent(ctx, spec)
+			if err != nil {
+				return ctrl.Result{}, fmt.Errorf("spawn agent: %w", err)
 			}
+			agentIDs = append(agentIDs, id)
 		}
 	}
 	now := metav1.Now()
 	job.Status.Phase = "Running"
 	job.Status.ActiveAgents = int32(totalAgents)
 	job.Status.StartedAt = &now
+	job.Status.AgentIDs = agentIDs
 	if err := r.Status().Update(ctx, job); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -79,23 +104,21 @@ func (r *AgentJobReconciler) reconcilePending(ctx context.Context, job *v1alpha1
 }
 
 func (r *AgentJobReconciler) reconcileRunning(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
-	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(job.Namespace),
-		client.MatchingLabels{"muto.io/job": job.Name}); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// If no pods found yet, requeue (pods may still be creating)
-	if len(podList.Items) == 0 {
-		return ctrl.Result{RequeueAfter: 1 * time.Second}, nil
+	if len(job.Status.AgentIDs) == 0 {
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	allDone, anyFailed := true, false
-	for _, pod := range podList.Items {
-		if pod.Status.Phase != corev1.PodSucceeded && pod.Status.Phase != corev1.PodFailed {
-			allDone = false
+	for _, id := range job.Status.AgentIDs {
+		ev, err := r.Adapter.AgentStatus(ctx, id)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("agent status %s: %w", id, err)
 		}
-		if pod.Status.Phase == corev1.PodFailed {
+		if ev == nil {
+			allDone = false
+			continue
+		}
+		if ev.Type == agent.EventFailed {
 			anyFailed = true
 		}
 	}
@@ -144,14 +167,21 @@ func (r *AgentJobReconciler) reconcileTerminal(ctx context.Context, job *v1alpha
 }
 
 func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
-	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(job.Namespace),
-		client.MatchingLabels{"muto.io/job": job.Name}); err != nil {
-		return ctrl.Result{}, fmt.Errorf("list pods for terminating job: %w", err)
+	for _, id := range job.Status.AgentIDs {
+		if err := r.Adapter.TerminateAgent(ctx, id); err != nil {
+			return ctrl.Result{}, fmt.Errorf("terminate agent %s: %w", id, err)
+		}
 	}
-	for i := range podList.Items {
-		if err := r.Delete(ctx, &podList.Items[i]); err != nil && !errors.IsNotFound(err) {
-			return ctrl.Result{}, fmt.Errorf("delete pod %s: %w", podList.Items[i].Name, err)
+	// Remove the finalizer before deleting so this TTL-driven delete doesn't
+	// re-enter finalizeAgentJob and terminate every agent a second time -
+	// harmless on K8s (TerminateAgent swallows NotFound) but not on CF
+	// (CFAdapter.TerminateAgent only swallows "succeeded"/"failed" errors,
+	// so a second cancel on an already-canceling task would stick the
+	// finalizer forever).
+	if controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+		controllerutil.RemoveFinalizer(job, agentJobFinalizer)
+		if err := r.Update(ctx, job); err != nil {
+			return ctrl.Result{}, fmt.Errorf("remove finalizer: %w", err)
 		}
 	}
 	if err := r.Delete(ctx, job); err != nil && !errors.IsNotFound(err) {
@@ -160,78 +190,68 @@ func (r *AgentJobReconciler) reconcileTerminating(ctx context.Context, job *v1al
 	return ctrl.Result{}, nil
 }
 
-func (r *AgentJobReconciler) buildPod(
+// finalizeAgentJob runs when an AgentJob has a DeletionTimestamp set (a
+// direct delete, not the TTL->Terminating path). It terminates every
+// tracked agent before removing the finalizer, since dropping the Pods'
+// OwnerReference means nothing else will clean them up.
+func (r *AgentJobReconciler) finalizeAgentJob(ctx context.Context, job *v1alpha1.AgentJob) (ctrl.Result, error) {
+	if !controllerutil.ContainsFinalizer(job, agentJobFinalizer) {
+		return ctrl.Result{}, nil
+	}
+	for _, id := range job.Status.AgentIDs {
+		if err := r.Adapter.TerminateAgent(ctx, id); err != nil {
+			return ctrl.Result{}, fmt.Errorf("terminate agent %s: %w", id, err)
+		}
+	}
+	controllerutil.RemoveFinalizer(job, agentJobFinalizer)
+	if err := r.Update(ctx, job); err != nil {
+		return ctrl.Result{}, fmt.Errorf("remove finalizer: %w", err)
+	}
+	return ctrl.Result{}, nil
+}
+
+// buildAgentSpec translates one AgentJob role/replica into the generic
+// agent.Spec the PlatformAdapter understands. The pod-naming scheme matches
+// what the reconciler used to build directly: a plain "<job>-<role>" name
+// when there is a single replica, "<job>-<role>-<index>" when there are
+// several.
+func (r *AgentJobReconciler) buildAgentSpec(
 	job *v1alpha1.AgentJob,
 	roleSpec v1alpha1.AgentRoleSpec,
 	tenant *v1alpha1.Tenant,
+	replicas int32,
 	replicaIndex int32,
-) *corev1.Pod {
-	envVars := []corev1.EnvVar{
-		{Name: "MUTO_TENANT", Value: job.Spec.TenantRef},
-		{Name: "MUTO_ROLE", Value: roleSpec.Role},
-		{Name: "MUTO_JOB_ID", Value: job.Name},
-		{Name: "MUTO_MESSAGEBUS_TOPIC", Value: job.Spec.MessageBus.Topic},
-	}
-	if tenant.Spec.MessageBus.Type == a2a.BusTypeA2A {
-		envVars = append(envVars,
-			corev1.EnvVar{
-				Name:  "MUTO_A2A_GATEWAY",
-				Value: "http://a2a-gateway." + job.Namespace + ".svc.cluster.local:8080",
-			},
-			corev1.EnvVar{
-				Name: "MUTO_A2A_TOKEN",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: "muto-a2a-token"},
-						Key:                  "token",
-					},
-				},
-			},
-		)
-	}
-	podName := fmt.Sprintf("%s-%s", job.Name, roleSpec.Role)
-	replicas := roleSpec.MaxReplicas
-	if replicas == 0 {
-		replicas = 1
-	}
+) *agent.Spec {
+	name := fmt.Sprintf("%s-%s", job.Name, roleSpec.Role)
 	if replicas > 1 {
-		podName = fmt.Sprintf("%s-%s-%d", job.Name, roleSpec.Role, replicaIndex)
+		name = fmt.Sprintf("%s-%s-%d", job.Name, roleSpec.Role, replicaIndex)
 	}
-
-	container := corev1.Container{
-		Name:  roleSpec.Role,
-		Image: roleSpec.Image,
-		Env:   envVars,
-	}
-	if roleSpec.Image == "busybox:latest" {
-		// sh runs as PID 1, which ignores SIGTERM unless trapped; without the
-		// trap every pod deletion waits out the full 30s grace period.
-		container.Command = []string{"sh", "-c", "trap 'exit 0' TERM; sleep 30 & wait"}
-	}
-
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: job.Namespace,
-			Labels: map[string]string{
-				"muto.io/tenant": job.Spec.TenantRef,
-				"muto.io/job":    job.Name,
-				"muto.io/role":   roleSpec.Role,
-			},
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(job, v1alpha1.GroupVersion.WithKind("AgentJob")),
-			},
+	return &agent.Spec{
+		TenantRef: job.Spec.TenantRef,
+		Agents: []agent.AgentRole{{
+			Role:        roleSpec.Role,
+			Image:       roleSpec.Image,
+			Command:     roleSpec.Command,
+			MaxReplicas: roleSpec.MaxReplicas,
+		}},
+		Name:      name,
+		Namespace: job.Namespace,
+		JobID:     job.Name,
+		Labels: map[string]string{
+			"muto.io/tenant": job.Spec.TenantRef,
+			"muto.io/job":    job.Name,
+			"muto.io/role":   roleSpec.Role,
 		},
-		Spec: corev1.PodSpec{
-			Containers:    []corev1.Container{container},
-			RestartPolicy: corev1.RestartPolicyNever,
+		MessageBus: agent.MessageBusConfig{
+			Topic: job.Spec.MessageBus.Topic,
+			Type:  tenant.Spec.MessageBus.Type,
 		},
+		TTLAfterCompletion: job.Spec.TTLAfterCompletion,
 	}
 }
 
 func (r *AgentJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.AgentJob{}).
-		Owns(&corev1.Pod{}).
 		Complete(tracing.WrapReconciler("AgentJobReconciler.Reconcile", r))
 }

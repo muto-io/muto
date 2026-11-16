@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/IBM/sarama v1.61.1
-	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
+	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.2
 	github.com/go-logr/logr v1.4.4
 	github.com/mark3labs/mcp-go v1.5.0
 	github.com/nats-io/nats.go v1.55.0
@@ -137,7 +137,7 @@ require (
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
-	golang.org/x/oauth2 v0.37.0 // indirect
+	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/term v0.47.0 // indirect

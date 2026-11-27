@@ -121,3 +121,14 @@ jobs:
       - uses: azure/setup-helm@v5
       - name: Lint chart
         run: helm lint deploy/helm/muto
+
+  ci-health-test:
+    name: CI Health Script Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - name: Run unit tests
+        run: python -m unittest discover -s scripts/ci-health -v

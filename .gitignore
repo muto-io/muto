@@ -27,3 +27,7 @@ pyproject.toml
 
 # Claude
 .superpowers
+
+# Generated CI/CD health data (built by scripts/ci-health/collect.py)
+docs/operations/ci-health/data.json
+site/

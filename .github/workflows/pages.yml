@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'scripts/ci-health/**'
       - '.github/workflows/pages.yml'
       - 'README.md'
       - 'CONTRIBUTING.md'
@@ -12,12 +13,17 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'scripts/ci-health/**'
       - '.github/workflows/pages.yml'
+  schedule:
+    # Daily refresh of the CI/CD health dashboard
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  actions: read
+  pull-requests: read
 
 concurrency:
   group: pages
@@ -43,6 +49,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docs-requirements.txt
 
+      - name: Collect CI/CD health metrics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/ci-health/collect.py
+
       - name: Build documentation
         run: mkdocs build
 
@@ -60,7 +71,11 @@ jobs:
     name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
